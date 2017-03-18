@@ -1,12 +1,14 @@
 Package: later
 Type: Package
-Title: What the Package Does in One 'Title Case' Line
-Version: 1.0
+Title: Executes functions some time later
+Version: 0.1
 Date: 2017-03-16
-Author: Your Name
-Maintainer: Your Name <your@email.com>
-Description: One paragraph description of what the package does as one
-        or more full sentences.
+Authors@R: c(
+    person("Joe", "Cheng", role = c("aut", "cre"), email = "joe@rstudio.com"),
+    person(family = "RStudio", role = "cph")
+    )
+Description: Executes arbitrary R functions some time after the current time,
+    after the R execution stack has emptied.
 License: GPL (>= 2)
 Imports: Rcpp (>= 0.12.9), rlang
 LinkingTo: Rcpp
