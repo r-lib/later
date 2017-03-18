@@ -1,3 +1,5 @@
+#ifndef _WIN32
+
 #include <Rcpp.h>
 #include <Rinternals.h>
 #include <R_ext/eventloop.h>
@@ -12,11 +14,6 @@ extern void* R_TopLevelContext;
 
 // Whether we have initialized the input handler.
 int initialized = 0;
-
-// This is just quote(base::sys.nframe()). We create this from R and
-// store it, because I don't want to learn how to parse strings into
-// call SEXPRs from C/C++.
-static SEXP nframes;
 
 // The handles to the read and write ends of a pipe. We use this pipe
 // to signal R's input handler callback mechanism that we want to be
@@ -36,19 +33,6 @@ void *buf;
 // The queue of user-provided callbacks that are scheduled to be
 // executed.
 std::queue<Rcpp::Function> callbacks;
-
-// Save a call expression as NFramesCallback.
-// [[Rcpp::export]]
-void saveNframesCallback(SEXP exp) {
-  R_PreserveObject(exp);
-  nframes = exp;
-}
-
-// Returns true if sys.nframes() returns 0.
-static bool at_top_level() {
-  int frames = Rcpp::as<int>(Rf_eval(nframes, R_GlobalEnv));
-  return frames == 0;
-}
 
 static void async_input_handler(void *data) {
   if (!at_top_level()) {
@@ -70,7 +54,7 @@ static void async_input_handler(void *data) {
   }
 }
 
-static void ensureInitialized() {
+void ensureInitialized() {
   if (!initialized) {
     buf = malloc(BUF_SIZE);
     
@@ -89,10 +73,7 @@ static void ensureInitialized() {
   }
 }
 
-// [[Rcpp::export]]
-void execLater(Rcpp::Function callback) {
-  ensureInitialized();
-  
+void doExecLater(Rcpp::Function callback) {
   callbacks.push(callback);
   
   if (!hot) {
@@ -100,3 +81,5 @@ void execLater(Rcpp::Function callback) {
     hot = 1;
   }
 }
+
+#endif // ifndef _WIN32
