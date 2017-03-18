@@ -1,6 +1,8 @@
 #include "later.h"
 #include <Rcpp.h>
 
+// Declare platform-specific functions that are implemented in
+// later_posix.cpp and later_win32.cpp.
 void ensureInitialized();
 void doExecLater(Rcpp::Function callback);
 
@@ -9,10 +11,12 @@ void doExecLater(Rcpp::Function callback);
 // call SEXPRs from C/C++.
 static SEXP nframes;
 
-// Save a call expression as NFramesCallback.
+// Save a call expression as NFramesCallback. This is called at startup.
 // [[Rcpp::export]]
 void saveNframesCallback(SEXP exp) {
+  // TODO: Is R_PreserveObject necessary here?
   R_PreserveObject(exp);
+  
   nframes = exp;
 }
 
@@ -25,6 +29,5 @@ bool at_top_level() {
 // [[Rcpp::export]]
 void execLater(Rcpp::Function callback) {
   ensureInitialized();
-  
   doExecLater(callback);
 }

@@ -16,8 +16,8 @@ int initialized = 0;
 // The handle to the message-only window
 HWND hwnd;
 
-// Pointer to the timer, used to cancel
-UINT_PTR pTimer;
+// The ID of the timer
+UINT_PTR TIMER_ID = 1;
 
 // The queue of user-provided callbacks that are scheduled to be
 // executed.
@@ -42,9 +42,8 @@ static bool executeHandlers() {
 LRESULT CALLBACK callbackWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
   switch (message) {
   case WM_TIMER:
-    REprintf(".");
     if (executeHandlers()) {
-      KillTimer(hwnd, pTimer);
+      KillTimer(hwnd, TIMER_ID);
     }
     break;
   default:
@@ -77,7 +76,9 @@ void ensureInitialized() {
 void doExecLater(Rcpp::Function callback) {
   callbacks.push(callback);
   
-  pTimer = SetTimer(hwnd, 1, USER_TIMER_MINIMUM, NULL);
+  if (!SetTimer(hwnd, TIMER_ID, USER_TIMER_MINIMUM, NULL)) {
+    Rf_error("Failed to schedule callback timer");
+  }
 }
 
 #endif // ifdef _WIN32

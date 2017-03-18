@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <queue>
 
+#include "later.h"
+
 using namespace Rcpp;
 
 extern void* R_GlobalContext;
