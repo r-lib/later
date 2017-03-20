@@ -12,4 +12,5 @@ Description: Executes arbitrary R functions some time after the current time,
 License: GPL (>= 2)
 Imports: Rcpp (>= 0.12.9), rlang
 LinkingTo: Rcpp
+Remotes: hadley/rlang
 RoxygenNote: 6.0.1
