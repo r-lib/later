@@ -1,5 +1,6 @@
 #include <memory>
 
+// Impl abstract class; implemented by platform-specific classes
 class TimestampImpl {
 public:
   virtual bool future() const = 0;
@@ -15,9 +16,12 @@ public:
   Timestamp();
   Timestamp(double secs);
 
+  // Is this timestamp in the future?
   bool future() const {
     return p_impl->future();
   }
+  
+  // Comparison operators
   bool operator<(const Timestamp& other) const {
     return p_impl->less(other.p_impl.get());
   }

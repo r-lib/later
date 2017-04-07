@@ -3,8 +3,6 @@
 #include "timestamp.hpp"
 #include "optional.hpp"
 
-using namespace Rcpp;
-
 struct Callback {
   Timestamp when;
   Rcpp::Function func;
@@ -18,42 +16,26 @@ struct Callback {
   }
 };
 
+// Stores R function callbacks, ordered by timestamp.
 class CallbackRegistry {
 private:
   std::priority_queue<Callback,std::vector<Callback>,std::greater<Callback> > queue;
   
 public:
-  void add(Rcpp::Function func, double secs) {
-    Timestamp when(secs);
-    Callback cb = {when, func};
-    queue.push(cb);
-  }
+  // Add a function to the registry, to be executed at `secs` seconds in
+  // the future (i.e. relative to the current time).
+  void add(Rcpp::Function func, double secs);
   
   // The smallest timestamp present in the registry, if any.
   // Use this to determine the next time we need to pump events.
-  Optional<Timestamp> nextTimestamp() const {
-    if (this->queue.empty()) {
-      return Optional<Timestamp>();
-    } else {
-      return Optional<Timestamp>(this->queue.top().when);
-    }
-  }
+  Optional<Timestamp> nextTimestamp() const;
   
-  bool empty() const {
-    return this->queue.empty();
-  }
+  // Is the registry completely empty?
+  bool empty() const;
   
-  // Returns true if the smallest timestamp exists and is not in the future.
-  bool due() const {
-    return !this->queue.empty() && !this->queue.top().when.future();
-  }
+  // Is anything ready to execute?
+  bool due() const;
   
-  std::vector<Rcpp::Function> take() {
-    std::vector<Rcpp::Function> results;
-    while (this->due()) {
-      results.push_back(this->queue.top().func);
-      this->queue.pop();
-    }
-    return results;
-  }
+  // Pop and return an ordered list of functions to execute now.
+  std::vector<Rcpp::Function> take();
 };
