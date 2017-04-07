@@ -7,7 +7,7 @@
 #include <queue>
 
 #include "later.h"
-#include "callback_registry.hpp"
+#include "callback_registry.h"
 
 using namespace Rcpp;
 

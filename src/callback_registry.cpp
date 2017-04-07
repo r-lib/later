@@ -1,4 +1,4 @@
-#include "callback_registry.hpp"
+#include "callback_registry.h"
 
 void CallbackRegistry::add(Rcpp::Function func, double secs) {
   Timestamp when(secs);

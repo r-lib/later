@@ -1,7 +1,7 @@
 #ifdef __unix__
 #ifndef __APPLE__ 
 
-#include "timestamp.hpp"
+#include "timestamp.h"
 #include <time.h>
 
 class TimestampImplUnix : public TimestampImpl {

@@ -1,7 +1,7 @@
 #include <Rcpp.h>
 #include <queue>
-#include "timestamp.hpp"
-#include "optional.hpp"
+#include "timestamp.h"
+#include "optional.h"
 
 struct Callback {
   Timestamp when;

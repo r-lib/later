@@ -1,6 +1,6 @@
 #ifdef __APPLE__
 
-#include "timestamp.hpp"
+#include "timestamp.h"
 #include <mach/mach_time.h>
 
 class TimestampImplDarwin : public TimestampImpl {

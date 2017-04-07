@@ -2,7 +2,7 @@
 #include <Rcpp.h>
 #include <queue>
 
-#include "callback_registry.hpp"
+#include "callback_registry.h"
 
 // Declare platform-specific functions that are implemented in
 // later_posix.cpp and later_win32.cpp.

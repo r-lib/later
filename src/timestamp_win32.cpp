@@ -1,6 +1,6 @@
 #ifdef _WIN32
 
-#include "timestamp.hpp"
+#include "timestamp.h"
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 

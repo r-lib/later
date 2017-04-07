@@ -7,7 +7,7 @@
 #include <queue>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include "callback_registry.hpp"
+#include "callback_registry.h"
 
 using namespace Rcpp;
 
