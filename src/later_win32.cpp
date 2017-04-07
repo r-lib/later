@@ -1,16 +1,17 @@
 #ifdef _WIN32
 
+#include "later.h"
+
 #include <Rcpp.h>
 #include <Rinternals.h>
 #include <queue>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-
-#include "later.h"
+#include "callback_registry.hpp"
 
 using namespace Rcpp;
 
-extern std::queue<Rcpp::Function> callbacks;
+extern CallbackRegistry callbackRegistry;
 
 // Whether we have initialized the message-only window.
 int initialized = 0;
@@ -29,7 +30,7 @@ static bool executeHandlers() {
   }
 
   execCallbacks();  
-  return true;
+  return idle();
 }
 
 LRESULT CALLBACK callbackWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -66,8 +67,8 @@ void ensureInitialized() {
   }
 }
 
-void doExecLater(Rcpp::Function callback) {
-  callbacks.push(callback);
+void doExecLater(Rcpp::Function callback, double delaySecs) {
+  callbackRegistry.add(callback, delaySecs);
   
   if (!SetTimer(hwnd, TIMER_ID, USER_TIMER_MINIMUM, NULL)) {
     Rf_error("Failed to schedule callback timer");
