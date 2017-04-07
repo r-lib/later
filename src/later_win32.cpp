@@ -10,6 +10,8 @@
 
 using namespace Rcpp;
 
+extern std::queue<Rcpp::Function> callbacks;
+
 // Whether we have initialized the message-only window.
 int initialized = 0;
 
@@ -19,23 +21,14 @@ HWND hwnd;
 // The ID of the timer
 UINT_PTR TIMER_ID = 1;
 
-// The queue of user-provided callbacks that are scheduled to be
-// executed.
-std::queue<Rcpp::Function> callbacks;
-
 static bool executeHandlers() {
   if (!at_top_level()) {
     // It's not safe to run arbitrary callbacks when other R code
     // is already running. Wait until we're back at the top level.
     return false;
   }
-  
-  // TODO: What to do about errors that occur in async handlers?
-  while (!callbacks.empty()) {
-    Rcpp::Function first = callbacks.front();
-    callbacks.pop();
-    first();
-  }
+
+  execCallbacks();  
   return true;
 }
 

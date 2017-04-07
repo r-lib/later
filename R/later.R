@@ -31,15 +31,23 @@ nframe <- function() {
 
 #' Executes a function later
 #' 
-#' Executes a function or formula (see \code{\link[rlang]{as_function}}) some
+#' Executes a function or formula (see \code{\link[rlang]{as_function}}) some 
 #' time in the future, when no other R code is on the execution stack.
 #' 
 #' TODO: Talk about error handling
 #' 
 #' @param func A function or formula.
+#' @param delay Number of seconds in the future to delay execution. There is no 
+#'   guarantee that the function will be executed at the desired time, but it 
+#'   should not execute earlier.
 #'   
 #' @export
-later <- function(func) {
+later <- function(func, delay = 0) {
   f <- rlang::as_function(func)
-  execLater(f)
+  execLater(f, delay)
+}
+
+#' @export
+run_now <- function() {
+  invisible(execCallbacks())
 }
