@@ -16,3 +16,4 @@ Imports:
 LinkingTo: Rcpp
 Remotes: hadley/rlang
 RoxygenNote: 5.0.1
+SystemRequirements: C++11
