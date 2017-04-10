@@ -15,13 +15,24 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// execCallbacks
+bool execCallbacks();
+RcppExport SEXP later_execCallbacks() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(execCallbacks());
+    return rcpp_result_gen;
+END_RCPP
+}
 // execLater
-void execLater(Rcpp::Function callback);
-RcppExport SEXP later_execLater(SEXP callbackSEXP) {
+void execLater(Rcpp::Function callback, double delaySecs);
+RcppExport SEXP later_execLater(SEXP callbackSEXP, SEXP delaySecsSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::Function >::type callback(callbackSEXP);
-    execLater(callback);
+    Rcpp::traits::input_parameter< double >::type delaySecs(delaySecsSEXP);
+    execLater(callback, delaySecs);
     return R_NilValue;
 END_RCPP
 }

@@ -1,10 +1,13 @@
 #include "later.h"
 #include <Rcpp.h>
+#include <queue>
+
+#include "callback_registry.h"
 
 // Declare platform-specific functions that are implemented in
 // later_posix.cpp and later_win32.cpp.
 void ensureInitialized();
-void doExecLater(Rcpp::Function callback);
+void doExecLater(Rcpp::Function callback, double delaySecs);
 
 // This is just quote(base::sys.nframe()). We create this from R and
 // store it, because I don't want to learn how to parse strings into
@@ -26,8 +29,30 @@ bool at_top_level() {
   return frames == 0;
 }
 
+// The queue of user-provided callbacks that are scheduled to be
+// executed.
+CallbackRegistry callbackRegistry;
+
 // [[Rcpp::export]]
-void execLater(Rcpp::Function callback) {
+bool execCallbacks() {
+  std::vector<Rcpp::Function> callbacks = callbackRegistry.take();
+  // if (callbacks.size())
+  //   printf("Executing %ld\n", callbacks.size());
+  for (std::vector<Rcpp::Function>::iterator it = callbacks.begin();
+    it != callbacks.end();
+    it++) {
+    // TODO: What to do about errors/warnings that occur here?
+    (*it)();
+  }
+  return !callbacks.empty();
+}
+
+bool idle() {
+  return callbackRegistry.empty();
+}
+
+// [[Rcpp::export]]
+void execLater(Rcpp::Function callback, double delaySecs) {
   ensureInitialized();
-  doExecLater(callback);
+  doExecLater(callback, delaySecs);
 }

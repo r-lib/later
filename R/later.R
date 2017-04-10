@@ -2,7 +2,7 @@
 #' @import Rcpp
 
 .onLoad <- function(...) {
-  saveNframesCallback(quote(later:::nframe()))
+  saveNframesCallback(parse(text="later:::nframe()")[[1]])
 }
 
 # I don't know why, but it's necessary to wrap sys.nframe (an .Internal) inside 
@@ -31,15 +31,33 @@ nframe <- function() {
 
 #' Executes a function later
 #' 
-#' Executes a function or formula (see \code{\link[rlang]{as_function}}) some
+#' Executes a function or formula (see \code{\link[rlang]{as_function}}) some 
 #' time in the future, when no other R code is on the execution stack.
 #' 
 #' TODO: Talk about error handling
 #' 
 #' @param func A function or formula.
+#' @param delay Number of seconds in the future to delay execution. There is no 
+#'   guarantee that the function will be executed at the desired time, but it 
+#'   should not execute earlier.
 #'   
 #' @export
-later <- function(func) {
+later <- function(func, delay = 0) {
   f <- rlang::as_function(func)
-  execLater(f)
+  execLater(f, delay)
+}
+
+#' Execute scheduled operations
+#' 
+#' Normally, operations scheduled with \code{\link{later}} will not execute 
+#' unless/until no other R code is on the stack (i.e. at the top-level). If you 
+#' need to run blocking R code for a long time and want to allow scheduled
+#' operations to run at well-defined points of your own operation, you can call
+#' \code{run_now} at those points and any operations that are due to run will do
+#' so.
+#' 
+#' @export
+run_now <- function() {
+  execCallbacks()
+  invisible()
 }

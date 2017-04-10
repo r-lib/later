@@ -7,11 +7,14 @@
 #include <queue>
 
 #include "later.h"
+#include "callback_registry.h"
 
 using namespace Rcpp;
 
 extern void* R_GlobalContext;
 extern void* R_TopLevelContext;
+
+extern CallbackRegistry callbackRegistry;
 
 
 // Whether we have initialized the input handler.
@@ -32,29 +35,22 @@ int hot = 0;
 size_t BUF_SIZE = 256;
 void *buf;
 
-// The queue of user-provided callbacks that are scheduled to be
-// executed.
-std::queue<Rcpp::Function> callbacks;
-
 static void async_input_handler(void *data) {
   if (!at_top_level()) {
     // It's not safe to run arbitrary callbacks when other R code
     // is already running. Wait until we're back at the top level.
     return;
   }
-
-  if (read(pipe_out, buf, BUF_SIZE) < 0) {
-    // TODO: This sets a warning but it doesn't get displayed until
-    // after the next R command is executed. Can we make it sooner?
-    Rf_warning("Failed to read out of pipe for later package");
-  }
-  hot = 0;
   
-  // TODO: What to do about errors that occur in async handlers?
-  while (!callbacks.empty()) {
-    Rcpp::Function first = callbacks.front();
-    callbacks.pop();
-    first();
+  execCallbacks();
+
+  if (idle()) {
+    if (read(pipe_out, buf, BUF_SIZE) < 0) {
+      // TODO: This sets a warning but it doesn't get displayed until
+      // after the next R command is executed. Can we make it sooner?
+      Rf_warning("Failed to read out of pipe for later package");
+    }
+    hot = 0;
   }
 }
 
@@ -77,8 +73,8 @@ void ensureInitialized() {
   }
 }
 
-void doExecLater(Rcpp::Function callback) {
-  callbacks.push(callback);
+void doExecLater(Rcpp::Function callback, double delaySecs) {
+  callbackRegistry.add(callback, delaySecs);
   
   if (!hot) {
     write(pipe_in, "a", 1);

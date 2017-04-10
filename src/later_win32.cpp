@@ -1,14 +1,17 @@
 #ifdef _WIN32
 
+#include "later.h"
+
 #include <Rcpp.h>
 #include <Rinternals.h>
 #include <queue>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-
-#include "later.h"
+#include "callback_registry.h"
 
 using namespace Rcpp;
+
+extern CallbackRegistry callbackRegistry;
 
 // Whether we have initialized the message-only window.
 int initialized = 0;
@@ -19,24 +22,15 @@ HWND hwnd;
 // The ID of the timer
 UINT_PTR TIMER_ID = 1;
 
-// The queue of user-provided callbacks that are scheduled to be
-// executed.
-std::queue<Rcpp::Function> callbacks;
-
 static bool executeHandlers() {
   if (!at_top_level()) {
     // It's not safe to run arbitrary callbacks when other R code
     // is already running. Wait until we're back at the top level.
     return false;
   }
-  
-  // TODO: What to do about errors that occur in async handlers?
-  while (!callbacks.empty()) {
-    Rcpp::Function first = callbacks.front();
-    callbacks.pop();
-    first();
-  }
-  return true;
+
+  execCallbacks();  
+  return idle();
 }
 
 LRESULT CALLBACK callbackWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -73,8 +67,8 @@ void ensureInitialized() {
   }
 }
 
-void doExecLater(Rcpp::Function callback) {
-  callbacks.push(callback);
+void doExecLater(Rcpp::Function callback, double delaySecs) {
+  callbackRegistry.add(callback, delaySecs);
   
   if (!SetTimer(hwnd, TIMER_ID, USER_TIMER_MINIMUM, NULL)) {
     Rf_error("Failed to schedule callback timer");

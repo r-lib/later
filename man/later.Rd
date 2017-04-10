@@ -4,15 +4,20 @@
 \alias{later}
 \title{Executes a function later}
 \usage{
-later(func)
+later(func, delay = 0)
 }
 \arguments{
 \item{func}{A function or formula.}
+
+\item{delay}{Number of seconds in the future to delay execution. There is no 
+guarantee that the function will be executed at the desired time, but it 
+should not execute earlier.}
 }
 \description{
-Executes a function or formula (see \code{\link[rlang]{as_function}}) some
+Executes a function or formula (see \code{\link[rlang]{as_function}}) some 
 time in the future, when no other R code is on the execution stack.
 }
 \details{
 TODO: Talk about error handling
 }
+

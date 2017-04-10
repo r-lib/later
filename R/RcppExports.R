@@ -5,7 +5,11 @@ saveNframesCallback <- function(exp) {
     invisible(.Call('later_saveNframesCallback', PACKAGE = 'later', exp))
 }
 
-execLater <- function(callback) {
-    invisible(.Call('later_execLater', PACKAGE = 'later', callback))
+execCallbacks <- function() {
+    .Call('later_execCallbacks', PACKAGE = 'later')
+}
+
+execLater <- function(callback, delaySecs) {
+    invisible(.Call('later_execLater', PACKAGE = 'later', callback, delaySecs))
 }
 
