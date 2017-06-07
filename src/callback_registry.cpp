@@ -2,7 +2,13 @@
 
 void CallbackRegistry::add(Rcpp::Function func, double secs) {
   Timestamp when(secs);
-  Callback cb = {when, func};
+  Callback cb(when, new RcppFuncCallable(func));
+  queue.push(cb);
+}
+
+void CallbackRegistry::add(void (*func)(void*), void* data, double secs) {
+  Timestamp when(secs);
+  Callback cb(when, new CFuncCallable(func, data));
   queue.push(cb);
 }
 
@@ -25,10 +31,10 @@ bool CallbackRegistry::due() const {
   return !this->queue.empty() && !this->queue.top().when.future();
 }
 
-std::vector<Rcpp::Function> CallbackRegistry::take() {
-  std::vector<Rcpp::Function> results;
+std::vector<Callback> CallbackRegistry::take() {
+  std::vector<Callback> results;
   while (this->due()) {
-    results.push_back(this->queue.top().func);
+    results.push_back(this->queue.top());
     this->queue.pop();
   }
   return results;

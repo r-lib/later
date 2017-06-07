@@ -23,4 +23,5 @@ void R_init_later(DllInfo *dll)
 {
   R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
   R_useDynamicSymbols(dll, FALSE);
+  //R_RegisterCCallable("later", "execLaterNative", execLaterNative);
 }

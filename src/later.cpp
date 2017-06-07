@@ -35,10 +35,10 @@ CallbackRegistry callbackRegistry;
 
 // [[Rcpp::export]]
 bool execCallbacks() {
-  std::vector<Rcpp::Function> callbacks = callbackRegistry.take();
+  std::vector<Callback> callbacks = callbackRegistry.take();
   // if (callbacks.size())
   //   printf("Executing %ld\n", callbacks.size());
-  for (std::vector<Rcpp::Function>::iterator it = callbacks.begin();
+  for (std::vector<Callback>::iterator it = callbacks.begin();
     it != callbacks.end();
     it++) {
     // TODO: What to do about errors/warnings that occur here?
