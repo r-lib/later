@@ -56,8 +56,9 @@ later <- function(func, delay = 0) {
 #' \code{run_now} at those points and any operations that are due to run will do
 #' so.
 #' 
+#' @return A logical indicating whether any callbacks were actually run.
+#' 
 #' @export
 run_now <- function() {
-  execCallbacks()
-  invisible()
+  invisible(execCallbacks())
 }

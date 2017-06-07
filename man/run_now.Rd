@@ -6,6 +6,9 @@
 \usage{
 run_now()
 }
+\value{
+A logical indicating whether any callbacks were actually run.
+}
 \description{
 Normally, operations scheduled with \code{\link{later}} will not execute 
 unless/until no other R code is on the stack (i.e. at the top-level). If you 
