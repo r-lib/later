@@ -82,4 +82,13 @@ void doExecLater(Rcpp::Function callback, double delaySecs) {
   }
 }
 
+void doExecLater(void (*callback)(void*), void* data, double delaySecs) {
+  callbackRegistry.add(callback, data, delaySecs);
+  
+  if (!hot) {
+    write(pipe_in, "a", 1);
+    hot = 1;
+  }
+}
+
 #endif // ifndef _WIN32

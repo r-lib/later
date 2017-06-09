@@ -8,6 +8,7 @@
 // later_posix.cpp and later_win32.cpp.
 void ensureInitialized();
 void doExecLater(Rcpp::Function callback, double delaySecs);
+void doExecLater(void (*callback)(void*), void* data, double delaySecs);
 
 // This is just quote(base::sys.nframe()). We create this from R and
 // store it, because I don't want to learn how to parse strings into
@@ -55,4 +56,9 @@ bool idle() {
 void execLater(Rcpp::Function callback, double delaySecs) {
   ensureInitialized();
   doExecLater(callback, delaySecs);
+}
+
+extern "C" void execLaterNative(void (*func)(void*), void* data, double delaySecs) {
+  ensureInitialized();
+  doExecLater(func, data, delaySecs);
 }

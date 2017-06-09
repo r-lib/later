@@ -75,4 +75,12 @@ void doExecLater(Rcpp::Function callback, double delaySecs) {
   }
 }
 
+void doExecLater(void (*func)(void*), void* data, double delaySecs) {
+  callbackRegistry.add(func, data, delaySecs);
+  
+  if (!SetTimer(hwnd, TIMER_ID, USER_TIMER_MINIMUM, NULL)) {
+    Rf_error("Failed to schedule callback timer");
+  }
+}
+
 #endif // ifdef _WIN32

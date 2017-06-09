@@ -2,6 +2,7 @@
 #include <queue>
 #include "timestamp.h"
 #include "optional.h"
+#include "tinythread.h"
 
 class Callable {
 public:
@@ -62,6 +63,7 @@ private:
 class CallbackRegistry {
 private:
   std::priority_queue<Callback,std::vector<Callback>,std::greater<Callback> > queue;
+  mutable tthread::recursive_mutex mutex;
   
 public:
   // Add a function to the registry, to be executed at `secs` seconds in

@@ -19,9 +19,11 @@ static const R_CallMethodDef CallEntries[] = {
   {NULL, NULL, 0}
 };
 
+void execLaterNative(void (*func)(void*), void* data, double secs);
+
 void R_init_later(DllInfo *dll)
 {
   R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
   R_useDynamicSymbols(dll, FALSE);
-  //R_RegisterCCallable("later", "execLaterNative", execLaterNative);
+  R_RegisterCCallable("later", "execLaterNative", (DL_FUNC)&execLaterNative);
 }
