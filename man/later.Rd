@@ -20,4 +20,3 @@ time in the future, when no other R code is on the execution stack.
 \details{
 TODO: Talk about error handling
 }
-

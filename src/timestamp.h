@@ -3,6 +3,7 @@
 // Impl abstract class; implemented by platform-specific classes
 class TimestampImpl {
 public:
+  virtual ~TimestampImpl() {}
   virtual bool future() const = 0;
   virtual bool less(const TimestampImpl* other) const = 0;
   virtual bool greater(const TimestampImpl* other) const = 0;

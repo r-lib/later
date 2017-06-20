@@ -6,7 +6,7 @@
 
 class Callable {
 public:
-  ~Callable() {}
+  virtual ~Callable() {}
   virtual void operator()() = 0;
 };
 

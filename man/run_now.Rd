@@ -17,4 +17,3 @@ operations to run at well-defined points of your own operation, you can call
 \code{run_now} at those points and any operations that are due to run will do
 so.
 }
-
