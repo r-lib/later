@@ -1,17 +1,18 @@
+#include <boost/bind.hpp>
 #include "callback_registry.h"
 
 typedef tthread::lock_guard<tthread::recursive_mutex> Guard;
 
 void CallbackRegistry::add(Rcpp::Function func, double secs) {
   Timestamp when(secs);
-  Callback cb(when, new RcppFuncCallable(func));
+  Callback cb(when, func);
   Guard guard(mutex);
   queue.push(cb);
 }
 
 void CallbackRegistry::add(void (*func)(void*), void* data, double secs) {
   Timestamp when(secs);
-  Callback cb(when, new CFuncCallable(func, data));
+  Callback cb(when, boost::bind(func, data));
   Guard guard(mutex);
   queue.push(cb);
 }

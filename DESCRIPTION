@@ -13,7 +13,7 @@ License: GPL (>= 2)
 Imports:
     Rcpp (>= 0.12.9),
     rlang
-LinkingTo: Rcpp
+LinkingTo: Rcpp, BH
 Remotes: hadley/rlang
 RoxygenNote: 6.0.1
 SystemRequirements: C++11

@@ -36,13 +36,17 @@ CallbackRegistry callbackRegistry;
 
 // [[Rcpp::export]]
 bool execCallbacks() {
+  // execCallbacks can be called directly from C code, and the callbacks may
+  // include Rcpp code. (Should we also call wrap?)
+  Rcpp::RNGScope rngscope;
+  
   std::vector<Callback> callbacks = callbackRegistry.take();
   // if (callbacks.size())
   //   printf("Executing %ld\n", callbacks.size());
   for (std::vector<Callback>::iterator it = callbacks.begin();
     it != callbacks.end();
     it++) {
-    // TODO: What to do about errors/warnings that occur here?
+    // TODO: What to do about errors/warnings, and Rcpp exceptions, that occur here?
     (*it)();
   }
   return !callbacks.empty();

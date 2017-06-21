@@ -1,45 +1,23 @@
 #include <Rcpp.h>
 #include <queue>
+#include <boost/function.hpp>
 #include "timestamp.h"
 #include "optional.h"
 #include "tinythread.h"
 
-class Callable {
-public:
-  virtual ~Callable() {}
-  virtual void operator()() = 0;
-};
+typedef boost::function0<void> Task;
 
-class RcppFuncCallable : public Callable {
-public:
-  RcppFuncCallable(Rcpp::Function func) : func(func) {
+namespace {
+  void execCallback(void* data) {
+    Task* pTask = static_cast<Task*>(data);
+    (*pTask)();
   }
-  
-  virtual void operator()() {
-    func();
-  }
-private:
-  Rcpp::Function func;
-};
-
-class CFuncCallable : public Callable {
-public:
-  CFuncCallable(void (*func)(void*), void* data) :
-    func(func), data(data) {
-  }
-  
-  virtual void operator()() {
-    func(data);
-  }
-private:
-  void (*func)(void*);
-  void* data;
-};
+} // namespace
 
 class Callback {
 
 public:
-  Callback(Timestamp when, Callable* func) : when(when), func(func) {}
+  Callback(Timestamp when, Task func) : when(when), func(func) {}
   
   bool operator<(const Callback& other) const {
     return this->when < other.when;
@@ -50,13 +28,15 @@ public:
   }
   
   void operator()() const {
-    (*func)();
+    // Using R_ToplevelExec in an (unsuccessful) attempt to catch and properly
+    // handle errors
+    R_ToplevelExec(execCallback, (void*)&func);
   }
 
   Timestamp when;
-private:
-  std::shared_ptr<Callable> func;
   
+private:
+  Task func;
 };
 
 // Stores R function callbacks, ordered by timestamp.

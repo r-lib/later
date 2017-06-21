@@ -1,5 +1,6 @@
 #' @useDynLib later
 #' @import Rcpp
+#' @importFrom Rcpp evalCpp
 
 .onLoad <- function(...) {
   saveNframesCallback(parse(text="later:::nframe()")[[1]])

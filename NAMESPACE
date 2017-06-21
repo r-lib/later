@@ -3,4 +3,5 @@
 export(later)
 export(run_now)
 import(Rcpp)
+importFrom(Rcpp,evalCpp)
 useDynLib(later)
