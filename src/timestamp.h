@@ -1,4 +1,4 @@
-#include <memory>
+#include <boost/shared_ptr.hpp>
 
 // Impl abstract class; implemented by platform-specific classes
 class TimestampImpl {
@@ -11,7 +11,7 @@ public:
 
 class Timestamp {
 private:
-  std::shared_ptr<const TimestampImpl> p_impl;
+  boost::shared_ptr<const TimestampImpl> p_impl;
   
 public:
   Timestamp();
