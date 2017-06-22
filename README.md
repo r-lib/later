@@ -118,4 +118,4 @@ void asyncMean(Rcpp::NumericVector data) {
 }
 ```
 
-It's not very useful to execute tasks on background threads if you can't get access to the results back in R. See the [promise package](https://github.com/rstudio/promise) for a general solution to that problem; it ships with a `PromiseTask` base class that you can use to implement an R promise object.
+It's not very useful to execute tasks on background threads if you can't get access to the results back in R. We'll soon be introducing a complementary R package that provides a suitable "promise" or "future" abstraction.
