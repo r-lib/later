@@ -10,7 +10,7 @@ namespace {
     LaterInitializer() {
       // See comment in execLaterNative to learn why we need to do this
       // in a statically initialized object
-      later::execLaterNative(NULL, NULL, 0);
+      later::later(NULL, NULL, 0);
     }
   };
   

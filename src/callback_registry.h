@@ -7,13 +7,6 @@
 
 typedef boost::function0<void> Task;
 
-namespace {
-  void execCallback(void* data) {
-    Task* pTask = static_cast<Task*>(data);
-    (*pTask)();
-  }
-} // namespace
-
 class Callback {
 
 public:
@@ -28,9 +21,14 @@ public:
   }
   
   void operator()() const {
-    // Using R_ToplevelExec in an (unsuccessful) attempt to catch and properly
-    // handle errors
-    R_ToplevelExec(execCallback, (void*)&func);
+    // From example in http://gallery.rcpp.org/articles/intro-to-exceptions/
+    try {
+      func();
+    } catch(std::exception &ex) {	
+      forward_exception_to_r(ex);
+    } catch(...) { 
+      ::Rf_error("c++ exception (unknown reason)"); 
+    }
   }
 
   Timestamp when;
@@ -65,5 +63,5 @@ public:
   bool due() const;
   
   // Pop and return an ordered list of functions to execute now.
-  std::vector<Callback> take();
+  std::vector<Callback> take(size_t max = -1);
 };

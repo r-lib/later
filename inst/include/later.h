@@ -10,7 +10,7 @@ namespace {
 
 namespace later {
 
-inline void execLaterNative(void (*func)(void*), void* data, double secs) {
+inline void later(void (*func)(void*), void* data, double secs) {
   // This function works by retrieving the later::execLaterNative function
   // pointer using R_GetCCallable the first time it's called (per compilation
   // unit, since it's inline). execLaterNative is designed to be safe to call
@@ -56,6 +56,7 @@ public:
   BackgroundTask() {}
   virtual ~BackgroundTask() {}
   
+  // Start executing the task  
   void begin() {
     new tthread::thread(BackgroundTask::task_main, this);
   }
@@ -78,7 +79,7 @@ private:
     BackgroundTask* task = reinterpret_cast<BackgroundTask*>(data);
     // TODO: Error handling
     task->execute();
-    execLaterNative(&BackgroundTask::result_callback, task, 0);
+    later(&BackgroundTask::result_callback, task, 0);
   }
   
   static void result_callback(void* data) {

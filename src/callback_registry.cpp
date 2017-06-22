@@ -39,10 +39,10 @@ bool CallbackRegistry::due() const {
   return !this->queue.empty() && !this->queue.top().when.future();
 }
 
-std::vector<Callback> CallbackRegistry::take() {
+std::vector<Callback> CallbackRegistry::take(size_t max) {
   Guard guard(mutex);
   std::vector<Callback> results;
-  while (this->due()) {
+  while (this->due() && (max <= 0 || results.size() < max)) {
     results.push_back(this->queue.top());
     this->queue.pop();
   }

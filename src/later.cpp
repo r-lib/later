@@ -40,16 +40,19 @@ bool execCallbacks() {
   // include Rcpp code. (Should we also call wrap?)
   Rcpp::RNGScope rngscope;
   
-  std::vector<Callback> callbacks = callbackRegistry.take();
-  // if (callbacks.size())
-  //   printf("Executing %ld\n", callbacks.size());
-  for (std::vector<Callback>::iterator it = callbacks.begin();
-    it != callbacks.end();
-    it++) {
-    // TODO: What to do about errors/warnings, and Rcpp exceptions, that occur here?
-    (*it)();
+  bool any = false;
+  while (true) {
+    // We only take one at a time, because we don't want to lose callbacks if 
+    // one of the callbacks throws an error
+    std::vector<Callback> callbacks = callbackRegistry.take(1);
+    if (callbacks.size() == 0) {
+      break;
+    }
+    any = true;
+    // This line may throw errors!
+    callbacks[0]();
   }
-  return !callbacks.empty();
+  return any;
 }
 
 bool idle() {
