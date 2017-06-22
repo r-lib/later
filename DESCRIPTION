@@ -1,19 +1,16 @@
 Package: later
 Type: Package
-Title: Executes functions some time later
-Version: 0.1
-Date: 2017-03-16
+Title: Utilities for Delaying Function Execution
+Version: 0.2
 Authors@R: c(
     person("Joe", "Cheng", role = c("aut", "cre"), email = "joe@rstudio.com"),
     person(family = "RStudio", role = "cph")
     )
-Description: Executes arbitrary R functions some time after the current time,
-    after the R execution stack has emptied.
+Description: Executes arbitrary R or C functions some time after the current
+    time, after the R execution stack has emptied.
 License: GPL (>= 2)
 Imports:
     Rcpp (>= 0.12.9),
     rlang
 LinkingTo: Rcpp, BH
-Remotes: hadley/rlang
 RoxygenNote: 6.0.1
-SystemRequirements: C++11

@@ -35,12 +35,25 @@ nframe <- function() {
 #' Executes a function or formula (see \code{\link[rlang]{as_function}}) some 
 #' time in the future, when no other R code is on the execution stack.
 #' 
-#' TODO: Talk about error handling
+#' Error handling is not particularly well-defined and may change in the future.
+#' options(error=browser) should work and errors in `func` should generally not
+#' crash the R process, but not much else can be said about it at this point.
+#' If you must have specific behavior occur in the face of errors, put error
+#' handling logic inside of `func`.
 #' 
 #' @param func A function or formula.
 #' @param delay Number of seconds in the future to delay execution. There is no 
 #'   guarantee that the function will be executed at the desired time, but it 
 #'   should not execute earlier.
+#'
+#' @examples
+#' # Example of formula style
+#' later(~cat("Hello from the past\n"), 3)
+#' 
+#' # Example of function style
+#' later(function() {
+#'   print(summary(cars))
+#' }, 2)
 #'   
 #' @export
 later <- function(func, delay = 0) {
