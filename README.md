@@ -1,6 +1,6 @@
 # later
 
-[![Build Status](https://travis-ci.org/jcheng5/later.svg?branch=master)](https://travis-ci.org/jcheng5/later)
+[![Build Status](https://travis-ci.org/r-lib/later.svg?branch=master)](https://travis-ci.org/r-lib/later)
 
 Schedule an R function or formula to run after a specified period of time. Similar to JavaScript's `setTimeout` function. Like JavaScript, R is single-threaded so there's no guarantee that the operation will run exactly at the requested time, only that at least that much time will elapse.
 
@@ -11,7 +11,7 @@ The mechanism used by this package is inspired by Simon Urbanek's [background](h
 ## Installation
 
 ```r
-remotes::install_github("jcheng5/later")
+remotes::install_github("r-lib/later")
 ```
 
 ## Usage from R
