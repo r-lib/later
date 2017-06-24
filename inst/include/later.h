@@ -4,9 +4,16 @@
 
 #include <iostream>
 #include <Rcpp.h>
-namespace {
-#include "_later_tinythread.h"
-} // namespace
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+// Taken from http://tolstoy.newcastle.edu.au/R/e2/devel/06/11/1242.html
+// Undefine the Realloc macro, which is defined by both R and by Windows stuff
+#undef Realloc
+// Also need to undefine the Free macro
+#undef Free
+#include <windows.h>
+#endif // _WIN32
 
 namespace later {
 
@@ -58,7 +65,23 @@ public:
   
   // Start executing the task  
   void begin() {
-    new tthread::thread(BackgroundTask::task_main, this);
+#ifndef _WIN32
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+    pthread_t t;
+    pthread_create(&t, NULL, BackgroundTask::task_main, this);
+    pthread_attr_destroy(&attr);
+#else
+    HANDLE hThread = ::CreateThread(
+      NULL, 0,
+      BackgroundTask::task_main_win,
+      this,
+      0,
+      NULL
+    );
+    ::CloseHandle(hThread);
+#endif
   }
 
 protected:
@@ -75,12 +98,20 @@ protected:
   virtual void complete() = 0;
 
 private:
-  static void task_main(void* data) {
+  static void* task_main(void* data) {
     BackgroundTask* task = reinterpret_cast<BackgroundTask*>(data);
     // TODO: Error handling
     task->execute();
     later(&BackgroundTask::result_callback, task, 0);
+    return NULL;
   }
+  
+#ifdef _WIN32
+  static DWORD WINAPI task_main_win(LPVOID lpParameter) {
+    task_main(lpParameter);
+    return 1;
+  }
+#endif
   
   static void result_callback(void* data) {
     BackgroundTask* task = reinterpret_cast<BackgroundTask*>(data);

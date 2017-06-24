@@ -6,6 +6,15 @@
 
 using namespace Rcpp;
 
+// ensureInitialized
+void ensureInitialized();
+RcppExport SEXP later_ensureInitialized() {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    ensureInitialized();
+    return R_NilValue;
+END_RCPP
+}
 // saveNframesCallback
 void saveNframesCallback(SEXP exp);
 RcppExport SEXP later_saveNframesCallback(SEXP expSEXP) {

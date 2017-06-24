@@ -22,6 +22,15 @@ HWND hwnd;
 // The ID of the timer
 UINT_PTR TIMER_ID = 1;
 
+// The window message we use to run SetTimer on the main thread
+const UINT WM_SETUPTIMER = WM_USER + 101;
+
+static void setupTimer() {
+  if (!SetTimer(hwnd, TIMER_ID, USER_TIMER_MINIMUM, NULL)) {
+    Rf_error("Failed to schedule callback timer");
+  }
+}
+
 static bool executeHandlers() {
   if (!at_top_level()) {
     // It's not safe to run arbitrary callbacks when other R code
@@ -39,6 +48,9 @@ LRESULT CALLBACK callbackWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
     if (executeHandlers()) {
       KillTimer(hwnd, TIMER_ID);
     }
+    break;
+  case WM_SETUPTIMER:
+    setupTimer();
     break;
   default:
     return DefWindowProc(hWnd, message, wParam, lParam);
@@ -70,16 +82,18 @@ void ensureInitialized() {
 void doExecLater(Rcpp::Function callback, double delaySecs) {
   callbackRegistry.add(callback, delaySecs);
   
-  if (!SetTimer(hwnd, TIMER_ID, USER_TIMER_MINIMUM, NULL)) {
-    Rf_error("Failed to schedule callback timer");
-  }
+  setupTimer();
 }
 
 void doExecLater(void (*func)(void*), void* data, double delaySecs) {
   callbackRegistry.add(func, data, delaySecs);
-  
-  if (!SetTimer(hwnd, TIMER_ID, USER_TIMER_MINIMUM, NULL)) {
-    Rf_error("Failed to schedule callback timer");
+
+  if (GetCurrentThreadId() == GetWindowThreadProcessId(hwnd, NULL)) {
+    setupTimer();
+  } else {
+    // Not safe to setup the timer from this thread. Instead, send a
+    // message to the main thread that the timer should be set up.
+    PostMessage(hwnd, WM_SETUPTIMER, 0, 0);
   }
 }
 

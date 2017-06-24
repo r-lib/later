@@ -8,11 +8,13 @@ Check these declarations against the C/Fortran source code.
 */
 
 /* .Call calls */
+extern SEXP later_ensureInitialized();
 extern SEXP later_execCallbacks();
 extern SEXP later_execLater(SEXP, SEXP);
 extern SEXP later_saveNframesCallback(SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
+  {"later_ensureInitialized",   (DL_FUNC) &later_ensureInitialized,   0},
   {"later_execCallbacks",       (DL_FUNC) &later_execCallbacks,       0},
   {"later_execLater",           (DL_FUNC) &later_execLater,           2},
   {"later_saveNframesCallback", (DL_FUNC) &later_saveNframesCallback, 1},

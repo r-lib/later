@@ -6,6 +6,7 @@
 
 // Declare platform-specific functions that are implemented in
 // later_posix.cpp and later_win32.cpp.
+// [[Rcpp::export]]
 void ensureInitialized();
 void doExecLater(Rcpp::Function callback, double delaySecs);
 void doExecLater(void (*callback)(void*), void* data, double delaySecs);
