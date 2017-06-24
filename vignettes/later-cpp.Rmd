@@ -1,5 +1,5 @@
 ---
-title: "Using `later` from C++"
+title: "Using later from C++"
 author: "Joe Cheng"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
@@ -8,6 +8,8 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+
+# Using later from C++
 
 You can call `later::later` from C++ code in your own packages, to cause your own C-style functions to be called back. This is safe to call from either the main R thread or a different thread; in both cases, your callback will be invoked from the main R thread.
 
