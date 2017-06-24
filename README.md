@@ -100,7 +100,7 @@ protected:
   }
   
   void complete() {
-    Rprintf("Result is %d", result);
+    Rprintf("Result is %f\n", result);
   }
 
 private:
