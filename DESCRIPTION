@@ -1,7 +1,7 @@
 Package: later
 Type: Package
 Title: Utilities for Delaying Function Execution
-Version: 0.2
+Version: 0.3
 Authors@R: c(
     person("Joe", "Cheng", role = c("aut", "cre"), email = "joe@rstudio.com"),
     person(family = "RStudio", role = "cph"),
@@ -9,6 +9,8 @@ Authors@R: c(
     )
 Description: Executes arbitrary R or C functions some time after the current
     time, after the R execution stack has emptied.
+URL: https://github.com/r-lib/later
+BugReports: https://github.com/r-lib/later/issues
 License: GPL (>= 2)
 Imports:
     Rcpp (>= 0.12.9),
