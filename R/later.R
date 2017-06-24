@@ -3,6 +3,7 @@
 #' @importFrom Rcpp evalCpp
 
 .onLoad <- function(...) {
+  ensureInitialized()
   saveNframesCallback(parse(text="later:::nframe()")[[1]])
 }
 
