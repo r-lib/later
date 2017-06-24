@@ -77,7 +77,8 @@ void doExecLater(Rcpp::Function callback, double delaySecs) {
   callbackRegistry.add(callback, delaySecs);
   
   if (!hot) {
-    write(pipe_in, "a", 1);
+    ssize_t cbytes = write(pipe_in, "a", 1);
+    (void)cbytes; // squelch compiler warning
     hot = 1;
   }
 }
@@ -86,7 +87,8 @@ void doExecLater(void (*callback)(void*), void* data, double delaySecs) {
   callbackRegistry.add(callback, data, delaySecs);
   
   if (!hot) {
-    write(pipe_in, "a", 1);
+    ssize_t cbytes = write(pipe_in, "a", 1);
+    (void)cbytes; // squelch compiler warning
     hot = 1;
   }
 }
