@@ -32,8 +32,20 @@ nframe <- function() {
 
 #' Executes a function later
 #' 
-#' Executes a function or formula (see \code{\link[rlang]{as_function}}) some 
-#' time in the future, when no other R code is on the execution stack.
+#' Schedule an R function or formula to run after a specified period of time.
+#' Similar to JavaScript's `setTimeout` function. Like JavaScript, R is
+#' single-threaded so there's no guarantee that the operation will run exactly
+#' at the requested time, only that at least that much time will elapse.
+#' 
+#' The mechanism used by this package is inspired by Simon Urbanek's
+#' [background](https://github.com/s-u/background) package and similar code in
+#' Rhttpd.
+#' 
+#' @note
+#' To avoid bugs due to reentrancy, by default, scheduled operations only run
+#' when there is no other R code present on the execution stack; i.e., when R is
+#' sitting at the top-level prompt. You can force past-due operations to run at
+#' a time of your choosing by calling [run_now()].
 #' 
 #' Error handling is not particularly well-defined and may change in the future.
 #' options(error=browser) should work and errors in `func` should generally not
@@ -41,7 +53,7 @@ nframe <- function() {
 #' If you must have specific behavior occur in the face of errors, put error
 #' handling logic inside of `func`.
 #' 
-#' @param func A function or formula.
+#' @param func A function or formula (see [rlang::as_function()]).
 #' @param delay Number of seconds in the future to delay execution. There is no 
 #'   guarantee that the function will be executed at the desired time, but it 
 #'   should not execute earlier.
@@ -63,12 +75,16 @@ later <- function(func, delay = 0) {
 
 #' Execute scheduled operations
 #' 
-#' Normally, operations scheduled with \code{\link{later}} will not execute 
-#' unless/until no other R code is on the stack (i.e. at the top-level). If you 
-#' need to run blocking R code for a long time and want to allow scheduled
-#' operations to run at well-defined points of your own operation, you can call
-#' \code{run_now} at those points and any operations that are due to run will do
-#' so.
+#' Normally, operations scheduled with [later()] will not execute unless/until
+#' no other R code is on the stack (i.e. at the top-level). If you need to run
+#' blocking R code for a long time and want to allow scheduled operations to run
+#' at well-defined points of your own operation, you can call `run_now()` at
+#' those points and any operations that are due to run will do so.
+#' 
+#' If one of the callbacks throws an error, the error will _not_ be caught, and
+#' subsequent callbacks will not be executed (until `run_now()` is called again,
+#' or control returns to the R prompt). You must use your own [base::tryCatch()]
+#' if you want to handle errors.
 #' 
 #' @return A logical indicating whether any callbacks were actually run.
 #' 

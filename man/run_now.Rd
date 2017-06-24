@@ -10,10 +10,15 @@ run_now()
 A logical indicating whether any callbacks were actually run.
 }
 \description{
-Normally, operations scheduled with \code{\link{later}} will not execute 
-unless/until no other R code is on the stack (i.e. at the top-level). If you 
-need to run blocking R code for a long time and want to allow scheduled
-operations to run at well-defined points of your own operation, you can call
-\code{run_now} at those points and any operations that are due to run will do
-so.
+Normally, operations scheduled with \code{\link[=later]{later()}} will not execute unless/until
+no other R code is on the stack (i.e. at the top-level). If you need to run
+blocking R code for a long time and want to allow scheduled operations to run
+at well-defined points of your own operation, you can call \code{run_now()} at
+those points and any operations that are due to run will do so.
+}
+\details{
+If one of the callbacks throws an error, the error will \emph{not} be caught, and
+subsequent callbacks will not be executed (until \code{run_now()} is called again,
+or control returns to the R prompt). You must use your own \code{\link[base:tryCatch]{base::tryCatch()}}
+if you want to handle errors.
 }
