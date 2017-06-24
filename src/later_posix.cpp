@@ -54,6 +54,8 @@ static void async_input_handler(void *data) {
   }
 }
 
+InputHandler* inputHandlerHandle;
+
 void ensureInitialized() {
   if (!initialized) {
     buf = malloc(BUF_SIZE);
@@ -67,9 +69,16 @@ void ensureInitialized() {
     pipe_out = pipes[0];
     pipe_in = pipes[1];
     
-    addInputHandler(R_InputHandlers, pipe_out, async_input_handler, 20);
+    inputHandlerHandle = addInputHandler(R_InputHandlers, pipe_out, async_input_handler, 20);
     
     initialized = 1;
+  }
+}
+
+void deInitialize() {
+  if (initialized) {
+    removeInputHandler(&R_InputHandlers, inputHandlerHandle);
+    initialized = 0;
   }
 }
 
