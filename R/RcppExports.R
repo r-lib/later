@@ -13,6 +13,10 @@ execCallbacks <- function() {
     .Call('later_execCallbacks', PACKAGE = 'later')
 }
 
+idle <- function() {
+    .Call('later_idle', PACKAGE = 'later')
+}
+
 execLater <- function(callback, delaySecs) {
     invisible(.Call('later_execLater', PACKAGE = 'later', callback, delaySecs))
 }

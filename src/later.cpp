@@ -56,6 +56,7 @@ bool execCallbacks() {
   return any;
 }
 
+// [[Rcpp::export]]
 bool idle() {
   return callbackRegistry.empty();
 }

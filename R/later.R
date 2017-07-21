@@ -93,3 +93,14 @@ later <- function(func, delay = 0) {
 run_now <- function() {
   invisible(execCallbacks())
 }
+
+#' Check if later loop is empty
+#' 
+#' Returns true if there are currently no callbacks that are scheduled to
+#' execute in the present or future.
+#' 
+#' @keywords internal
+#' @export
+loop_empty <- function() {
+  idle()
+}

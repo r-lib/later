@@ -35,6 +35,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// idle
+bool idle();
+RcppExport SEXP later_idle() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(idle());
+    return rcpp_result_gen;
+END_RCPP
+}
 // execLater
 void execLater(Rcpp::Function callback, double delaySecs);
 RcppExport SEXP later_execLater(SEXP callbackSEXP, SEXP delaySecsSEXP) {
