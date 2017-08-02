@@ -15,6 +15,17 @@ void doExecLater(void (*callback)(void*), void* data, double delaySecs);
 // store it, because I don't want to learn how to parse strings into
 // call SEXPRs from C/C++.
 static SEXP nframes;
+static size_t exec_callbacks_reentrancy_count = 0;
+
+class ProtectCallbacks {
+public:
+  ProtectCallbacks() {
+    exec_callbacks_reentrancy_count++;
+  }
+  ~ProtectCallbacks() {
+    exec_callbacks_reentrancy_count--;
+  }
+};
 
 // Save a call expression as NFramesCallback. This is called at startup.
 // [[Rcpp::export]]
@@ -25,8 +36,10 @@ void saveNframesCallback(SEXP exp) {
   nframes = exp;
 }
 
-// Returns true if sys.nframes() returns 0.
+// Returns true if execCallbacks is executing, or sys.nframes() returns 0.
 bool at_top_level() {
+  if (exec_callbacks_reentrancy_count != 0)
+    return false;
   int frames = Rcpp::as<int>(Rf_eval(nframes, R_GlobalEnv));
   return frames == 0;
 }
@@ -40,6 +53,7 @@ bool execCallbacks() {
   // execCallbacks can be called directly from C code, and the callbacks may
   // include Rcpp code. (Should we also call wrap?)
   Rcpp::RNGScope rngscope;
+  ProtectCallbacks pcscope;
   
   bool any = false;
   while (true) {

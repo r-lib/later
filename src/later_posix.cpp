@@ -28,12 +28,41 @@ int pipe_in, pipe_out;
 // Whether the file descriptor is ready for reading, i.e., whether
 // the input handler callback is scheduled to be called. We use this
 // to avoid unnecessarily writing to the pipe.
-int hot = 0;
+bool hot = false;
 
 // The buffer we're using for the pipe. This doesn't have to be large,
 // in theory it only ever holds zero or one byte.
 size_t BUF_SIZE = 256;
 void *buf;
+
+void set_fd(bool ready) {
+  if (ready != hot) {
+    if (ready) {
+      ssize_t cbytes = write(pipe_in, "a", 1);
+      (void)cbytes; // squelch compiler warning
+      hot = true;
+    } else {
+      if (read(pipe_out, buf, BUF_SIZE) < 0) {
+        // TODO: This sets a warning but it doesn't get displayed until
+        // after the next R command is executed. Can we make it sooner?
+        Rf_warning("Failed to read out of pipe for later package");
+      }
+      hot = false;
+    }
+  }
+}
+
+class SuspendFDReadiness {
+public:
+  SuspendFDReadiness() {
+    set_fd(false);
+  }
+  ~SuspendFDReadiness() {
+    if (!idle()) {
+      set_fd(true);
+    }
+  }
+};
 
 static void async_input_handler(void *data) {
   if (!at_top_level()) {
@@ -41,17 +70,15 @@ static void async_input_handler(void *data) {
     // is already running. Wait until we're back at the top level.
     return;
   }
+
+  // jcheng 2017-08-01: While callbacks are executing, make the file descriptor
+  // not-ready so that our input handler is not even called back by R.
+  // Previously we'd let the input handler run but return quickly, but this
+  // seemed to cause R_SocketWait to hang (encountered while working with the
+  // future package, trying to call value(future) with plan(multisession)).
+  SuspendFDReadiness sfdr_scope;
   
   execCallbacks();
-
-  if (idle()) {
-    if (read(pipe_out, buf, BUF_SIZE) < 0) {
-      // TODO: This sets a warning but it doesn't get displayed until
-      // after the next R command is executed. Can we make it sooner?
-      Rf_warning("Failed to read out of pipe for later package");
-    }
-    hot = 0;
-  }
 }
 
 InputHandler* inputHandlerHandle;
@@ -85,21 +112,13 @@ void deInitialize() {
 void doExecLater(Rcpp::Function callback, double delaySecs) {
   callbackRegistry.add(callback, delaySecs);
   
-  if (!hot) {
-    ssize_t cbytes = write(pipe_in, "a", 1);
-    (void)cbytes; // squelch compiler warning
-    hot = 1;
-  }
+  set_fd(true);
 }
 
 void doExecLater(void (*callback)(void*), void* data, double delaySecs) {
   callbackRegistry.add(callback, data, delaySecs);
   
-  if (!hot) {
-    ssize_t cbytes = write(pipe_in, "a", 1);
-    (void)cbytes; // squelch compiler warning
-    hot = 1;
-  }
+  set_fd(true);
 }
 
 #endif // ifndef _WIN32
