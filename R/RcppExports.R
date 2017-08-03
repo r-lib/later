@@ -2,22 +2,22 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 ensureInitialized <- function() {
-    invisible(.Call('later_ensureInitialized', PACKAGE = 'later'))
+    invisible(.Call('_later_ensureInitialized', PACKAGE = 'later'))
 }
 
 saveNframesCallback <- function(exp) {
-    invisible(.Call('later_saveNframesCallback', PACKAGE = 'later', exp))
+    invisible(.Call('_later_saveNframesCallback', PACKAGE = 'later', exp))
 }
 
 execCallbacks <- function() {
-    .Call('later_execCallbacks', PACKAGE = 'later')
+    .Call('_later_execCallbacks', PACKAGE = 'later')
 }
 
 idle <- function() {
-    .Call('later_idle', PACKAGE = 'later')
+    .Call('_later_idle', PACKAGE = 'later')
 }
 
 execLater <- function(callback, delaySecs) {
-    invisible(.Call('later_execLater', PACKAGE = 'later', callback, delaySecs))
+    invisible(.Call('_later_execLater', PACKAGE = 'later', callback, delaySecs))
 }
 
