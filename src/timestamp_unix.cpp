@@ -1,20 +1,26 @@
-#ifdef __unix__
-#ifndef __APPLE__ 
+#ifndef _WIN32
 
 #include "timestamp.h"
-#include <time.h>
+#include <sys/time.h>
 
-class TimestampImplUnix : public TimestampImpl {
+void get_current_time(timespec *ts) {
+  timeval tv;
+  gettimeofday(&tv, NULL);
+  TIMEVAL_TO_TIMESPEC(&tv, ts);
+}
+
+class TimestampImplPosix : public TimestampImpl {
 private:
   timespec time;
 
 public:
-  TimestampImplUnix() {
-    clock_gettime(CLOCK_MONOTONIC, &this->time);
+  TimestampImplPosix() {
+    get_current_time(&this->time);
   }
   
-  TimestampImplUnix(double secs) {
-    clock_gettime(CLOCK_MONOTONIC, &this->time);
+  TimestampImplPosix(double secs) {
+    get_current_time(&this->time);
+    
     time_t wholeSecs = (long)secs;
     long nanos = (secs - wholeSecs) * 1e9;
     this->time.tv_sec += wholeSecs;
@@ -31,33 +37,32 @@ public:
   
   virtual bool future() const {
     timespec now;
-    clock_gettime(CLOCK_MONOTONIC, &now);
+    get_current_time(&now);
     return this->time.tv_sec > now.tv_sec ||
       (this->time.tv_sec == now.tv_sec && this->time.tv_nsec > now.tv_nsec);
   }
   
   virtual bool less(const TimestampImpl* other) const {
-    const TimestampImplUnix* other_impl = dynamic_cast<const TimestampImplUnix*>(other);
+    const TimestampImplPosix* other_impl = dynamic_cast<const TimestampImplPosix*>(other);
     return this->time.tv_sec < other_impl->time.tv_sec ||
       (this->time.tv_sec == other_impl->time.tv_sec && this->time.tv_nsec < other_impl->time.tv_nsec);
   }
   
   virtual bool greater(const TimestampImpl* other) const {
-    const TimestampImplUnix* other_impl = dynamic_cast<const TimestampImplUnix*>(other);
+    const TimestampImplPosix* other_impl = dynamic_cast<const TimestampImplPosix*>(other);
     return this->time.tv_sec > other_impl->time.tv_sec ||
       (this->time.tv_sec == other_impl->time.tv_sec && this->time.tv_nsec > other_impl->time.tv_nsec);
   }
   
   virtual double diff_secs(const TimestampImpl* other) const {
-    const TimestampImplUnix* other_impl = dynamic_cast<const TimestampImplUnix*>(other);
+    const TimestampImplPosix* other_impl = dynamic_cast<const TimestampImplPosix*>(other);
     double sec_diff = this->time.tv_sec - other_impl->time.tv_sec;
     sec_diff += (this->time.tv_nsec - other_impl->time.tv_nsec) / 1.0e9;
     return sec_diff;
   }
 };
 
-Timestamp::Timestamp() : p_impl(new TimestampImplUnix()) {}
-Timestamp::Timestamp(double secs) : p_impl(new TimestampImplUnix(secs)) {}
+Timestamp::Timestamp() : p_impl(new TimestampImplPosix()) {}
+Timestamp::Timestamp(double secs) : p_impl(new TimestampImplPosix(secs)) {}
 
-#endif // __APPLE__
-#endif // __unix__
+#endif // _WIN32
