@@ -50,7 +50,9 @@ public:
   
   virtual double diff_secs(const TimestampImpl* other) const {
     const TimestampImplUnix* other_impl = dynamic_cast<const TimestampImplUnix*>(other);
-    return difftime(this->time, other_impl->time);
+    double sec_diff = this->time.tv_sec - other_impl->time.tv_sec;
+    sec_diff += (this->time.tv_nsec - other_impl->time.tv_nsec) / 1.0e9;
+    return sec_diff;
   }
 };
 
