@@ -8,6 +8,7 @@
 
 #include "later.h"
 #include "callback_registry.h"
+#include "timer_posix.h"
 
 using namespace Rcpp;
 
@@ -15,7 +16,6 @@ extern void* R_GlobalContext;
 extern void* R_TopLevelContext;
 
 extern CallbackRegistry callbackRegistry;
-
 
 // Whether we have initialized the input handler.
 int initialized = 0;
@@ -52,6 +52,14 @@ void set_fd(bool ready) {
   }
 }
 
+namespace {
+void fd_on() {
+  set_fd(true);
+}
+  
+Timer timer(fd_on);
+} // namespace
+
 class SuspendFDReadiness {
 public:
   SuspendFDReadiness() {
@@ -68,6 +76,16 @@ static void async_input_handler(void *data) {
   if (!at_top_level()) {
     // It's not safe to run arbitrary callbacks when other R code
     // is already running. Wait until we're back at the top level.
+    
+    // jcheng 2017-08-02: We can't just leave the file descriptor hot and let
+    // async_input_handler get invoked as fast as possible. Previously we did
+    // this, but on POSIX systems, it interferes with R_SocketWait.
+    // https://github.com/r-lib/later/issues/4
+    // Instead, we set the file descriptor to cold, and tell the timer to fire
+    // again in a few milliseconds. This should give enough breathing room that
+    // we don't interfere with the sockets too much.
+    set_fd(false);
+    timer.set(Timestamp(0.032));
     return;
   }
 
@@ -112,13 +130,13 @@ void deInitialize() {
 void doExecLater(Rcpp::Function callback, double delaySecs) {
   callbackRegistry.add(callback, delaySecs);
   
-  set_fd(true);
+  timer.set(*callbackRegistry.nextTimestamp());
 }
 
 void doExecLater(void (*callback)(void*), void* data, double delaySecs) {
   callbackRegistry.add(callback, data, delaySecs);
   
-  set_fd(true);
+  timer.set(*callbackRegistry.nextTimestamp());
 }
 
 #endif // ifndef _WIN32

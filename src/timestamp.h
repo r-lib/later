@@ -1,3 +1,6 @@
+#ifndef _TIMESTAMP_H_
+#define _TIMESTAMP_H_
+
 #include <boost/shared_ptr.hpp>
 
 // Impl abstract class; implemented by platform-specific classes
@@ -7,6 +10,7 @@ public:
   virtual bool future() const = 0;
   virtual bool less(const TimestampImpl* other) const = 0;
   virtual bool greater(const TimestampImpl* other) const = 0;
+  virtual double diff_secs(const TimestampImpl* other) const = 0;
 };
 
 class Timestamp {
@@ -29,4 +33,11 @@ public:
   bool operator>(const Timestamp& other) const {
     return p_impl->greater(other.p_impl.get());
   }
+  
+  // Diff
+  double diff_secs(const Timestamp& other) const {
+    return p_impl->diff_secs(other.p_impl.get());
+  }
 };
+
+#endif // _TIMESTAMP_H_

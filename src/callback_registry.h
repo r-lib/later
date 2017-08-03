@@ -1,3 +1,6 @@
+#ifndef _CALLBACK_REGISTRY_H_
+#define _CALLBACK_REGISTRY_H_
+
 #include <Rcpp.h>
 #include <queue>
 #include <boost/function.hpp>
@@ -65,3 +68,5 @@ public:
   // Pop and return an ordered list of functions to execute now.
   std::vector<Callback> take(size_t max = -1);
 };
+
+#endif // _CALLBACK_REGISTRY_H_

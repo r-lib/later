@@ -47,6 +47,11 @@ public:
     return this->time.tv_sec > other_impl->time.tv_sec ||
       (this->time.tv_sec == other_impl->time.tv_sec && this->time.tv_nsec > other_impl->time.tv_nsec);
   }
+  
+  virtual double diff_secs(const TimestampImpl* other) const {
+    const TimestampImplUnix* other_impl = dynamic_cast<const TimestampImplUnix*>(other);
+    return difftime(this->time, other_impl->time);
+  }
 };
 
 Timestamp::Timestamp() : p_impl(new TimestampImplUnix()) {}

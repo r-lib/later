@@ -1,3 +1,6 @@
+#ifndef _OPTIONAL_H_
+#define _OPTIONAL_H_
+
 template<class T>
 class Optional {
   bool has;
@@ -21,3 +24,5 @@ public:
     return has;
   }
 };
+
+#endif // _OPTIONAL_H_
