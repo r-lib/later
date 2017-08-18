@@ -35,6 +35,16 @@ public:
     const TimestampImplWin32* other_impl = dynamic_cast<const TimestampImplWin32*>(other);
     return this->performanceCount.QuadPart > other_impl->performanceCount.QuadPart;
   }
+
+  virtual double diff_secs(const TimestampImpl* other) const {
+    const TimestampImplWin32* other_impl = dynamic_cast<const TimestampImplWin32*>(other);
+    LONGLONG sec_diff = this->performanceCount.QuadPart - other_impl->performanceCount.QuadPart;
+
+    LARGE_INTEGER freq;
+    QueryPerformanceFrequency(&freq);
+
+    return (double)sec_diff / (double)freq.QuadPart;
+  }
 };
 
 Timestamp::Timestamp() : p_impl(new TimestampImplWin32()) {}
