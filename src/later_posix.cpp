@@ -112,6 +112,8 @@ InputHandler* dummyInputHandlerHandle;
 // could occur.
 static void remove_dummy_handler(void *data) {
   removeInputHandler(&R_InputHandlers, dummyInputHandlerHandle);
+  close(dummy_pipe_in);
+  close(dummy_pipe_out);
 }
 
 void ensureInitialized() {
@@ -148,6 +150,8 @@ void ensureInitialized() {
 void deInitialize() {
   if (initialized) {
     removeInputHandler(&R_InputHandlers, inputHandlerHandle);
+    close(pipe_in);
+    close(pipe_out);
     initialized = 0;
 
     // Trigger remove_dummy_handler()
