@@ -12,6 +12,9 @@
 
 using namespace Rcpp;
 
+#define LATER_ACTIVITY 20
+#define LATER_DUMMY_ACTIVITY 21
+
 extern void* R_GlobalContext;
 extern void* R_TopLevelContext;
 
@@ -24,6 +27,8 @@ int initialized = 0;
 // to signal R's input handler callback mechanism that we want to be
 // called back.
 int pipe_in, pipe_out;
+
+int dummy_pipe_in, dummy_pipe_out;
 
 // Whether the file descriptor is ready for reading, i.e., whether
 // the input handler callback is scheduled to be called. We use this
@@ -100,6 +105,16 @@ static void async_input_handler(void *data) {
 }
 
 InputHandler* inputHandlerHandle;
+InputHandler* dummyInputHandlerHandle;
+
+// If the real input handler has been removed, the dummy input handler removes
+// itself. The real input handler cannot remove both; otherwise a segfault
+// could occur.
+static void remove_dummy_handler(void *data) {
+  removeInputHandler(&R_InputHandlers, dummyInputHandlerHandle);
+  close(dummy_pipe_in);
+  close(dummy_pipe_out);
+}
 
 void ensureInitialized() {
   if (!initialized) {
@@ -114,8 +129,20 @@ void ensureInitialized() {
     pipe_out = pipes[0];
     pipe_in = pipes[1];
     
-    inputHandlerHandle = addInputHandler(R_InputHandlers, pipe_out, async_input_handler, 20);
-    
+    inputHandlerHandle = addInputHandler(R_InputHandlers, pipe_out, async_input_handler, LATER_ACTIVITY);
+
+    // Need to add a dummy input handler to avoid segfault when the "real"
+    // input handler removes the subsequent input handler in the linked list.
+    // See https://github.com/rstudio/httpuv/issues/78
+    int dummy_pipes[2];
+    if (pipe(dummy_pipes)) {
+      Rf_error("Failed to create pipe");
+      return;
+    }
+    dummy_pipe_out = dummy_pipes[0];
+    dummy_pipe_in  = dummy_pipes[1];
+    dummyInputHandlerHandle = addInputHandler(R_InputHandlers, dummy_pipe_out, remove_dummy_handler, LATER_DUMMY_ACTIVITY);
+
     initialized = 1;
   }
 }
@@ -123,7 +150,12 @@ void ensureInitialized() {
 void deInitialize() {
   if (initialized) {
     removeInputHandler(&R_InputHandlers, inputHandlerHandle);
+    close(pipe_in);
+    close(pipe_out);
     initialized = 0;
+
+    // Trigger remove_dummy_handler()
+    write(dummy_pipe_in, "a", 1);
   }
 }
 
