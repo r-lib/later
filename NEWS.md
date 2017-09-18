@@ -1,3 +1,7 @@
+## later 0.5
+
+* Fix a hang on Fedora 25+ which prevented the package from being installed successfully.
+
 ## later 0.4
 
 * Add `loop_empty()` function, which returns `TRUE` if there are currently no callbacks that are scheduled to execute in the present or future.
