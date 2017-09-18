@@ -19,6 +19,6 @@ those points and any operations that are due to run will do so.
 \details{
 If one of the callbacks throws an error, the error will \emph{not} be caught, and
 subsequent callbacks will not be executed (until \code{run_now()} is called again,
-or control returns to the R prompt). You must use your own \code{\link[base:tryCatch]{base::tryCatch()}}
-if you want to handle errors.
+or control returns to the R prompt). You must use your own
+\link[base:conditions]{tryCatch} if you want to handle errors.
 }

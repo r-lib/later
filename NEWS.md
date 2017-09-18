@@ -1,6 +1,6 @@
 ## later 0.5
 
-* Fix a hang on Fedora 25+ which prevented the package from being installed successfully.
+* Fix a hang on Fedora 25+ which prevented the package from being installed successfully. Reported by @lepennec. [Issue #7](https://github.com/r-lib/later/issues/7), [PR #10](https://github.com/r-lib/later/pull/10)
 
 ## later 0.4
 
