@@ -75,20 +75,20 @@ later <- function(func, delay = 0) {
 }
 
 #' Execute scheduled operations
-#' 
+#'
 #' Normally, operations scheduled with [later()] will not execute unless/until
 #' no other R code is on the stack (i.e. at the top-level). If you need to run
 #' blocking R code for a long time and want to allow scheduled operations to run
 #' at well-defined points of your own operation, you can call `run_now()` at
 #' those points and any operations that are due to run will do so.
-#' 
+#'
 #' If one of the callbacks throws an error, the error will _not_ be caught, and
 #' subsequent callbacks will not be executed (until `run_now()` is called again,
-#' or control returns to the R prompt). You must use your own [base::tryCatch()]
-#' if you want to handle errors.
-#' 
+#' or control returns to the R prompt). You must use your own
+#' [tryCatch][base::conditions] if you want to handle errors.
+#'
 #' @return A logical indicating whether any callbacks were actually run.
-#' 
+#'
 #' @export
 run_now <- function() {
   invisible(execCallbacks())

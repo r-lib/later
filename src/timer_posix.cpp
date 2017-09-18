@@ -17,6 +17,9 @@ void Timer::bg_main() {
       // The wake time has not been set yet. Wait until it is set, then start
       // the loop over again, so we hit the other branch.
       pthread_cond_wait(&this->cond, &this->mutex);
+      if (this->stopped) {
+        return;
+      }
       continue;
     } else {
       // The wake time has been set. There are three possibilities:
@@ -45,6 +48,9 @@ void Timer::bg_main() {
         }
 
         int res = pthread_cond_timedwait(&this->cond, &this->mutex, &ts);
+        if (this->stopped) {
+          return;
+        }
         if (ETIMEDOUT != res) {
           // Time didn't elapse, we were woken up (probably). Start over.
           continue;
@@ -58,17 +64,26 @@ void Timer::bg_main() {
 }
 
 Timer::Timer(const boost::function<void ()>& callback) :
-  callback(callback) {
+  callback(callback), stopped(false) {
   
   pthread_mutex_init(&this->mutex, NULL);
   pthread_cond_init(&this->cond, NULL);
   
-  pthread_t thread;
-  pthread_create(&thread, NULL, &bg_main_func, this);
-  pthread_detach(thread);
+  pthread_create(&this->bgthread, NULL, &bg_main_func, this);
 }
 
 Timer::~Timer() {
+
+  // Must stop background thread before cleaning up condition variable and
+  // mutex. Calling pthread_cond_destroy on a condvar that's being waited
+  // on results in undefined behavior--on Fedora 25+ it hangs.
+  pthread_mutex_lock(&this->mutex);
+  this->stopped = true;
+  pthread_cond_signal(&this->cond);
+  pthread_mutex_unlock(&this->mutex);
+
+  pthread_join(this->bgthread, NULL);
+
   pthread_cond_destroy(&this->cond);
   pthread_mutex_destroy(&this->mutex);
 }

@@ -12,7 +12,9 @@ class Timer {
   boost::function<void ()> callback;
   pthread_mutex_t mutex;
   pthread_cond_t cond;
+  pthread_t bgthread;
   boost::optional<Timestamp> wakeAt;
+  bool stopped;
   
   static void* bg_main_func(void*);
   void bg_main();
