@@ -24,14 +24,7 @@ public:
   }
   
   void operator()() const {
-    // From example in http://gallery.rcpp.org/articles/intro-to-exceptions/
-    try {
-      func();
-    } catch(std::exception &ex) {	
-      forward_exception_to_r(ex);
-    } catch(...) { 
-      ::Rf_error("c++ exception (unknown reason)"); 
-    }
+    func();
   }
 
   Timestamp when;

@@ -2,6 +2,8 @@
 
 * Fix a hang on Fedora 25+ which prevented the package from being installed successfully. Reported by @lepennec. [Issue #7](https://github.com/r-lib/later/issues/7), [PR #10](https://github.com/r-lib/later/pull/10)
 
+* Fixed [issue #12](https://github.com/r-lib/later/issues/12): When an exception occurred in a callback function, it would cause future callbacks to not execute. [PR #13](https://github.com/r-lib/later/pull/13)
+
 ## later 0.4
 
 * Add `loop_empty()` function, which returns `TRUE` if there are currently no callbacks that are scheduled to execute in the present or future.

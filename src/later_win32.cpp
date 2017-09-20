@@ -32,6 +32,11 @@ static void setupTimer() {
 }
 
 static bool executeHandlers() {
+  // The BEGIN_RCPP and END_RCPP macros are needed so that, if an exception
+  // occurs in any of the callbacks, destructors will still execute.
+  // https://github.com/r-lib/later/issues/12
+  // https://github.com/RcppCore/Rcpp/issues/753
+  BEGIN_RCPP
   if (!at_top_level()) {
     // It's not safe to run arbitrary callbacks when other R code
     // is already running. Wait until we're back at the top level.
@@ -40,6 +45,7 @@ static bool executeHandlers() {
 
   execCallbacks();  
   return idle();
+  END_RCPP
 }
 
 LRESULT CALLBACK callbackWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {

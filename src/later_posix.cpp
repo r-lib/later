@@ -78,6 +78,11 @@ public:
 };
 
 static void async_input_handler(void *data) {
+  // The BEGIN_RCPP and VOID_END_RCPP macros are needed so that, if an exception
+  // occurs in any of the callbacks, destructors will still execute.
+  // https://github.com/r-lib/later/issues/12
+  // https://github.com/RcppCore/Rcpp/issues/753
+  BEGIN_RCPP
   if (!at_top_level()) {
     // It's not safe to run arbitrary callbacks when other R code
     // is already running. Wait until we're back at the top level.
@@ -102,6 +107,7 @@ static void async_input_handler(void *data) {
   SuspendFDReadiness sfdr_scope;
   
   execCallbacks();
+  VOID_END_RCPP
 }
 
 InputHandler* inputHandlerHandle;
