@@ -21,3 +21,7 @@ execLater <- function(callback, delaySecs) {
     invisible(.Call('_later_execLater', PACKAGE = 'later', callback, delaySecs))
 }
 
+secsToNext <- function() {
+    .Call('_later_secsToNext', PACKAGE = 'later')
+}
+

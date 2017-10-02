@@ -56,3 +56,13 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// secsToNext
+double secsToNext();
+RcppExport SEXP _later_secsToNext() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(secsToNext());
+    return rcpp_result_gen;
+END_RCPP
+}

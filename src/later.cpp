@@ -81,6 +81,17 @@ void execLater(Rcpp::Function callback, double delaySecs) {
   doExecLater(callback, delaySecs);
 }
 
+// [[Rcpp::export]]
+double secsToNext() {
+  Optional<Timestamp> nextTime = callbackRegistry.nextTimestamp();
+  if (!nextTime.has_value()) {
+    return R_PosInf;
+  } else {
+    Timestamp now;
+    return (*nextTime).diff_secs(now);
+  }
+}
+
 extern "C" void execLaterNative(void (*func)(void*), void* data, double delaySecs) {
   ensureInitialized();
   doExecLater(func, data, delaySecs);
