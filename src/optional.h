@@ -19,6 +19,9 @@ public:
   T& operator*() {
     return this->value;
   }
+  T* operator->() {
+    return &this->value;
+  }
   
   bool has_value() const {
     return has;
