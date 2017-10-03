@@ -81,6 +81,25 @@ void execLater(Rcpp::Function callback, double delaySecs) {
   doExecLater(callback, delaySecs);
 }
 
+
+//' Relative time to next scheduled operation
+//'
+//' Returns the duration between now and the earliest operation that is currently
+//' scheduled, in seconds. If the operation is in the past, the value will be
+//' negative. If no operation is currently scheduled, the value will be `Inf`.
+//'
+//' @export
+// [[Rcpp::export]]
+double next_op_secs() {
+  Optional<Timestamp> nextTime = callbackRegistry.nextTimestamp();
+  if (!nextTime.has_value()) {
+    return R_PosInf;
+  } else {
+    Timestamp now;
+    return nextTime->diff_secs(now);
+  }
+}
+
 extern "C" void execLaterNative(void (*func)(void*), void* data, double delaySecs) {
   ensureInitialized();
   doExecLater(func, data, delaySecs);

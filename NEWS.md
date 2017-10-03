@@ -4,6 +4,8 @@
 
 * Fixed [issue #12](https://github.com/r-lib/later/issues/12): When an exception occurred in a callback function, it would cause future callbacks to not execute. [PR #13](https://github.com/r-lib/later/pull/13)
 
+* Added `next_op_secs()` function to report the number of seconds before the next scheduled operation. [PR #15](https://github.com/r-lib/later/pull/15)
+
 ## later 0.4
 
 * Add `loop_empty()` function, which returns `TRUE` if there are currently no callbacks that are scheduled to execute in the present or future.
