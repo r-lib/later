@@ -12,7 +12,10 @@ class Timer {
   boost::function<void ()> callback;
   pthread_mutex_t mutex;
   pthread_cond_t cond;
-  pthread_t bgthread;
+  // Stores the handle to a bgthread, which is created upon demand. (Previously
+  // the thread was created in the constructor, but addressed sanitized (ASAN)
+  // builds of R would hang when pthread_create was called during dlopen.)
+  boost::optional<pthread_t> bgthread;
   boost::optional<Timestamp> wakeAt;
   bool stopped;
   
