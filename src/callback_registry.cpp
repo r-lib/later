@@ -34,15 +34,15 @@ bool CallbackRegistry::empty() const {
 }
 
 // Returns true if the smallest timestamp exists and is not in the future.
-bool CallbackRegistry::due() const {
+bool CallbackRegistry::due(const Timestamp& time) const {
   Guard guard(mutex);
-  return !this->queue.empty() && !this->queue.top().when.future();
+  return !this->queue.empty() && !(this->queue.top().when > time);
 }
 
-std::vector<Callback> CallbackRegistry::take(size_t max) {
+std::vector<Callback> CallbackRegistry::take(size_t max, const Timestamp& time) {
   Guard guard(mutex);
   std::vector<Callback> results;
-  while (this->due() && (max <= 0 || results.size() < max)) {
+  while (this->due(time) && (max <= 0 || results.size() < max)) {
     results.push_back(this->queue.top());
     this->queue.pop();
   }
