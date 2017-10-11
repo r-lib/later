@@ -55,11 +55,12 @@ bool execCallbacks() {
   Rcpp::RNGScope rngscope;
   ProtectCallbacks pcscope;
   
+  Timestamp now;
   bool any = false;
   while (true) {
     // We only take one at a time, because we don't want to lose callbacks if 
     // one of the callbacks throws an error
-    std::vector<Callback> callbacks = callbackRegistry.take(1);
+    std::vector<Callback> callbacks = callbackRegistry.take(1, now);
     if (callbacks.size() == 0) {
       break;
     }

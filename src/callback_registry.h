@@ -56,10 +56,10 @@ public:
   bool empty() const;
   
   // Is anything ready to execute?
-  bool due() const;
+  bool due(const Timestamp& time = Timestamp()) const;
   
   // Pop and return an ordered list of functions to execute now.
-  std::vector<Callback> take(size_t max = -1);
+  std::vector<Callback> take(size_t max = -1, const Timestamp& time = Timestamp());
 };
 
 #endif // _CALLBACK_REGISTRY_H_
