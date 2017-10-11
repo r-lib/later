@@ -1,3 +1,7 @@
+## later 0.6
+
+* Fix a hang on address sanitized (ASAN) builds of R. [Issue #16](https://github.com/r-lib/later/issues/16), [PR #17](https://github.com/r-lib/later/pull/17)
+
 ## later 0.5
 
 * Fix a hang on Fedora 25+ which prevented the package from being installed successfully. Reported by @lepennec. [Issue #7](https://github.com/r-lib/later/issues/7), [PR #10](https://github.com/r-lib/later/pull/10)
