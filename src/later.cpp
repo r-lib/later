@@ -49,14 +49,18 @@ bool at_top_level() {
 CallbackRegistry callbackRegistry;
 
 // [[Rcpp::export]]
-bool execCallbacks() {
+bool execCallbacks(double timeoutSecs) {
   // execCallbacks can be called directly from C code, and the callbacks may
   // include Rcpp code. (Should we also call wrap?)
   Rcpp::RNGScope rngscope;
   ProtectCallbacks pcscope;
   
+  if (!callbackRegistry.wait(timeoutSecs)) {
+    return false;
+  }
+  
   Timestamp now;
-  bool any = false;
+  
   while (true) {
     // We only take one at a time, because we don't want to lose callbacks if 
     // one of the callbacks throws an error
@@ -64,11 +68,10 @@ bool execCallbacks() {
     if (callbacks.size() == 0) {
       break;
     }
-    any = true;
     // This line may throw errors!
     callbacks[0]();
   }
-  return any;
+  return true;
 }
 
 // [[Rcpp::export]]

@@ -26,12 +26,13 @@ BEGIN_RCPP
 END_RCPP
 }
 // execCallbacks
-bool execCallbacks();
-RcppExport SEXP _later_execCallbacks() {
+bool execCallbacks(double timeoutSecs);
+RcppExport SEXP _later_execCallbacks(SEXP timeoutSecsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(execCallbacks());
+    Rcpp::traits::input_parameter< double >::type timeoutSecs(timeoutSecsSEXP);
+    rcpp_result_gen = Rcpp::wrap(execCallbacks(timeoutSecs));
     return rcpp_result_gen;
 END_RCPP
 }

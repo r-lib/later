@@ -9,8 +9,8 @@ saveNframesCallback <- function(exp) {
     invisible(.Call('_later_saveNframesCallback', PACKAGE = 'later', exp))
 }
 
-execCallbacks <- function() {
-    .Call('_later_execCallbacks', PACKAGE = 'later')
+execCallbacks <- function(timeoutSecs) {
+    .Call('_later_execCallbacks', PACKAGE = 'later', timeoutSecs)
 }
 
 idle <- function() {

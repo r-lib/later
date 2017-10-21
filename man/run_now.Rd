@@ -4,7 +4,13 @@
 \alias{run_now}
 \title{Execute scheduled operations}
 \usage{
-run_now()
+run_now(timeoutSecs = 0L)
+}
+\arguments{
+\item{timeoutSecs}{Wait (block) for up to this number of seconds waiting for
+an operation to be ready to run. If \code{0}, then return immediately if there
+are no operations that are ready to run. If \code{Inf} or negative, then wait as
+long as it takes (if none are scheduled, then this will block forever).}
 }
 \value{
 A logical indicating whether any callbacks were actually run.
