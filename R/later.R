@@ -99,6 +99,10 @@ run_now <- function(timeoutSecs = 0L) {
   if (timeoutSecs == Inf) {
     timeoutSecs <- -1
   }
+  
+  if (!is.numeric(timeoutSecs))
+    stop("timeoutSecs must be numeric")
+  
   invisible(execCallbacks(timeoutSecs))
 }
 
