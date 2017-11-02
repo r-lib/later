@@ -1,13 +1,15 @@
 #include <boost/bind.hpp>
 #include "callback_registry.h"
 
-typedef tthread::lock_guard<tthread::recursive_mutex> Guard;
+CallbackRegistry::CallbackRegistry() : mutex(mtx_recursive), condvar(mutex) {
+}
 
 void CallbackRegistry::add(Rcpp::Function func, double secs) {
   Timestamp when(secs);
   Callback cb(when, func);
   Guard guard(mutex);
   queue.push(cb);
+  condvar.signal();
 }
 
 void CallbackRegistry::add(void (*func)(void*), void* data, double secs) {
@@ -15,6 +17,7 @@ void CallbackRegistry::add(void (*func)(void*), void* data, double secs) {
   Callback cb(when, boost::bind(func, data));
   Guard guard(mutex);
   queue.push(cb);
+  condvar.signal();
 }
 
 // The smallest timestamp present in the registry, if any.
@@ -47,4 +50,34 @@ std::vector<Callback> CallbackRegistry::take(size_t max, const Timestamp& time) 
     this->queue.pop();
   }
   return results;
+}
+
+bool CallbackRegistry::wait(double timeoutSecs) const {
+  if (timeoutSecs < 0) {
+    // "1000 years ought to be enough for anybody" --Bill Gates
+    timeoutSecs = 3e10;
+  }
+
+  Timestamp expireTime(timeoutSecs);
+  
+  Guard guard(mutex);
+  while (true) {
+    Timestamp end = expireTime;
+    Optional<Timestamp> next = nextTimestamp();
+    if (next.has_value() && *next < expireTime) {
+      end = *next;
+    }
+    double waitFor = end.diff_secs(Timestamp());
+    if (waitFor <= 0)
+      break;
+    // Don't wait for more than 2 seconds at a time, in order to keep us
+    // at least somewhat responsive to user interrupts
+    if (waitFor > 2) {
+      waitFor = 2;
+    }
+    condvar.timedwait(waitFor);
+    Rcpp::checkUserInterrupt();
+  }
+  
+  return due();
 }

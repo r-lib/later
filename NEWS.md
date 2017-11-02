@@ -2,6 +2,8 @@
 
 * Fix a hang on address sanitized (ASAN) builds of R. [Issue #16](https://github.com/r-lib/later/issues/16), [PR #17](https://github.com/r-lib/later/pull/17)
 
+* The `run_now()` function now takes a `timeoutSecs` argument. If no tasks are ready to run at the time `run_now(timeoutSecs)` is invoked, we will wait up to `timeoutSecs` for one to become ready. The default value of `0` means `run_now()` will return immediately if no tasks are ready, which is the same behavior as in previous releases. [PR #19](https://github.com/r-lib/later/pull/19)
+
 * The `run_now()` function used to return only when it was unable to find any more tasks that were due. This means that if tasks were being scheduled at an interval faster than the tasks are executed, `run_now()` would never return. This release changes that behavior so that a timestamp is taken as `run_now()` begins executing, and only tasks whose timestamps are earlier or equal to it are run. [PR #18](https://github.com/r-lib/later/pull/18)
 
 ## later 0.5

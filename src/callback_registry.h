@@ -6,7 +6,7 @@
 #include <boost/function.hpp>
 #include "timestamp.h"
 #include "optional.h"
-#include "tinythread.h"
+#include "threadutils.h"
 
 typedef boost::function0<void> Task;
 
@@ -37,9 +37,12 @@ private:
 class CallbackRegistry {
 private:
   std::priority_queue<Callback,std::vector<Callback>,std::greater<Callback> > queue;
-  mutable tthread::recursive_mutex mutex;
-  
+  mutable Mutex mutex;
+  mutable ConditionVariable condvar;
+
 public:
+  CallbackRegistry();
+
   // Add a function to the registry, to be executed at `secs` seconds in
   // the future (i.e. relative to the current time).
   void add(Rcpp::Function func, double secs);
@@ -60,6 +63,8 @@ public:
   
   // Pop and return an ordered list of functions to execute now.
   std::vector<Callback> take(size_t max = -1, const Timestamp& time = Timestamp());
+  
+  bool wait(double timeoutSecs) const;
 };
 
 #endif // _CALLBACK_REGISTRY_H_
