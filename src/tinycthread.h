@@ -24,6 +24,15 @@ freely, subject to the following restrictions:
 #ifndef _TINYCTHREAD_H_
 #define _TINYCTHREAD_H_
 
+// jcheng 2017-11-03: _XOPEN_SOURCE 600 is necessary to prevent Solaris headers
+// from complaining about the combination of C99 and _XOPEN_SOURCE <= 500. The
+// error message starts with:
+// "Compiler or options invalid for pre-UNIX 03 X/Open applications"
+#if defined(sun) && (__STDC_VERSION__ - 0 >= 199901L) && (!defined(_XOPEN_SOURCE) || ((_XOPEN_SOURCE - 0) < 600))
+  #undef _XOPEN_SOURCE
+  #define _XOPEN_SOURCE 600
+#endif
+
 /**
 * @file
 * @mainpage TinyCThread API Reference
