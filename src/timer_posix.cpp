@@ -4,6 +4,7 @@
 #include <sys/time.h>
 
 #include "timer_posix.h"
+#include "timeconv.h"
 
 void* Timer::bg_main_func(void* data) {
   reinterpret_cast<Timer*>(data)->bg_main();
@@ -36,9 +37,8 @@ void Timer::bg_main() {
       // a relative time. gettimeofday is the only way to do this that works
       // on both Linux and Darwin.
       timeval tv;
-      timespec ts;
       gettimeofday(&tv, NULL);
-      TIMEVAL_TO_TIMESPEC(&tv, &ts);
+      timespec ts = timevalToTimespec(tv);
       ts.tv_sec += (time_t)secs;
       ts.tv_nsec += (secs - (time_t)secs) * 1e9;
       if (ts.tv_nsec < 0) {

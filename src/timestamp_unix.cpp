@@ -1,12 +1,13 @@
 #ifndef _WIN32
 
-#include "timestamp.h"
 #include <sys/time.h>
+#include "timestamp.h"
+#include "timeconv.h"
 
 void get_current_time(timespec *ts) {
   timeval tv;
   gettimeofday(&tv, NULL);
-  TIMEVAL_TO_TIMESPEC(&tv, ts);
+  *ts = timevalToTimespec(tv);
 }
 
 class TimestampImplPosix : public TimestampImpl {
