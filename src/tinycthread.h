@@ -112,8 +112,8 @@ freely, subject to the following restrictions:
   #endif
 #endif
 
-/* Workaround for missing clock_gettime (most Windows compilers, afaik) */
-#if defined(_TTHREAD_WIN32_)
+/* Workaround for missing clock_gettime (most Windows compilers, and macOS < 10.12 afaik) */
+#if defined(_TTHREAD_WIN32_) || (defined(__APPLE__) && !defined(CLOCK_MONOTONIC))
 #define _TTHREAD_EMULATE_CLOCK_GETTIME_
 /* Emulate struct timespec */
 struct _ttherad_timespec {
