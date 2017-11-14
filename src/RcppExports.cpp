@@ -15,16 +15,6 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
-// saveNframesCallback
-void saveNframesCallback(SEXP exp);
-RcppExport SEXP _later_saveNframesCallback(SEXP expSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type exp(expSEXP);
-    saveNframesCallback(exp);
-    return R_NilValue;
-END_RCPP
-}
 // execCallbacks
 bool execCallbacks(double timeoutSecs);
 RcppExport SEXP _later_execCallbacks(SEXP timeoutSecsSEXP) {
