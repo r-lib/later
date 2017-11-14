@@ -12,7 +12,6 @@ extern SEXP _later_ensureInitialized();
 extern SEXP _later_execCallbacks(SEXP);
 extern SEXP _later_idle();
 extern SEXP _later_execLater(SEXP, SEXP);
-extern SEXP _later_saveNframesCallback(SEXP);
 extern SEXP _later_next_op_secs();
 
 static const R_CallMethodDef CallEntries[] = {
@@ -20,7 +19,6 @@ static const R_CallMethodDef CallEntries[] = {
   {"_later_execCallbacks",       (DL_FUNC) &_later_execCallbacks,       1},
   {"_later_idle",                (DL_FUNC) &_later_idle,                0},
   {"_later_execLater",           (DL_FUNC) &_later_execLater,           2},
-  {"_later_saveNframesCallback", (DL_FUNC) &_later_saveNframesCallback, 1},
   {"_later_next_op_secs",        (DL_FUNC) &_later_next_op_secs,        0},
   {NULL, NULL, 0}
 };

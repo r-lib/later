@@ -11,10 +11,6 @@ void ensureInitialized();
 void doExecLater(Rcpp::Function callback, double delaySecs);
 void doExecLater(void (*callback)(void*), void* data, double delaySecs);
 
-// This is just quote(base::sys.nframe()). We create this from R and
-// store it, because I don't want to learn how to parse strings into
-// call SEXPRs from C/C++.
-static SEXP nframes;
 static size_t exec_callbacks_reentrancy_count = 0;
 
 class ProtectCallbacks {
@@ -27,21 +23,30 @@ public:
   }
 };
 
-// Save a call expression as NFramesCallback. This is called at startup.
-// [[Rcpp::export]]
-void saveNframesCallback(SEXP exp) {
-  // TODO: Is R_PreserveObject necessary here?
-  R_PreserveObject(exp);
-  
-  nframes = exp;
+// Returns number of frames on the call stack. Basically just a wrapper for
+// base::sys.nframe().
+int sys_nframe() {
+  SEXP e, result;
+  int errorOccurred;
+
+  PROTECT(e = Rf_lang1(Rf_install("sys.nframe")));
+  result = R_tryEval(e, R_BaseEnv, &errorOccurred);
+
+  if (errorOccurred) {
+    UNPROTECT(1);
+    return -1;
+  }
+
+  int value = INTEGER(result)[0];
+  UNPROTECT(1);
+  return value;
 }
 
 // Returns true if execCallbacks is executing, or sys.nframes() returns 0.
 bool at_top_level() {
   if (exec_callbacks_reentrancy_count != 0)
     return false;
-  int frames = Rcpp::as<int>(Rf_eval(nframes, R_GlobalEnv));
-  return frames == 0;
+  return sys_nframe() == 0;
 }
 
 // The queue of user-provided callbacks that are scheduled to be

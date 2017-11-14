@@ -5,10 +5,6 @@ ensureInitialized <- function() {
     invisible(.Call('_later_ensureInitialized', PACKAGE = 'later'))
 }
 
-saveNframesCallback <- function(exp) {
-    invisible(.Call('_later_saveNframesCallback', PACKAGE = 'later', exp))
-}
-
 execCallbacks <- function(timeoutSecs) {
     .Call('_later_execCallbacks', PACKAGE = 'later', timeoutSecs)
 }
