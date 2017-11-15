@@ -27,17 +27,17 @@ public:
 // base::sys.nframe().
 int sys_nframe() {
   SEXP e, result;
-  int errorOccurred;
+  int errorOccurred, value;
 
   PROTECT(e = Rf_lang1(Rf_install("sys.nframe")));
   result = R_tryEval(e, R_BaseEnv, &errorOccurred);
 
   if (errorOccurred) {
-    UNPROTECT(1);
-    return -1;
+    value = -1;
+  } else {
+    value = INTEGER(result)[0];
   }
 
-  int value = INTEGER(result)[0];
   UNPROTECT(1);
   return value;
 }
@@ -46,7 +46,12 @@ int sys_nframe() {
 bool at_top_level() {
   if (exec_callbacks_reentrancy_count != 0)
     return false;
-  return sys_nframe() == 0;
+
+  int nframe = sys_nframe();
+  if (nframe == -1) {
+    throw Rcpp::exception("Error occurred while calling sys.nframe()");
+  }
+  return nframe == 0;
 }
 
 // The queue of user-provided callbacks that are scheduled to be
