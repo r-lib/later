@@ -1,3 +1,7 @@
+## later 0.6.0.9000
+
+* Fixed [issue #22](https://github.com/r-lib/later/issues/22): GC events could cause an error message: `Error: unimplemented type 'integer' in 'coerceToInteger'`. [PR #23](https://github.com/r-lib/later/pull/23)
+
 ## later 0.6
 
 * Fix a hang on address sanitized (ASAN) builds of R. [Issue #16](https://github.com/r-lib/later/issues/16), [PR #17](https://github.com/r-lib/later/pull/17)
