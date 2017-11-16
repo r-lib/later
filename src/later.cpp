@@ -30,7 +30,7 @@ int sys_nframe() {
   int errorOccurred, value;
 
   PROTECT(e = Rf_lang1(Rf_install("sys.nframe")));
-  result = R_tryEval(e, R_BaseEnv, &errorOccurred);
+  PROTECT(result = R_tryEval(e, R_BaseEnv, &errorOccurred));
 
   if (errorOccurred) {
     value = -1;
@@ -38,7 +38,7 @@ int sys_nframe() {
     value = INTEGER(result)[0];
   }
 
-  UNPROTECT(1);
+  UNPROTECT(2);
   return value;
 }
 
