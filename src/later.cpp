@@ -1,8 +1,14 @@
 #include "later.h"
+#include "debug.h"
 #include <Rcpp.h>
 #include <queue>
 
 #include "callback_registry.h"
+
+// For debug.h
+#if defined(DEBUG_THREAD) && !defined(_WIN32)
+pthread_t __main_thread__;
+#endif
 
 // Declare platform-specific functions that are implemented in
 // later_posix.cpp and later_win32.cpp.
@@ -26,6 +32,7 @@ public:
 // Returns number of frames on the call stack. Basically just a wrapper for
 // base::sys.nframe().
 int sys_nframe() {
+  ASSERT_MAIN_THREAD()
   SEXP e, result;
   int errorOccurred, value;
 
@@ -44,6 +51,7 @@ int sys_nframe() {
 
 // Returns true if execCallbacks is executing, or sys.nframes() returns 0.
 bool at_top_level() {
+  ASSERT_MAIN_THREAD()
   if (exec_callbacks_reentrancy_count != 0)
     return false;
 
@@ -60,6 +68,7 @@ CallbackRegistry callbackRegistry;
 
 // [[Rcpp::export]]
 bool execCallbacks(double timeoutSecs) {
+  ASSERT_MAIN_THREAD()
   // execCallbacks can be called directly from C code, and the callbacks may
   // include Rcpp code. (Should we also call wrap?)
   Rcpp::RNGScope rngscope;
@@ -86,11 +95,13 @@ bool execCallbacks(double timeoutSecs) {
 
 // [[Rcpp::export]]
 bool idle() {
+  ASSERT_MAIN_THREAD()
   return callbackRegistry.empty();
 }
 
 // [[Rcpp::export]]
 void execLater(Rcpp::Function callback, double delaySecs) {
+  ASSERT_MAIN_THREAD()
   ensureInitialized();
   doExecLater(callback, delaySecs);
 }
@@ -105,6 +116,7 @@ void execLater(Rcpp::Function callback, double delaySecs) {
 //' @export
 // [[Rcpp::export]]
 double next_op_secs() {
+  ASSERT_MAIN_THREAD()
   Optional<Timestamp> nextTime = callbackRegistry.nextTimestamp();
   if (!nextTime.has_value()) {
     return R_PosInf;
