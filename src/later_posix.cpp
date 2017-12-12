@@ -78,11 +78,6 @@ public:
 };
 
 static void async_input_handler(void *data) {
-  // The BEGIN_RCPP and VOID_END_RCPP macros are needed so that, if an exception
-  // occurs in any of the callbacks, destructors will still execute.
-  // https://github.com/r-lib/later/issues/12
-  // https://github.com/RcppCore/Rcpp/issues/753
-  BEGIN_RCPP
   if (!at_top_level()) {
     // It's not safe to run arbitrary callbacks when other R code
     // is already running. Wait until we're back at the top level.
@@ -105,9 +100,31 @@ static void async_input_handler(void *data) {
   // seemed to cause R_SocketWait to hang (encountered while working with the
   // future package, trying to call value(future) with plan(multisession)).
   SuspendFDReadiness sfdr_scope;
-  
-  execCallbacks();
-  VOID_END_RCPP
+
+  // This try-catch is meant to be similar to the BEGIN_RCPP and VOID_END_RCPP
+  // macros. They are needed for two reasons: first, if an exception occurs in
+  // any of the callbacks, destructors will still execute; and second, if an
+  // exception (including R-level error) occurs in a callback and it reaches
+  // the top level in an R input handler, R appears to be unable to handle it
+  // properly.
+  // https://github.com/r-lib/later/issues/12
+  // https://github.com/RcppCore/Rcpp/issues/753
+  // https://github.com/r-lib/later/issues/31
+  try {
+    execCallbacks();
+  }
+  catch(Rcpp::internal::InterruptedException &e) {
+    REprintf("later: interrupt occurred while executing callback.");
+  }
+  catch(std::exception& e){
+    std::string msg = "later: exception occurred while executing callback: \n";
+    msg += e.what();
+    msg += "\n";
+    REprintf(msg.c_str());
+  }
+  catch( ... ){
+    REprintf("later: c++ exception (unknown reason) occurred while executing callback.");
+  }
 }
 
 InputHandler* inputHandlerHandle;
