@@ -64,7 +64,6 @@ static bool executeHandlers() {
   }
 
   return idle();
-  END_RCPP
 }
 
 LRESULT CALLBACK callbackWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
