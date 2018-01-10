@@ -4,6 +4,8 @@
 
 * Fixed issues [#25](https://github.com/r-lib/later/issues/25), [#29](https://github.com/r-lib/later/issues/29), and [#31](https://github.com/r-lib/later/issues/31): If errors occurred when callbacks were executed by R's input handler (as opposed to by `run_now()`), then they would not be properly handled by R and put the terminal in a problematic state. [PR #33](https://github.com/r-lib/later/pull/33)
 
+* Fixed [issue #37](https://github.com/r-lib/later/issues/37): High CPU usage on Linux. [PR #38](https://github.com/r-lib/later/pull/38)
+
 ## later 0.6
 
 * Fix a hang on address sanitized (ASAN) builds of R. [Issue #16](https://github.com/r-lib/later/issues/16), [PR #17](https://github.com/r-lib/later/pull/17)
