@@ -8,6 +8,8 @@
 
 * Fixed [issue #36](https://github.com/r-lib/later/issues/36): Failure to build on OS X <=10.12 (thanks @mingwandroid). [PR #21](https://github.com/r-lib/later/pull/21)
 
+* Fixed [issue #39](https://github.com/r-lib/later/issues/39): Calling the C++ function `later::later()` from a different thread could cause an R GC event to occur on that thread, leading to memory corruption. [PR #40](https://github.com/r-lib/later/pull/40)
+
 ## later 0.6
 
 * Fix a hang on address sanitized (ASAN) builds of R. [Issue #16](https://github.com/r-lib/later/issues/16), [PR #17](https://github.com/r-lib/later/pull/17)
