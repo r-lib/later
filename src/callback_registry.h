@@ -58,9 +58,13 @@ private:
 public:
   CallbackRegistry();
 
-  // Add a function to the registry, to be executed at `secs` seconds in
+  // Add an R function to the registry, to be executed at `secs` seconds in
   // the future (i.e. relative to the current time).
   void add(Rcpp::Function func, double secs);
+
+  // Add a boost::function to the registry, to be executed at `secs` seconds
+  // in the future (i.e. relative to the current time).
+  void add(boost::function<void(void)> func, double secs);
   
   // Add a C function to the registry, to be executed at `secs` seconds in
   // the future (i.e. relative to the current time).

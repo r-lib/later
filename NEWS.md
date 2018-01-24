@@ -1,3 +1,7 @@
+## later 0.7.1.9000
+
+* With the C++ interface for `later::later()`, it is now possible to schedule a `boost::function<void(void)>` for execution. [PR #41](https://github.com/r-lib/later/pull/41)
+
 ## later 0.7.1
 
 * Fixed [issue #39](https://github.com/r-lib/later/issues/39): Calling the C++ function `later::later()` from a different thread could cause an R GC event to occur on that thread, leading to memory corruption. [PR #40](https://github.com/r-lib/later/pull/40)

@@ -14,6 +14,14 @@ void CallbackRegistry::add(Rcpp::Function func, double secs) {
   condvar.signal();
 }
 
+void CallbackRegistry::add(boost::function<void(void)> func, double secs) {
+  Timestamp when(secs);
+  Callback_sp cb = boost::make_shared<Callback>(when, func);
+  Guard guard(mutex);
+  queue.push(cb);
+  condvar.signal();
+}
+
 void CallbackRegistry::add(void (*func)(void*), void* data, double secs) {
   Timestamp when(secs);
   Callback_sp cb = boost::make_shared<Callback>(when, boost::bind(func, data));
