@@ -74,12 +74,12 @@ bool execCallbacks(double timeoutSecs) {
   while (true) {
     // We only take one at a time, because we don't want to lose callbacks if 
     // one of the callbacks throws an error
-    std::vector<Callback> callbacks = callbackRegistry.take(1, now);
+    std::vector<Callback_sp> callbacks = callbackRegistry.take(1, now);
     if (callbacks.size() == 0) {
       break;
     }
     // This line may throw errors!
-    callbacks[0]();
+    (*callbacks[0])();
   }
   return true;
 }

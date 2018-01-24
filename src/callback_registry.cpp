@@ -1,4 +1,6 @@
 #include <boost/bind.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 #include "callback_registry.h"
 
 CallbackRegistry::CallbackRegistry() : mutex(mtx_recursive), condvar(mutex) {
@@ -6,7 +8,7 @@ CallbackRegistry::CallbackRegistry() : mutex(mtx_recursive), condvar(mutex) {
 
 void CallbackRegistry::add(Rcpp::Function func, double secs) {
   Timestamp when(secs);
-  Callback cb(when, func);
+  Callback_sp cb = boost::make_shared<Callback>(when, func);
   Guard guard(mutex);
   queue.push(cb);
   condvar.signal();
@@ -14,7 +16,7 @@ void CallbackRegistry::add(Rcpp::Function func, double secs) {
 
 void CallbackRegistry::add(void (*func)(void*), void* data, double secs) {
   Timestamp when(secs);
-  Callback cb(when, boost::bind(func, data));
+  Callback_sp cb = boost::make_shared<Callback>(when, boost::bind(func, data));
   Guard guard(mutex);
   queue.push(cb);
   condvar.signal();
@@ -27,7 +29,7 @@ Optional<Timestamp> CallbackRegistry::nextTimestamp() const {
   if (this->queue.empty()) {
     return Optional<Timestamp>();
   } else {
-    return Optional<Timestamp>(this->queue.top().when);
+    return Optional<Timestamp>(this->queue.top()->when);
   }
 }
 
@@ -39,12 +41,12 @@ bool CallbackRegistry::empty() const {
 // Returns true if the smallest timestamp exists and is not in the future.
 bool CallbackRegistry::due(const Timestamp& time) const {
   Guard guard(mutex);
-  return !this->queue.empty() && !(this->queue.top().when > time);
+  return !this->queue.empty() && !(this->queue.top()->when > time);
 }
 
-std::vector<Callback> CallbackRegistry::take(size_t max, const Timestamp& time) {
+std::vector<Callback_sp> CallbackRegistry::take(size_t max, const Timestamp& time) {
   Guard guard(mutex);
-  std::vector<Callback> results;
+  std::vector<Callback_sp> results;
   while (this->due(time) && (max <= 0 || results.size() < max)) {
     results.push_back(this->queue.top());
     this->queue.pop();
