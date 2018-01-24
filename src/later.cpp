@@ -1,13 +1,13 @@
 #include "later.h"
-#include "debug.h"
 #include <Rcpp.h>
 #include <queue>
+#include "debug.h"
 
 #include "callback_registry.h"
 
 // For debug.h
-#if defined(DEBUG_THREAD) && !defined(_WIN32)
-pthread_t __main_thread__;
+#if defined(DEBUG_THREAD)
+thrd_t __main_thread__;
 #endif
 
 // Declare platform-specific functions that are implemented in

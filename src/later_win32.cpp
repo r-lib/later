@@ -7,6 +7,7 @@
 #include <queue>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include "debug.h"
 #include "callback_registry.h"
 
 using namespace Rcpp;
@@ -84,6 +85,7 @@ LRESULT CALLBACK callbackWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 
 void ensureInitialized() {
   if (!initialized) {
+    REGISTER_MAIN_THREAD()
     static const char* class_name = "R_LATER_WINDOW_CLASS";
     WNDCLASSEX wc = {};
     wc.cbSize = sizeof(WNDCLASSEX);

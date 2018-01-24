@@ -1,0 +1,2 @@
+# Uncomment to enable thread assertions
+# PKG_CPPFLAGS += -DDEBUG_THREAD -UNDEBUG

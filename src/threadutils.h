@@ -1,3 +1,7 @@
+#ifndef _THREADUTILS_H_
+#define _THREADUTILS_H_
+
+#include <stdexcept>
 #include <sys/time.h>
 extern "C" {
 #include "tinycthread.h"
@@ -133,3 +137,5 @@ public:
     }
   }
 };
+
+#endif // _THREADUTILS_H_
