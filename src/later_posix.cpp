@@ -9,6 +9,7 @@
 #include "later.h"
 #include "callback_registry.h"
 #include "timer_posix.h"
+#include "debug.h"
 
 using namespace Rcpp;
 
@@ -78,6 +79,8 @@ public:
 };
 
 static void async_input_handler(void *data) {
+  ASSERT_MAIN_THREAD()
+
   if (!at_top_level()) {
     // It's not safe to run arbitrary callbacks when other R code
     // is already running. Wait until we're back at the top level.
@@ -134,6 +137,7 @@ InputHandler* dummyInputHandlerHandle;
 // itself. The real input handler cannot remove both; otherwise a segfault
 // could occur.
 static void remove_dummy_handler(void *data) {
+  ASSERT_MAIN_THREAD()
   removeInputHandler(&R_InputHandlers, dummyInputHandlerHandle);
   close(dummy_pipe_in);
   close(dummy_pipe_out);
@@ -141,6 +145,7 @@ static void remove_dummy_handler(void *data) {
 
 void ensureInitialized() {
   if (!initialized) {
+    REGISTER_MAIN_THREAD()
     buf = malloc(BUF_SIZE);
     
     int pipes[2];
@@ -171,6 +176,7 @@ void ensureInitialized() {
 }
 
 void deInitialize() {
+  ASSERT_MAIN_THREAD()
   if (initialized) {
     removeInputHandler(&R_InputHandlers, inputHandlerHandle);
     close(pipe_in);
@@ -183,6 +189,7 @@ void deInitialize() {
 }
 
 void doExecLater(Rcpp::Function callback, double delaySecs) {
+  ASSERT_MAIN_THREAD()
   callbackRegistry.add(callback, delaySecs);
   
   timer.set(*callbackRegistry.nextTimestamp());
