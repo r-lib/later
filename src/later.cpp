@@ -93,6 +93,26 @@ bool execCallbacks(double timeoutSecs) {
   return true;
 }
 
+// Invoke execCallbacks up to 20 times. At the first iteration where no work is
+// done, terminate. We call this from the top level instead of just calling
+// execCallbacks because the top level only gets called occasionally (every 10's
+// of ms), so tasks that generate other tasks will execute surprisingly slowly.
+//
+// Example:
+// promise_map(1:1000, function(i) {
+//   message(i)
+//   promise_resolve(i)
+// })
+bool execCallbacksForTopLevel() {
+  bool any = false;
+  for (size_t i = 0; i < 20; i++) {
+    if (!execCallbacks())
+      return any;
+    any = true;
+  }
+  return any;
+}
+
 // [[Rcpp::export]]
 bool idle() {
   ASSERT_MAIN_THREAD()

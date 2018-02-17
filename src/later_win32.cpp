@@ -49,7 +49,7 @@ static bool executeHandlers() {
   // https://github.com/RcppCore/Rcpp/issues/753
   // https://github.com/r-lib/later/issues/31
   try {
-    execCallbacks();
+    execCallbacksForTopLevel();
   }
   catch(Rcpp::internal::InterruptedException &e) {
     REprintf("later: interrupt occurred while executing callback.");
