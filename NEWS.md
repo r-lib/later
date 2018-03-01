@@ -2,6 +2,8 @@
 
 * Fixed [issue #39](https://github.com/r-lib/later/issues/39): Calling the C++ function `later::later()` from a different thread could cause an R GC event to occur on that thread, leading to memory corruption. [PR #40](https://github.com/r-lib/later/pull/40)
 
+* Decrease latency of repeated top-level execution.
+
 ## later 0.7 (unreleased)
 
 * Fixed [issue #22](https://github.com/r-lib/later/issues/22): GC events could cause an error message: `Error: unimplemented type 'integer' in 'coerceToInteger'`. [PR #23](https://github.com/r-lib/later/pull/23)
