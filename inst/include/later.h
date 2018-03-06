@@ -17,6 +17,11 @@
 
 namespace later {
 
+namespace {
+// The function type for the real execLaterNative
+extern "C" typedef void (*elnfun)(void (*func)(void*), void*, double);
+}
+
 inline void later(void (*func)(void*), void* data, double secs) {
   // This function works by retrieving the later::execLaterNative function
   // pointer using R_GetCCallable the first time it's called (per compilation
@@ -33,8 +38,6 @@ inline void later(void (*func)(void*), void* data, double secs) {
   // specially by including them in RcppExports.cpp, and we definitely
   // do not want the static initialization to happen there.
   
-  // The function type for the real execLaterNative
-  typedef void (*elnfun)(void (*func)(void*), void*, double);
   static elnfun eln = NULL;
   if (!eln) {
     // Initialize if necessary
@@ -55,6 +58,11 @@ inline void later(void (*func)(void*), void* data, double secs) {
   }
   
   eln(func, data, secs);
+}
+
+extern "C" {
+  // needs C language linkage to be passed safely to later::later
+  static void background_task_callback(void* data);
 }
 
 class BackgroundTask {
@@ -85,6 +93,8 @@ public:
   }
 
 protected:
+  friend void background_task_callback(void* data);
+  
   // The task to be executed on the background thread.
   // Neither the R runtime nor any R data structures may be
   // touched from the background thread; any values that need
@@ -102,7 +112,7 @@ private:
     BackgroundTask* task = reinterpret_cast<BackgroundTask*>(data);
     // TODO: Error handling
     task->execute();
-    later(&BackgroundTask::result_callback, task, 0);
+    later(background_task_callback, task, 0);
     return NULL;
   }
   
@@ -112,14 +122,16 @@ private:
     return 1;
   }
 #endif
-  
-  static void result_callback(void* data) {
+};
+
+extern "C" {
+  static void background_task_callback(void* data) {
     BackgroundTask* task = reinterpret_cast<BackgroundTask*>(data);
     // TODO: Error handling
     task->complete();
     delete task;
   }
-};
+} // extern "C"
 
 } // namespace later
 
