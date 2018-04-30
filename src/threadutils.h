@@ -116,6 +116,7 @@ public:
     if (clock_gettime(CLOCK_REALTIME, &ts) != 0) {
       throw std::runtime_error("clock_gettime failed");
     }
+    timespec old_ts = ts;
     ts.tv_sec += (time_t)timeoutSecs;
     ts.tv_nsec += (timeoutSecs - (time_t)timeoutSecs) * 1e9;
     if (ts.tv_nsec < 0) {
@@ -133,7 +134,9 @@ public:
     } else if (res == thrd_timeout) {
       return false;
     } else {
-      throw std::runtime_error("Condition variable failed to timedwait");
+      fprintf(stderr, "res: %d, tv_sec: %ld, tv_nsec: %ld, timeoutSecs: %f, m: %p, c: %p\n",
+        res, old_ts.tv_sec, old_ts.tv_nsec, timeoutSecs, _m, &_c);
+      return false;
     }
   }
 };
