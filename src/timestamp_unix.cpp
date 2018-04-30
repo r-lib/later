@@ -26,7 +26,7 @@ public:
     long nanos = (secs - wholeSecs) * 1e9;
     this->time.tv_sec += wholeSecs;
     this->time.tv_nsec += nanos;
-    while (this->time.tv_nsec > 1e9) {
+    while (this->time.tv_nsec >= 1e9) {
       this->time.tv_sec++;
       this->time.tv_nsec -= 1e9;
     }

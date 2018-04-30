@@ -305,10 +305,6 @@ int cnd_timedwait(cnd_t *cond, mtx_t *mtx, const struct timespec *ts)
   {
     return thrd_timeout;
   }
-  else if (ret != 0)
-  {
-    fprintf(stderr, "pthread_cond_timedwait returned %d\n", ret);
-  }
   return ret == 0 ? thrd_success : thrd_error;
 #endif
 }

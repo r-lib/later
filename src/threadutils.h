@@ -122,7 +122,7 @@ public:
       ts.tv_nsec += 1e9;
       ts.tv_sec--;
     }
-    if (ts.tv_nsec > 1e9) {
+    if (ts.tv_nsec >= 1e9) {
       ts.tv_nsec -= 1e9;
       ts.tv_sec++;
     }
