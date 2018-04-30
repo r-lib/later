@@ -7,6 +7,7 @@ extern "C" {
 #include "tinycthread.h"
 }
 #include <boost/noncopyable.hpp>
+#include <boost/type_traits/is_integral.hpp>
 
 #include "timeconv.h"
 
@@ -88,7 +89,7 @@ class ConditionVariable : boost::noncopyable {
   
 public:
   ConditionVariable(Mutex& mutex) : _m(&mutex._m) {
-    if (!std::is_integral<time_t>::value)
+    if (!boost::is_integral<time_t>::value)
       throw std::runtime_error("Integral time_t type expected");
     
     if (cnd_init(&_c) != thrd_success)
