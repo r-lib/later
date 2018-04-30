@@ -8,6 +8,8 @@ extern "C" {
 }
 #include <boost/noncopyable.hpp>
 
+#include "timeconv.h"
+
 #ifndef CLOCK_REALTIME
 // This is only here to prevent compilation errors on Windows and older
 // versions of OS X. clock_gettime doesn't exist on those platforms so
@@ -86,6 +88,9 @@ class ConditionVariable : boost::noncopyable {
   
 public:
   ConditionVariable(Mutex& mutex) : _m(&mutex._m) {
+    if (!std::is_integral<time_t>::value)
+      throw std::runtime_error("Integral time_t type expected");
+    
     if (cnd_init(&_c) != thrd_success)
       throw std::runtime_error("Condition variable failed to initialize");
   }
@@ -116,17 +121,9 @@ public:
     if (clock_gettime(CLOCK_REALTIME, &ts) != 0) {
       throw std::runtime_error("clock_gettime failed");
     }
-    ts.tv_sec += (time_t)timeoutSecs;
-    ts.tv_nsec += (timeoutSecs - (time_t)timeoutSecs) * 1e9;
-    if (ts.tv_nsec < 0) {
-      ts.tv_nsec += 1e9;
-      ts.tv_sec--;
-    }
-    if (ts.tv_nsec > 1e9) {
-      ts.tv_nsec -= 1e9;
-      ts.tv_sec++;
-    }
     
+    ts = addSeconds(ts, timeoutSecs);
+
     int res = cnd_timedwait(&_c, _m, &ts);
     if (res == thrd_success) {
       return true;
