@@ -88,6 +88,9 @@ class ConditionVariable : boost::noncopyable {
   
 public:
   ConditionVariable(Mutex& mutex) : _m(&mutex._m) {
+    if (!std::is_integral<time_t>::value)
+      throw std::runtime_error("Integral time_t type expected");
+    
     if (cnd_init(&_c) != thrd_success)
       throw std::runtime_error("Condition variable failed to initialize");
   }
