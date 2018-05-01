@@ -112,15 +112,23 @@ freely, subject to the following restrictions:
   #endif
 #endif
 
-/* Workaround for missing clock_gettime (most Windows compilers, and macOS < 10.12 afaik) */
-#if defined(_TTHREAD_WIN32_) || (defined(__APPLE__) && !defined(CLOCK_MONOTONIC))
-#define _TTHREAD_EMULATE_CLOCK_GETTIME_
+// jcheng 2018-04-30: This was in the _TTHREAD_EMULATE_CLOCK_GETTIME_
+// block previously, but all macOS versions provide timespec, and
+// overwriting it with _ttherad_timespec caused compilation errors
+// when trying to call POSIX functions that expected the regular
+// timespec.
+#if defined(_TTHREAD_WIN32_)
 /* Emulate struct timespec */
 struct _ttherad_timespec {
   time_t tv_sec;
   long   tv_nsec;
 };
 #define timespec _ttherad_timespec
+#endif
+
+/* Workaround for missing clock_gettime (most Windows compilers, and macOS < 10.12 afaik) */
+#if defined(_TTHREAD_WIN32_) || (defined(__APPLE__) && !defined(CLOCK_MONOTONIC))
+#define _TTHREAD_EMULATE_CLOCK_GETTIME_
 
 /* Emulate clockid_t */
 typedef int _tthread_clockid_t;

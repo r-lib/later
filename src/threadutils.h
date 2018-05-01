@@ -8,6 +8,7 @@ extern "C" {
 }
 #include <boost/noncopyable.hpp>
 #include <boost/type_traits/is_integral.hpp>
+#include <boost/type_traits/is_signed.hpp>
 
 #include "timeconv.h"
 
@@ -89,8 +90,14 @@ class ConditionVariable : boost::noncopyable {
   
 public:
   ConditionVariable(Mutex& mutex) : _m(&mutex._m) {
+    // If time_t isn't integral, our addSeconds logic needs to change,
+    // as it relies on casting to time_t being a truncation.
     if (!boost::is_integral<time_t>::value)
       throw std::runtime_error("Integral time_t type expected");
+    // If time_t isn't signed, our addSeconds logic can't handle
+    // negative values for secs.
+    if (!boost::is_signed<time_t>::value)
+      throw std::runtime_error("Signed time_t type expected");
     
     if (cnd_init(&_c) != thrd_success)
       throw std::runtime_error("Condition variable failed to initialize");
