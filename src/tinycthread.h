@@ -24,6 +24,10 @@ freely, subject to the following restrictions:
 #ifndef _TINYCTHREAD_H_
 #define _TINYCTHREAD_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // jcheng 2017-11-03: _XOPEN_SOURCE 600 is necessary to prevent Solaris headers
 // from complaining about the combination of C99 and _XOPEN_SOURCE <= 500. The
 // error message starts with:
@@ -449,6 +453,10 @@ void *tss_get(tss_t key);
 */
 int tss_set(tss_t key, void *val);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _TINYTHREAD_H_ */
 

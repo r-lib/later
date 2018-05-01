@@ -3,13 +3,11 @@
 
 #include <stdexcept>
 #include <sys/time.h>
-extern "C" {
-#include "tinycthread.h"
-}
 #include <boost/noncopyable.hpp>
 #include <boost/type_traits/is_integral.hpp>
 #include <boost/type_traits/is_signed.hpp>
 
+#include "tinycthread.h"
 #include "timeconv.h"
 
 #ifndef CLOCK_REALTIME
