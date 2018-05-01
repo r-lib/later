@@ -24,6 +24,10 @@ freely, subject to the following restrictions:
 #ifndef _TINYCTHREAD_H_
 #define _TINYCTHREAD_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // jcheng 2017-11-03: _XOPEN_SOURCE 600 is necessary to prevent Solaris headers
 // from complaining about the combination of C99 and _XOPEN_SOURCE <= 500. The
 // error message starts with:
@@ -112,15 +116,23 @@ freely, subject to the following restrictions:
   #endif
 #endif
 
-/* Workaround for missing clock_gettime (most Windows compilers, and macOS < 10.12 afaik) */
-#if defined(_TTHREAD_WIN32_) || (defined(__APPLE__) && !defined(CLOCK_MONOTONIC))
-#define _TTHREAD_EMULATE_CLOCK_GETTIME_
+// jcheng 2018-04-30: This was in the _TTHREAD_EMULATE_CLOCK_GETTIME_
+// block previously, but all macOS versions provide timespec, and
+// overwriting it with _ttherad_timespec caused compilation errors
+// when trying to call POSIX functions that expected the regular
+// timespec.
+#if defined(_TTHREAD_WIN32_)
 /* Emulate struct timespec */
 struct _ttherad_timespec {
   time_t tv_sec;
   long   tv_nsec;
 };
 #define timespec _ttherad_timespec
+#endif
+
+/* Workaround for missing clock_gettime (most Windows compilers, and macOS < 10.12 afaik) */
+#if defined(_TTHREAD_WIN32_) || (defined(__APPLE__) && !defined(CLOCK_MONOTONIC))
+#define _TTHREAD_EMULATE_CLOCK_GETTIME_
 
 /* Emulate clockid_t */
 typedef int _tthread_clockid_t;
@@ -441,6 +453,10 @@ void *tss_get(tss_t key);
 */
 int tss_set(tss_t key, void *val);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _TINYTHREAD_H_ */
 

@@ -1,4 +1,9 @@
 #include <sys/time.h>
+// Some platforms (Win32, previously some Mac versions) use
+// tinycthread.h to provide timespec. Whether tinycthread
+// defines timespec or not, we want it to be consistent for
+// anyone who uses these functions.
+#include "tinycthread.h"
 
 inline timespec timevalToTimespec(const timeval& tv) {
   timespec ts;

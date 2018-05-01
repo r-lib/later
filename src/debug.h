@@ -4,9 +4,7 @@
 // See the Makevars file to see how to compile with various debugging settings.
 
 #if defined(DEBUG_THREAD)
-extern "C" {
 #include "tinycthread.h"
-}
 
 extern thrd_t __main_thread__;
 extern thrd_t __background_thread__;
