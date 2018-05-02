@@ -17,6 +17,21 @@
 
 namespace later {
 
+namespace {
+struct CallbackWrapper {
+  void (*func)(void*);
+  void* data;
+};
+
+void callbackInvoker(void* data) {
+  CallbackWrapper* cb = (CallbackWrapper*)data;
+  BEGIN_RCPP
+  cb->func(cb->data);
+  VOID_END_RCPP
+  delete cb;
+}
+}
+
 inline void later(void (*func)(void*), void* data, double secs) {
   // This function works by retrieving the later::execLaterNative function
   // pointer using R_GetCCallable the first time it's called (per compilation
@@ -54,7 +69,10 @@ inline void later(void (*func)(void*), void* data, double secs) {
     return;
   }
   
-  eln(func, data, secs);
+  CallbackWrapper* cb = new CallbackWrapper();
+  cb->func = func;
+  cb->data = data;
+  eln(callbackInvoker, cb, secs);
 }
 
 class BackgroundTask {
