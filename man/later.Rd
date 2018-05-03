@@ -4,7 +4,7 @@
 \alias{later}
 \title{Executes a function later}
 \usage{
-later(func, delay = 0)
+later(func, delay = 0, loop = default_loop())
 }
 \arguments{
 \item{func}{A function or formula (see \code{\link[rlang:as_function]{rlang::as_function()}}).}

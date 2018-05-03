@@ -48,7 +48,7 @@ void Timer::bg_main() {
 }
 
 Timer::Timer(const boost::function<void ()>& callback) :
-  callback(callback), mutex(mtx_recursive), cond(mutex), stopped(false) {
+  callback(callback), mutex(tct_mtx_recursive), cond(mutex), stopped(false) {
 }
 
 Timer::~Timer() {
@@ -63,7 +63,7 @@ Timer::~Timer() {
       this->cond.signal();
     }
 
-    thrd_join(*this->bgthread, NULL);
+    tct_thrd_join(*this->bgthread, NULL);
   }
 }
 
@@ -73,7 +73,7 @@ void Timer::set(const Timestamp& timestamp) {
   // If the thread has not yet been created, created it.
   if (this->bgthread == boost::none) {
     thrd_t thread;
-    thrd_create(&thread, &bg_main_func, this);
+    tct_thrd_create(&thread, &bg_main_func, this);
     this->bgthread = thread;
   }
   

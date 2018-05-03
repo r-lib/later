@@ -4,7 +4,7 @@
 \alias{run_now}
 \title{Execute scheduled operations}
 \usage{
-run_now(timeoutSecs = 0L, all = TRUE)
+run_now(timeoutSecs = 0L, all = TRUE, loop = default_loop())
 }
 \arguments{
 \item{timeoutSecs}{Wait (block) for up to this number of seconds waiting for

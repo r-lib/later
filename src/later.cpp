@@ -1,6 +1,9 @@
 #include "later.h"
 #include <Rcpp.h>
+#include <map>
 #include <queue>
+#include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 #include "debug.h"
 
 #include "callback_registry.h"
@@ -15,8 +18,8 @@ thrd_t __main_thread__;
 // later_posix.cpp and later_win32.cpp.
 // [[Rcpp::export]]
 void ensureInitialized();
-void doExecLater(Rcpp::Function callback, double delaySecs);
-void doExecLater(void (*callback)(void*), void* data, double delaySecs);
+void doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp::Function callback, double delaySecs, bool resetTimer);
+void doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, void (*callback)(void*), void* data, double delaySecs, bool resetTimer);
 
 static size_t exec_callbacks_reentrancy_count = 0;
 
@@ -69,19 +72,24 @@ bool at_top_level() {
   return nframe == 0;
 }
 
-// The queue of user-provided callbacks that are scheduled to be
-// executed.
-CallbackRegistry callbackRegistry;
+std::map<int, boost::shared_ptr<CallbackRegistry> > callbackRegistries;
+boost::shared_ptr<CallbackRegistry> getCallbackRegistry(int loop) {
+  // TODO: clean up
+  if (callbackRegistries.find(loop) == callbackRegistries.end()) {
+    callbackRegistries[loop] = boost::make_shared<CallbackRegistry>();
+  }
+  return callbackRegistries[loop];
+}
 
 // [[Rcpp::export]]
-bool execCallbacks(double timeoutSecs, bool runAll) {
+bool execCallbacks(double timeoutSecs, bool runAll, int loop) {
   ASSERT_MAIN_THREAD()
   // execCallbacks can be called directly from C code, and the callbacks may
   // include Rcpp code. (Should we also call wrap?)
   Rcpp::RNGScope rngscope;
   ProtectCallbacks pcscope;
   
-  if (!callbackRegistry.wait(timeoutSecs)) {
+  if (!getCallbackRegistry(loop)->wait(timeoutSecs)) {
     return false;
   }
   
@@ -90,7 +98,7 @@ bool execCallbacks(double timeoutSecs, bool runAll) {
   do {
     // We only take one at a time, because we don't want to lose callbacks if 
     // one of the callbacks throws an error
-    std::vector<Callback_sp> callbacks = callbackRegistry.take(1, now);
+    std::vector<Callback_sp> callbacks = getCallbackRegistry(loop)->take(1, now);
     if (callbacks.size() == 0) {
       break;
     }
@@ -113,7 +121,7 @@ bool execCallbacks(double timeoutSecs, bool runAll) {
 bool execCallbacksForTopLevel() {
   bool any = false;
   for (size_t i = 0; i < 20; i++) {
-    if (!execCallbacks())
+    if (!execCallbacks(0, GLOBAL_LOOP))
       return any;
     any = true;
   }
@@ -121,16 +129,16 @@ bool execCallbacksForTopLevel() {
 }
 
 // [[Rcpp::export]]
-bool idle() {
+bool idle(int loop) {
   ASSERT_MAIN_THREAD()
-  return callbackRegistry.empty();
+  return getCallbackRegistry(loop)->empty();
 }
 
 // [[Rcpp::export]]
-void execLater(Rcpp::Function callback, double delaySecs) {
+void execLater(Rcpp::Function callback, double delaySecs, int loop) {
   ASSERT_MAIN_THREAD()
   ensureInitialized();
-  doExecLater(callback, delaySecs);
+  doExecLater(getCallbackRegistry(loop), callback, delaySecs, loop == GLOBAL_LOOP);
 }
 
 
@@ -142,9 +150,9 @@ void execLater(Rcpp::Function callback, double delaySecs) {
 //'
 //' @export
 // [[Rcpp::export]]
-double next_op_secs() {
+double next_op_secs(int loop) {
   ASSERT_MAIN_THREAD()
-  Optional<Timestamp> nextTime = callbackRegistry.nextTimestamp();
+  Optional<Timestamp> nextTime = getCallbackRegistry(loop)->nextTimestamp();
   if (!nextTime.has_value()) {
     return R_PosInf;
   } else {
@@ -155,5 +163,6 @@ double next_op_secs() {
 
 extern "C" void execLaterNative(void (*func)(void*), void* data, double delaySecs) {
   ensureInitialized();
-  doExecLater(func, data, delaySecs);
+  int loop = GLOBAL_LOOP;
+  doExecLater(getCallbackRegistry(GLOBAL_LOOP), func, data, delaySecs, loop == GLOBAL_LOOP);
 }

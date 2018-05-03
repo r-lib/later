@@ -20,8 +20,6 @@ using namespace Rcpp;
 extern void* R_GlobalContext;
 extern void* R_TopLevelContext;
 
-extern CallbackRegistry callbackRegistry;
-
 // Whether we have initialized the input handler.
 int initialized = 0;
 
@@ -78,7 +76,7 @@ public:
   }
   ~ResetTimerOnExit() {
     // Find the next event in the registry and, if there is one, set the timer.
-    Optional<Timestamp> nextEvent = callbackRegistry.nextTimestamp();
+    Optional<Timestamp> nextEvent = getCallbackRegistry(GLOBAL_LOOP)->nextTimestamp();
     if (nextEvent.has_value()) {
       timer.set(*nextEvent);
     }
@@ -195,17 +193,19 @@ void deInitialize() {
   }
 }
 
-void doExecLater(Rcpp::Function callback, double delaySecs) {
+void doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp::Function callback, double delaySecs, bool resetTimer) {
   ASSERT_MAIN_THREAD()
-  callbackRegistry.add(callback, delaySecs);
+  callbackRegistry->add(callback, delaySecs);
   
-  timer.set(*(callbackRegistry.nextTimestamp()));
+  if (resetTimer)
+    timer.set(*(callbackRegistry->nextTimestamp()));
 }
 
-void doExecLater(void (*callback)(void*), void* data, double delaySecs) {
-  callbackRegistry.add(callback, data, delaySecs);
-  
-  timer.set(*(callbackRegistry.nextTimestamp()));
+void doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, void (*callback)(void*), void* data, double delaySecs, bool resetTimer) {
+  callbackRegistry->add(callback, data, delaySecs);
+
+  if (resetTimer)  
+    timer.set(*(callbackRegistry->nextTimestamp()));
 }
 
 #endif // ifndef _WIN32
