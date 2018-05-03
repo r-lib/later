@@ -6,6 +6,11 @@
   ensureInitialized()
 }
 
+#' @export
+default_loop <- function() {
+  0L
+}
+
 #' Executes a function later
 #' 
 #' Schedule an R function or formula to run after a specified period of time.
@@ -44,9 +49,9 @@
 #' }, 2)
 #'   
 #' @export
-later <- function(func, delay = 0) {
+later <- function(func, delay = 0, loop = default_loop()) {
   f <- rlang::as_function(func)
-  execLater(f, delay)
+  execLater(f, delay, loop)
 }
 
 #' Execute scheduled operations
@@ -70,7 +75,7 @@ later <- function(func, delay = 0) {
 #' @return A logical indicating whether any callbacks were actually run.
 #'
 #' @export
-run_now <- function(timeoutSecs = 0L) {
+run_now <- function(timeoutSecs = 0L, loop = default_loop()) {
   if (timeoutSecs == Inf) {
     timeoutSecs <- -1
   }
@@ -78,7 +83,7 @@ run_now <- function(timeoutSecs = 0L) {
   if (!is.numeric(timeoutSecs))
     stop("timeoutSecs must be numeric")
   
-  invisible(execCallbacks(timeoutSecs))
+  invisible(execCallbacks(timeoutSecs, loop))
 }
 
 #' Check if later loop is empty
@@ -88,6 +93,6 @@ run_now <- function(timeoutSecs = 0L) {
 #' 
 #' @keywords internal
 #' @export
-loop_empty <- function() {
-  idle()
+loop_empty <- function(loop = default_loop()) {
+  idle(loop)
 }

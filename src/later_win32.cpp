@@ -8,11 +8,8 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include "debug.h"
-#include "callback_registry.h"
 
 using namespace Rcpp;
-
-extern CallbackRegistry callbackRegistry;
 
 // Whether we have initialized the message-only window.
 int initialized = 0;
@@ -64,7 +61,7 @@ static bool executeHandlers() {
     REprintf("later: c++ exception (unknown reason) occurred while executing callback.");
   }
 
-  return idle();
+  return idle(GLOBAL_LOOP);
 }
 
 LRESULT CALLBACK callbackWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -105,21 +102,24 @@ void ensureInitialized() {
   }
 }
 
-void doExecLater(Rcpp::Function callback, double delaySecs) {
-  callbackRegistry.add(callback, delaySecs);
-  
-  setupTimer();
+void doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp::Function callback, double delaySecs, bool resetTimer) {
+  callbackRegistry->add(callback, delaySecs);
+
+  if (resetTimer)  
+    setupTimer();
 }
 
-void doExecLater(void (*func)(void*), void* data, double delaySecs) {
-  callbackRegistry.add(func, data, delaySecs);
+void doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, void (*func)(void*), void* data, double delaySecs, bool resetTimer) {
+  callbackRegistry->add(func, data, delaySecs);
 
-  if (GetCurrentThreadId() == GetWindowThreadProcessId(hwnd, NULL)) {
-    setupTimer();
-  } else {
-    // Not safe to setup the timer from this thread. Instead, send a
-    // message to the main thread that the timer should be set up.
-    PostMessage(hwnd, WM_SETUPTIMER, 0, 0);
+  if (resetTimer) {
+    if (GetCurrentThreadId() == GetWindowThreadProcessId(hwnd, NULL)) {
+      setupTimer();
+    } else {
+      // Not safe to setup the timer from this thread. Instead, send a
+      // message to the main thread that the timer should be set up.
+      PostMessage(hwnd, WM_SETUPTIMER, 0, 0);
+    }
   }
 }
 

@@ -4,7 +4,7 @@
 \alias{next_op_secs}
 \title{Relative time to next scheduled operation}
 \usage{
-next_op_secs()
+next_op_secs(loop)
 }
 \description{
 Returns the duration between now and the earliest operation that is currently

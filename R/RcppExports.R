@@ -5,16 +5,16 @@ ensureInitialized <- function() {
     invisible(.Call('_later_ensureInitialized', PACKAGE = 'later'))
 }
 
-execCallbacks <- function(timeoutSecs) {
-    .Call('_later_execCallbacks', PACKAGE = 'later', timeoutSecs)
+execCallbacks <- function(timeoutSecs, loop) {
+    .Call('_later_execCallbacks', PACKAGE = 'later', timeoutSecs, loop)
 }
 
-idle <- function() {
-    .Call('_later_idle', PACKAGE = 'later')
+idle <- function(loop) {
+    .Call('_later_idle', PACKAGE = 'later', loop)
 }
 
-execLater <- function(callback, delaySecs) {
-    invisible(.Call('_later_execLater', PACKAGE = 'later', callback, delaySecs))
+execLater <- function(callback, delaySecs, loop) {
+    invisible(.Call('_later_execLater', PACKAGE = 'later', callback, delaySecs, loop))
 }
 
 #' Relative time to next scheduled operation
@@ -24,7 +24,7 @@ execLater <- function(callback, delaySecs) {
 #' negative. If no operation is currently scheduled, the value will be `Inf`.
 #'
 #' @export
-next_op_secs <- function() {
-    .Call('_later_next_op_secs', PACKAGE = 'later')
+next_op_secs <- function(loop) {
+    .Call('_later_next_op_secs', PACKAGE = 'later', loop)
 }
 

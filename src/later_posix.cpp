@@ -19,8 +19,6 @@ using namespace Rcpp;
 extern void* R_GlobalContext;
 extern void* R_TopLevelContext;
 
-extern CallbackRegistry callbackRegistry;
-
 // Whether we have initialized the input handler.
 int initialized = 0;
 
@@ -72,7 +70,7 @@ public:
     set_fd(false);
   }
   ~SuspendFDReadiness() {
-    if (!idle()) {
+    if (!idle(GLOBAL_LOOP)) {
       set_fd(true);
     }
   }
@@ -188,17 +186,19 @@ void deInitialize() {
   }
 }
 
-void doExecLater(Rcpp::Function callback, double delaySecs) {
+void doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp::Function callback, double delaySecs, bool resetTimer) {
   ASSERT_MAIN_THREAD()
-  callbackRegistry.add(callback, delaySecs);
+  callbackRegistry->add(callback, delaySecs);
   
-  timer.set(*callbackRegistry.nextTimestamp());
+  if (resetTimer)
+    timer.set(*callbackRegistry->nextTimestamp());
 }
 
-void doExecLater(void (*callback)(void*), void* data, double delaySecs) {
-  callbackRegistry.add(callback, data, delaySecs);
-  
-  timer.set(*callbackRegistry.nextTimestamp());
+void doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, void (*callback)(void*), void* data, double delaySecs, bool resetTimer) {
+  callbackRegistry->add(callback, data, delaySecs);
+
+  if (resetTimer)  
+    timer.set(*callbackRegistry->nextTimestamp());
 }
 
 #endif // ifndef _WIN32

@@ -1,0 +1,2 @@
+- [ ] Only trigger timers in later_posix.cpp and later_win32.cpp if we're at the global loop
+- [ ] User timer in later_win32.cpp is pretty inefficient, have it stop waking so much
