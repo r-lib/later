@@ -4,10 +4,44 @@
 
 .onLoad <- function(...) {
   ensureInitialized()
+  .globals$next_id <- 1L
+}
+
+.globals <- new.env(parent = emptyenv())
+
+next_loop_id <- function() {
+  res <- .globals$next_id
+  .globals$next_id <- res + 1L
+  res
 }
 
 #' @export
-default_loop <- function() {
+current_loop <- function() {
+  loop <- .globals$current_loop
+  if (is.null(loop)) {
+    global_loop()
+  } else {
+    loop
+  }
+}
+
+#' @export
+with_private_loop <- function(expr) {
+  with_loop(next_loop_id(), expr)
+}
+
+with_loop <- function(loop, expr) {
+  if (!identical(loop, current_loop())) {
+    old_loop <- .globals$current_loop
+    .globals$current_loop <- loop
+    on.exit(.globals$current_loop <- old_loop, add = TRUE)
+  }
+  
+  force(expr)
+}
+
+#' @export
+global_loop <- function() {
   0L
 }
 
@@ -49,7 +83,7 @@ default_loop <- function() {
 #' }, 2)
 #'   
 #' @export
-later <- function(func, delay = 0, loop = default_loop()) {
+later <- function(func, delay = 0, loop = current_loop()) {
   f <- rlang::as_function(func)
   execLater(f, delay, loop)
 }
@@ -75,15 +109,17 @@ later <- function(func, delay = 0, loop = default_loop()) {
 #' @return A logical indicating whether any callbacks were actually run.
 #'
 #' @export
-run_now <- function(timeoutSecs = 0L, loop = default_loop()) {
+run_now <- function(timeoutSecs = 0L, loop = current_loop()) {
   if (timeoutSecs == Inf) {
     timeoutSecs <- -1
   }
   
   if (!is.numeric(timeoutSecs))
     stop("timeoutSecs must be numeric")
-  
-  invisible(execCallbacks(timeoutSecs, loop))
+
+  with_loop(loop,
+    invisible(execCallbacks(timeoutSecs, loop))
+  )
 }
 
 #' Check if later loop is empty
@@ -93,6 +129,17 @@ run_now <- function(timeoutSecs = 0L, loop = default_loop()) {
 #' 
 #' @keywords internal
 #' @export
-loop_empty <- function(loop = default_loop()) {
+loop_empty <- function(loop = current_loop()) {
   idle(loop)
+}
+
+#' Relative time to next scheduled operation
+#'
+#' Returns the duration between now and the earliest operation that is currently
+#' scheduled, in seconds. If the operation is in the past, the value will be
+#' negative. If no operation is currently scheduled, the value will be `Inf`.
+#'
+#' @export
+next_op_secs <- function(loop = current_loop()) {
+  nextOpSecs(loop)
 }
