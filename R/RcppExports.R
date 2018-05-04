@@ -21,14 +21,7 @@ execLater <- function(callback, delaySecs, loop) {
     invisible(.Call('_later_execLater', PACKAGE = 'later', callback, delaySecs, loop))
 }
 
-#' Relative time to next scheduled operation
-#'
-#' Returns the duration between now and the earliest operation that is currently
-#' scheduled, in seconds. If the operation is in the past, the value will be
-#' negative. If no operation is currently scheduled, the value will be `Inf`.
-#'
-#' @export
-next_op_secs <- function(loop) {
-    .Call('_later_next_op_secs', PACKAGE = 'later', loop)
+nextOpSecs <- function(loop) {
+    .Call('_later_nextOpSecs', PACKAGE = 'later', loop)
 }
 

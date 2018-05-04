@@ -142,15 +142,8 @@ void execLater(Rcpp::Function callback, double delaySecs, int loop) {
 }
 
 
-//' Relative time to next scheduled operation
-//'
-//' Returns the duration between now and the earliest operation that is currently
-//' scheduled, in seconds. If the operation is in the past, the value will be
-//' negative. If no operation is currently scheduled, the value will be `Inf`.
-//'
-//' @export
 // [[Rcpp::export]]
-double next_op_secs(int loop) {
+double nextOpSecs(int loop) {
   ASSERT_MAIN_THREAD()
   Optional<Timestamp> nextTime = getCallbackRegistry(loop)->nextTimestamp();
   if (!nextTime.has_value()) {

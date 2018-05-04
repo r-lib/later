@@ -60,14 +60,14 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
-// next_op_secs
-double next_op_secs(int loop);
-RcppExport SEXP _later_next_op_secs(SEXP loopSEXP) {
+// nextOpSecs
+double nextOpSecs(int loop);
+RcppExport SEXP _later_nextOpSecs(SEXP loopSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type loop(loopSEXP);
-    rcpp_result_gen = Rcpp::wrap(next_op_secs(loop));
+    rcpp_result_gen = Rcpp::wrap(nextOpSecs(loop));
     return rcpp_result_gen;
 END_RCPP
 }
