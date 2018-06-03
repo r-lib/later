@@ -30,7 +30,10 @@ public:
 };
 
 // Returns number of frames on the call stack. Basically just a wrapper for
-// base::sys.nframe().
+// base::sys.nframe(). Note that this can report that an error occurred if the
+// user sends an interrupt while the `sys.nframe()` function is running. I
+// believe that the only reason that it should set errorOccurred is because of
+// a user interrupt.
 int sys_nframe() {
   ASSERT_MAIN_THREAD()
   SEXP e, result;
@@ -55,7 +58,17 @@ bool at_top_level() {
   if (exec_callbacks_reentrancy_count != 0)
     return false;
 
-  int nframe = sys_nframe();
+  int failcount = 0;
+  int nframe = -1;
+
+  // Try running sys.nframe() up to 10 times. A user interrupt could cause it
+  // to report an error even though its not a "real" error.
+  // https://github.com/r-lib/later/issues/57
+  while (nframe == -1 && failcount < 10) {
+    nframe = sys_nframe();
+    if (nframe == -1)
+      failcount++;
+  }
   if (nframe == -1) {
     throw Rcpp::exception("Error occurred while calling sys.nframe()");
   }
