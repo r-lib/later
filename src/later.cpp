@@ -4,6 +4,7 @@
 #include "debug.h"
 
 #include "callback_registry.h"
+#include "interrupt.h"
 
 // For debug.h
 #if defined(DEBUG_THREAD)
@@ -39,16 +40,19 @@ int sys_nframe() {
   SEXP e, result;
   int errorOccurred, value;
 
-  PROTECT(e = Rf_lang1(Rf_install("sys.nframe")));
-  PROTECT(result = R_tryEval(e, R_BaseEnv, &errorOccurred));
+  BEGIN_SUSPEND_INTERRUPTS {
+    PROTECT(e = Rf_lang1(Rf_install("sys.nframe")));
+    PROTECT(result = R_tryEval(e, R_BaseEnv, &errorOccurred));
 
-  if (errorOccurred) {
-    value = -1;
-  } else {
-    value = INTEGER(result)[0];
-  }
+    if (errorOccurred) {
+      value = -1;
+    } else {
+      value = INTEGER(result)[0];
+    }
 
-  UNPROTECT(2);
+    UNPROTECT(2);
+  } END_SUSPEND_INTERRUPTS;
+
   return value;
 }
 
@@ -58,17 +62,7 @@ bool at_top_level() {
   if (exec_callbacks_reentrancy_count != 0)
     return false;
 
-  int failcount = 0;
-  int nframe = -1;
-
-  // Try running sys.nframe() up to 10 times. A user interrupt could cause it
-  // to report an error even though its not a "real" error.
-  // https://github.com/r-lib/later/issues/57
-  while (nframe == -1 && failcount < 10) {
-    nframe = sys_nframe();
-    if (nframe == -1)
-      failcount++;
-  }
+  int nframe = sys_nframe();
   if (nframe == -1) {
     throw Rcpp::exception("Error occurred while calling sys.nframe()");
   }
