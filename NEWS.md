@@ -1,4 +1,4 @@
-## later 0.7.2.9000
+## later 0.7.3
 
 * Fixed [issue #57](https://github.com/r-lib/later/issues/57): If a user interrupt occurred when later (internally) called `sys.nframe()`, the R process would crash. [PR #58](https://github.com/r-lib/later/pull/58)
 

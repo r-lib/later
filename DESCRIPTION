@@ -1,7 +1,7 @@
 Package: later
 Type: Package
 Title: Utilities for Delaying Function Execution
-Version: 0.7.2.9001
+Version: 0.7.3
 Authors@R: c(
     person("Joe", "Cheng", role = c("aut", "cre"), email = "joe@rstudio.com"),
     person(family = "RStudio", role = "cph"),
