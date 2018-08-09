@@ -7,7 +7,7 @@ PKG_LIBS = -pthread
 # Does this platform support C11's <threads.h>? Note that not all C11
 # compilers and pthread libraries support <threads.h>, and that compilers that
 # use older standards (like C99) sometimes do support <threads.h>.
-THREADS_H_SUPPORT=$(shell ./threads_h_support.sh)
+THREADS_H_SUPPORT:=$(shell CC="$(CC)" CPPFLAGS="$(CPPFLAGS)" PKG_CFLAGS="$(PKG_CFLAGS)" CFLAGS="$(CFLAGS)" PKG_LIBS="$(PKG_LIBS)" ./threads_h_support.sh)
 
 ifeq ($(THREADS_H_SUPPORT), 1)
 PKG_CPPFLAGS += -DTHREADS_H_SUPPORT
