@@ -133,7 +133,7 @@ public:
     int res = cnd_timedwait(&_c, _m, &ts);
     if (res == thrd_success) {
       return true;
-    } else if (res == thrd_timeout) {
+    } else if (res == thrd_timedout) {
       return false;
     } else {
       throw std::runtime_error("Condition variable failed to timedwait");
