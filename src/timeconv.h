@@ -3,7 +3,7 @@
 // tinycthread.h to provide timespec. Whether tinycthread
 // defines timespec or not, we want it to be consistent for
 // anyone who uses these functions.
-#include "tinycthread.h"
+#include "tinycthread/tinycthread.h"
 
 inline timespec timevalToTimespec(const timeval& tv) {
   timespec ts;

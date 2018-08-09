@@ -1,5 +1,8 @@
 PKG_CPPFLAGS = -pthread
-PKG_LIBS = -pthread
+PKG_LIBS = ./tinycthread/tinycthread.o -pthread
 
 # Uncomment to enable thread assertions
 # PKG_CPPFLAGS += -DDEBUG_THREAD -UNDEBUG
+
+
+$(SHLIB): ./tinycthread/tinycthread.o
