@@ -7,7 +7,7 @@
 #include <boost/type_traits/is_integral.hpp>
 #include <boost/type_traits/is_signed.hpp>
 
-#include "tinycthread/tinycthread.h"
+#include "c11threads.h"
 #include "timeconv.h"
 
 #ifndef CLOCK_REALTIME
