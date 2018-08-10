@@ -2,3 +2,6 @@
 ^\.Rproj\.user$
 .travis.yml
 ^include$
+/\.o$
+/\.so$
+/\.dll$
