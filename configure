@@ -1,0 +1,45 @@
+#!/bin/sh
+
+echo "Running configure script"
+
+# Find compiler 
+CC=`${R_HOME}/bin/R CMD config CC`
+CFLAGS=`${R_HOME}/bin/R CMD config CFLAGS`
+CPPFLAGS=`${R_HOME}/bin/R CMD config CPPFLAGS`
+
+# Same as from src/Makevars
+LATER_PKG_LIBS=-pthread
+
+# For debugging
+echo "Using CC=$CC"
+echo "Using CFLAGS=$CFLAGS"
+echo "Using CPPFLAGS=$CPPFLAGS"
+
+
+# Detect support for C11-style threads.h. This checks for both the presence of
+# the header file, and the availability of threading functions when linked
+# using -pthread. Some C11 implementations don't have threads.h; on some platforms,
+# compiling with an earlier C standard (like -std=c99) will work with threads.h
+# and -pthread.
+echo "#include <threads.h>
+int main() {
+    mtx_t mutex;
+    mtx_init(&mutex, mtx_plain);
+    return 0;
+}" | ${CC} ${CPPFLAGS} ${CFLAGS} ${LATER_PKG_LIBS}  -x c - -o /dev/null > /dev/null 2>&1
+
+if [ $? -eq 0 ]; then
+  echo "C11-style threads.h support detected."
+  PKG_CPPFLAGS=-DTHREADS_H_SUPPORT=1
+else
+  echo "C11-style threads.h support not detected. Using tinycthread library."
+  PKG_CPPFLAGS=-DTHREADS_H_SUPPORT=-1
+  PKG_LIBS=./tinycthread/tinycthread.o
+fi
+
+
+# Write to Makevars
+sed -e "s|@cppflags@|$PKG_CPPFLAGS|" -e "s|@libs@|$PKG_LIBS|" src/Makevars.in > src/Makevars
+
+# Success
+exit 0
