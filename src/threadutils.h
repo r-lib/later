@@ -10,14 +10,6 @@
 #include "c11threads.h"
 #include "timeconv.h"
 
-#ifndef CLOCK_REALTIME
-// This is only here to prevent compilation errors on Windows and older
-// versions of OS X. clock_gettime doesn't exist on those platforms so
-// tinycthread emulates it; the emulated versions don't pay attention
-// to the clkid argument, but we still have to pass something.
-#define CLOCK_REALTIME 0
-#endif
-
 class ConditionVariable;
 
 class Mutex : boost::noncopyable {
@@ -124,8 +116,8 @@ public:
   
   bool timedwait(double timeoutSecs) {
     timespec ts;
-    if (clock_gettime(CLOCK_REALTIME, &ts) != 0) {
-      throw std::runtime_error("clock_gettime failed");
+    if (timespec_get(&ts, TIME_UTC) != TIME_UTC) {
+      throw std::runtime_error("timespec_get failed");
     }
     
     ts = addSeconds(ts, timeoutSecs);
