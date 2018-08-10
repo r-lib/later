@@ -1,3 +1,7 @@
+## later 0.7.3.9000
+
+* Fixed issue [#45](https://github.com/r-lib/later/issues/45) and [#63](https://github.com/r-lib/later/issues/63): glibc 2.28 and musl (used on Arch and Alpine Linux) added support for C11-style threads.h, which masked functions from the tinycthread library used by later. Later now detects support for threads.h and uses it if available; otherwise it uses tinycthread. [PR #64](https://github.com/r-lib/later/pull/64)
+
 ## later 0.7.3
 
 * Fixed [issue #57](https://github.com/r-lib/later/issues/57): If a user interrupt occurred when later (internally) called `sys.nframe()`, the R process would crash. [PR #58](https://github.com/r-lib/later/pull/58)
