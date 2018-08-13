@@ -5,3 +5,4 @@
 /\.o$
 /\.so$
 /\.dll$
+^src/README.md$
