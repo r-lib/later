@@ -1,16 +1,18 @@
 context("test-run_now.R")
 
+jitter <- 0.017*2 # Compensate for imprecision in system timer
+
 test_that("run_now waits and returns FALSE if no tasks", {
   x <- system.time({
     result <- later::run_now(0.5)
   })
-  expect_gte(as.numeric(x[["elapsed"]]), 0.499)
+  expect_gte(as.numeric(x[["elapsed"]]), 0.5 - jitter)
   expect_identical(result, FALSE)
 
   x <- system.time({
     result <- later::run_now(3)
   })
-  expect_gte(as.numeric(x[["elapsed"]]), 2.999)
+  expect_gte(as.numeric(x[["elapsed"]]), 3 - jitter)
   expect_identical(result, FALSE)
 })
 
