@@ -1,4 +1,4 @@
-## later 0.7.3.9000
+## later 0.7.4
 
 * Fixed issue [#45](https://github.com/r-lib/later/issues/45) and [#63](https://github.com/r-lib/later/issues/63): glibc 2.28 and musl (used on Arch and Alpine Linux) added support for C11-style threads.h, which masked functions from the tinycthread library used by later. Later now detects support for threads.h and uses it if available; otherwise it uses tinycthread. [PR #64](https://github.com/r-lib/later/pull/64)
 
