@@ -32,7 +32,7 @@ private:
   Task func;
   // Used to break ties when comparing to a callback that has precisely the same
   // timestamp
-  long callbackNum;
+  uint64_t callbackNum;
 };
 
 typedef boost::shared_ptr<Callback> Callback_sp;

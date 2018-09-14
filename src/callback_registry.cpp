@@ -6,7 +6,7 @@
 #include "callback_registry.h"
 #include "debug.h"
 
-boost::atomic<unsigned long> nextCallbackNum(0);
+boost::atomic<uint64_t> nextCallbackNum(0);
 
 Callback::Callback(Timestamp when, Task func) : when(when), func(func) {
   this->callbackNum = nextCallbackNum++;
