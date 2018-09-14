@@ -1,8 +1,45 @@
+#include <boost/atomic.hpp>
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
+#include <vector>
 #include "callback_registry.h"
 #include "debug.h"
+
+boost::atomic<uint64_t> nextCallbackNum(0);
+
+Callback::Callback(Timestamp when, Task func) : when(when), func(func) {
+  this->callbackNum = nextCallbackNum++;
+}
+
+// [[Rcpp::export]]
+void testCallbackOrdering() {
+  std::vector<Callback> callbacks;
+  Timestamp ts;
+  Task func;
+  for (size_t i = 0; i < 100; i++) {
+    callbacks.push_back(Callback(ts, func));
+  }
+  for (size_t i = 1; i < 100; i++) {
+    if (callbacks[i] < callbacks[i-1]) {
+      ::Rf_error("Callback ordering is broken [1]");
+    }
+    if (!(callbacks[i] > callbacks[i-1])) {
+      ::Rf_error("Callback ordering is broken [2]");
+    }
+    if (callbacks[i-1] > callbacks[i]) {
+      ::Rf_error("Callback ordering is broken [3]");
+    }
+    if (!(callbacks[i-1] < callbacks[i])) {
+      ::Rf_error("Callback ordering is broken [4]");
+    }
+  }
+  for (size_t i = 100; i > 1; i--) {
+    if (callbacks[i-1] < callbacks[i-2]) {
+      ::Rf_error("Callback ordering is broken [2]");
+    }
+  }
+}
 
 CallbackRegistry::CallbackRegistry() : mutex(mtx_recursive), condvar(mutex) {
 }

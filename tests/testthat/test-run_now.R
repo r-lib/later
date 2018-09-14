@@ -53,3 +53,31 @@ test_that("run_now wakes up when a background thread calls later()", {
   expect_lt(as.numeric(x[["elapsed"]]), 1.25)
   expect_true(result)
 })
+
+test_that("When callbacks have tied timestamps, they respect order of creation", {
+  expect_error(testCallbackOrdering(), NA)
+
+  Rcpp::sourceCpp(code = '
+    #include <Rcpp.h>
+    #include <later_api.h>
+    
+    void* max_seen = 0;
+    
+    void callback(void* data) {
+      if (data < max_seen) {
+        Rf_error("Bad ordering detected");
+      }
+      max_seen = data;
+    }
+    
+    // [[Rcpp::depends(later)]]
+    // [[Rcpp::export]]
+    void checkLaterOrdering() {
+      max_seen = 0;
+      for (size_t i = 0; i < 10000; i++) {
+        later::later(callback, (void*)i, 0);
+      }
+    }
+    ')
+  checkLaterOrdering(); while (!later::loop_empty()) later::run_now()
+})

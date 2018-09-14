@@ -3,6 +3,7 @@
 
 #include <Rcpp.h>
 #include <queue>
+#include <boost/operators.hpp>
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 #include "timestamp.h"
@@ -11,17 +12,14 @@
 
 typedef boost::function0<void> Task;
 
-class Callback {
+class Callback : boost::operators<Callback> {
 
 public:
-  Callback(Timestamp when, Task func) : when(when), func(func) {}
+  Callback(Timestamp when, Task func);
   
   bool operator<(const Callback& other) const {
-    return this->when < other.when;
-  }
-  
-  bool operator>(const Callback& other) const {
-    return this->when > other.when;
+    return this->when < other.when ||
+      (!(this->when > other.when) && this->callbackNum < other.callbackNum);
   }
   
   void operator()() const {
@@ -32,6 +30,9 @@ public:
   
 private:
   Task func;
+  // Used to break ties when comparing to a callback that has precisely the same
+  // timestamp
+  uint64_t callbackNum;
 };
 
 typedef boost::shared_ptr<Callback> Callback_sp;
