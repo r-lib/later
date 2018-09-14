@@ -53,3 +53,7 @@ test_that("run_now wakes up when a background thread calls later()", {
   expect_lt(as.numeric(x[["elapsed"]]), 1.25)
   expect_true(result)
 })
+
+test_that("When callbacks have tied timestamps, they respect order of creation", {
+  expect_error(testCallbackOrdering(), NA)
+})

@@ -6,6 +6,15 @@
 
 using namespace Rcpp;
 
+// testCallbackOrdering
+void testCallbackOrdering();
+RcppExport SEXP _later_testCallbackOrdering() {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    testCallbackOrdering();
+    return R_NilValue;
+END_RCPP
+}
 // ensureInitialized
 void ensureInitialized();
 RcppExport SEXP _later_ensureInitialized() {
