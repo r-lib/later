@@ -77,8 +77,10 @@ public:
   ResetTimerOnExit() {
   }
   ~ResetTimerOnExit() {
-    if (!idle()) {
-      timer.set(*callbackRegistry.nextTimestamp());
+    // Find the next event in the registry and, if there is one, set the timer.
+    Optional<Timestamp> nextEvent = callbackRegistry.nextTimestamp();
+    if (nextEvent.has_value()) {
+      timer.set(*nextEvent);
     }
   }
 };
