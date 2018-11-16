@@ -9,6 +9,7 @@
 #include "later.h"
 #include "callback_registry.h"
 #include "timer_posix.h"
+#include "threadutils.h"
 #include "debug.h"
 
 using namespace Rcpp;
@@ -35,15 +36,18 @@ int dummy_pipe_in, dummy_pipe_out;
 // the input handler callback is scheduled to be called. We use this
 // to avoid unnecessarily writing to the pipe.
 bool hot = false;
+// This mutex protects reading/writing of `hot` and of reading from/writing to
+// the pipe.
+Mutex m(mtx_plain);
 
 // The buffer we're using for the pipe. This doesn't have to be large,
 // in theory it only ever holds zero or one byte.
 size_t BUF_SIZE = 256;
 void *buf;
 
-// TODO: This is not threadsafe and it needs to be, as it can be called either
-// from the main R thread or from the timer's background thread
 void set_fd(bool ready) {
+  Guard g(m);
+
   if (ready != hot) {
     if (ready) {
       ssize_t cbytes = write(pipe_in, "a", 1);
