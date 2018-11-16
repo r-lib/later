@@ -34,6 +34,23 @@ test_that("run_now executes all scheduled tasks, not just one", {
   expect_identical(result2, FALSE)
 })
 
+test_that("run_now executes just one scheduled task, if requested", {
+  result1 <- later::run_now()
+  expect_identical(result1, FALSE)
+  
+  later::later(~{}, 0)
+  later::later(~{}, 0)
+  
+  result2 <- later::run_now(all = FALSE)
+  expect_identical(result2, TRUE)
+  
+  result3 <- later::run_now(all = FALSE)
+  expect_identical(result3, TRUE)
+  
+  result4 <- later::run_now()
+  expect_identical(result4, FALSE)
+})
+
 test_that("run_now doesn't go past a failed task", {
   later::later(~stop("boom"), 0)
   later::later(~{}, 0)

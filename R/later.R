@@ -66,11 +66,14 @@ later <- function(func, delay = 0) {
 #'   an operation to be ready to run. If `0`, then return immediately if there
 #'   are no operations that are ready to run. If `Inf` or negative, then wait as
 #'   long as it takes (if none are scheduled, then this will block forever).
-#'
+#' @param all If `FALSE`, `run_now()` will execute at most one scheduled
+#'   operation (instead of all eligible operations). This can be useful in cases
+#'   where you want to interleave scheduled operations with your own logic.
+#'   
 #' @return A logical indicating whether any callbacks were actually run.
 #'
 #' @export
-run_now <- function(timeoutSecs = 0L) {
+run_now <- function(timeoutSecs = 0L, all = TRUE) {
   if (timeoutSecs == Inf) {
     timeoutSecs <- -1
   }
@@ -78,7 +81,7 @@ run_now <- function(timeoutSecs = 0L) {
   if (!is.numeric(timeoutSecs))
     stop("timeoutSecs must be numeric")
   
-  invisible(execCallbacks(timeoutSecs))
+  invisible(execCallbacks(timeoutSecs, all))
 }
 
 #' Check if later loop is empty

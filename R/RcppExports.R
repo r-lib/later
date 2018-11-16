@@ -9,8 +9,8 @@ ensureInitialized <- function() {
     invisible(.Call('_later_ensureInitialized', PACKAGE = 'later'))
 }
 
-execCallbacks <- function(timeoutSecs) {
-    .Call('_later_execCallbacks', PACKAGE = 'later', timeoutSecs)
+execCallbacks <- function(timeoutSecs, runAll) {
+    .Call('_later_execCallbacks', PACKAGE = 'later', timeoutSecs, runAll)
 }
 
 idle <- function() {

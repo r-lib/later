@@ -74,7 +74,7 @@ bool at_top_level() {
 CallbackRegistry callbackRegistry;
 
 // [[Rcpp::export]]
-bool execCallbacks(double timeoutSecs) {
+bool execCallbacks(double timeoutSecs, bool runAll) {
   ASSERT_MAIN_THREAD()
   // execCallbacks can be called directly from C code, and the callbacks may
   // include Rcpp code. (Should we also call wrap?)
@@ -87,7 +87,7 @@ bool execCallbacks(double timeoutSecs) {
   
   Timestamp now;
   
-  while (true) {
+  do {
     // We only take one at a time, because we don't want to lose callbacks if 
     // one of the callbacks throws an error
     std::vector<Callback_sp> callbacks = callbackRegistry.take(1, now);
@@ -96,7 +96,7 @@ bool execCallbacks(double timeoutSecs) {
     }
     // This line may throw errors!
     (*callbacks[0])();
-  }
+  } while (runAll);
   return true;
 }
 

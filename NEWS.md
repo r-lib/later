@@ -1,5 +1,7 @@
 ## later 0.7.5.9000
 
+* Added `all` argument to `run_now()`; defaults to `TRUE`, but if set to `FALSE`, then `run_now` will run at most one later operation before returning. [PR #75](https://github.com/r-lib/later/pull/75)
+
 * Fixed [issue #74](https://github.com/r-lib/later/issues/74): Using later with R at the terminal on POSIX could cause 100% CPU. This was caused by later accidentally provoking R to call its input handler continuously. [PR #76](https://github.com/r-lib/later/pull/76)
 
 ## later 0.7.5
