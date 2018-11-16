@@ -41,6 +41,8 @@ bool hot = false;
 size_t BUF_SIZE = 256;
 void *buf;
 
+// TODO: This is not threadsafe and it needs to be, as it can be called either
+// from the main R thread or from the timer's background thread
 void set_fd(bool ready) {
   if (ready != hot) {
     if (ready) {
@@ -66,21 +68,21 @@ void fd_on() {
 Timer timer(fd_on);
 } // namespace
 
-class SuspendFDReadiness {
+class ResetTimerOnExit {
 public:
-  SuspendFDReadiness() {
-    set_fd(false);
+  ResetTimerOnExit() {
   }
-  ~SuspendFDReadiness() {
+  ~ResetTimerOnExit() {
     if (!idle()) {
-      set_fd(true);
+      timer.set(*callbackRegistry.nextTimestamp());
     }
   }
 };
 
 static void async_input_handler(void *data) {
   ASSERT_MAIN_THREAD()
-
+  set_fd(false);
+  
   if (!at_top_level()) {
     // It's not safe to run arbitrary callbacks when other R code
     // is already running. Wait until we're back at the top level.
@@ -92,7 +94,6 @@ static void async_input_handler(void *data) {
     // Instead, we set the file descriptor to cold, and tell the timer to fire
     // again in a few milliseconds. This should give enough breathing room that
     // we don't interfere with the sockets too much.
-    set_fd(false);
     timer.set(Timestamp(0.032));
     return;
   }
@@ -102,7 +103,7 @@ static void async_input_handler(void *data) {
   // Previously we'd let the input handler run but return quickly, but this
   // seemed to cause R_SocketWait to hang (encountered while working with the
   // future package, trying to call value(future) with plan(multisession)).
-  SuspendFDReadiness sfdr_scope;
+  ResetTimerOnExit resetTimerOnExit_scope;
 
   // This try-catch is meant to be similar to the BEGIN_RCPP and VOID_END_RCPP
   // macros. They are needed for two reasons: first, if an exception occurs in
