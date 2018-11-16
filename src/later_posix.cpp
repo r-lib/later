@@ -199,13 +199,13 @@ void doExecLater(Rcpp::Function callback, double delaySecs) {
   ASSERT_MAIN_THREAD()
   callbackRegistry.add(callback, delaySecs);
   
-  timer.set(*callbackRegistry.nextTimestamp());
+  timer.set(*(callbackRegistry.nextTimestamp()));
 }
 
 void doExecLater(void (*callback)(void*), void* data, double delaySecs) {
   callbackRegistry.add(callback, data, delaySecs);
   
-  timer.set(*callbackRegistry.nextTimestamp());
+  timer.set(*(callbackRegistry.nextTimestamp()));
 }
 
 #endif // ifndef _WIN32
