@@ -1,3 +1,7 @@
+## later 0.7.5.9000
+
+* Added `all` argument to `run_now()`; defaults to `TRUE`, but if set to `FALSE`, then `run_now` will run at most one later operation before returning. [PR #75](https://github.com/r-lib/later/pull/75)
+
 ## later 0.7.5
 
 * Fixed issue where the order of callbacks scheduled by native later::later could be nondeterministic if they are scheduled too quickly. This was because callbacks were sorted by the time at which they come due, which could be identical. Later now uses the order of insertion as a tiebreaker. [PR #69](https://github.com/r-lib/later/pull/69)

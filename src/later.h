@@ -1,7 +1,7 @@
 #ifndef _LATER_H_
 #define _LATER_H_
 
-bool execCallbacks(double timeoutSecs = 0);
+bool execCallbacks(double timeoutSecs = 0, bool runAll = true);
 bool execCallbacksForTopLevel();
 bool at_top_level();
 bool idle();
