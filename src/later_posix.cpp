@@ -9,6 +9,7 @@
 #include "later.h"
 #include "callback_registry.h"
 #include "timer_posix.h"
+#include "threadutils.h"
 #include "debug.h"
 
 using namespace Rcpp;
@@ -35,6 +36,9 @@ int dummy_pipe_in, dummy_pipe_out;
 // the input handler callback is scheduled to be called. We use this
 // to avoid unnecessarily writing to the pipe.
 bool hot = false;
+// This mutex protects reading/writing of `hot` and of reading from/writing to
+// the pipe.
+Mutex m(mtx_plain);
 
 // The buffer we're using for the pipe. This doesn't have to be large,
 // in theory it only ever holds zero or one byte.
@@ -42,6 +46,8 @@ size_t BUF_SIZE = 256;
 void *buf;
 
 void set_fd(bool ready) {
+  Guard g(m);
+
   if (ready != hot) {
     if (ready) {
       ssize_t cbytes = write(pipe_in, "a", 1);
@@ -66,21 +72,23 @@ void fd_on() {
 Timer timer(fd_on);
 } // namespace
 
-class SuspendFDReadiness {
+class ResetTimerOnExit {
 public:
-  SuspendFDReadiness() {
-    set_fd(false);
+  ResetTimerOnExit() {
   }
-  ~SuspendFDReadiness() {
-    if (!idle()) {
-      set_fd(true);
+  ~ResetTimerOnExit() {
+    // Find the next event in the registry and, if there is one, set the timer.
+    Optional<Timestamp> nextEvent = callbackRegistry.nextTimestamp();
+    if (nextEvent.has_value()) {
+      timer.set(*nextEvent);
     }
   }
 };
 
 static void async_input_handler(void *data) {
   ASSERT_MAIN_THREAD()
-
+  set_fd(false);
+  
   if (!at_top_level()) {
     // It's not safe to run arbitrary callbacks when other R code
     // is already running. Wait until we're back at the top level.
@@ -92,7 +100,6 @@ static void async_input_handler(void *data) {
     // Instead, we set the file descriptor to cold, and tell the timer to fire
     // again in a few milliseconds. This should give enough breathing room that
     // we don't interfere with the sockets too much.
-    set_fd(false);
     timer.set(Timestamp(0.032));
     return;
   }
@@ -102,7 +109,7 @@ static void async_input_handler(void *data) {
   // Previously we'd let the input handler run but return quickly, but this
   // seemed to cause R_SocketWait to hang (encountered while working with the
   // future package, trying to call value(future) with plan(multisession)).
-  SuspendFDReadiness sfdr_scope;
+  ResetTimerOnExit resetTimerOnExit_scope;
 
   // This try-catch is meant to be similar to the BEGIN_RCPP and VOID_END_RCPP
   // macros. They are needed for two reasons: first, if an exception occurs in
@@ -192,13 +199,13 @@ void doExecLater(Rcpp::Function callback, double delaySecs) {
   ASSERT_MAIN_THREAD()
   callbackRegistry.add(callback, delaySecs);
   
-  timer.set(*callbackRegistry.nextTimestamp());
+  timer.set(*(callbackRegistry.nextTimestamp()));
 }
 
 void doExecLater(void (*callback)(void*), void* data, double delaySecs) {
   callbackRegistry.add(callback, data, delaySecs);
   
-  timer.set(*callbackRegistry.nextTimestamp());
+  timer.set(*(callbackRegistry.nextTimestamp()));
 }
 
 #endif // ifndef _WIN32
