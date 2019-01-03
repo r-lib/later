@@ -38,7 +38,7 @@ int dummy_pipe_in, dummy_pipe_out;
 bool hot = false;
 // This mutex protects reading/writing of `hot` and of reading from/writing to
 // the pipe.
-Mutex m(mtx_plain);
+Mutex m(tct_mtx_plain);
 
 // The buffer we're using for the pipe. This doesn't have to be large,
 // in theory it only ever holds zero or one byte.

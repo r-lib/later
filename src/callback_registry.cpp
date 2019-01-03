@@ -41,7 +41,7 @@ void testCallbackOrdering() {
   }
 }
 
-CallbackRegistry::CallbackRegistry() : mutex(mtx_recursive), condvar(mutex) {
+CallbackRegistry::CallbackRegistry() : mutex(tct_mtx_recursive), condvar(mutex) {
 }
 
 void CallbackRegistry::add(Rcpp::Function func, double secs) {
