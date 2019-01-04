@@ -7,14 +7,14 @@
 #include <boost/type_traits/is_integral.hpp>
 #include <boost/type_traits/is_signed.hpp>
 
-#include "c11threads.h"
+#include "tinycthread.h"
 #include "timeconv.h"
 
 class ConditionVariable;
 
 class Mutex : boost::noncopyable {
   friend class ConditionVariable;
-  mtx_t _m;
+  tct_mtx_t _m;
   
 public:
   // type must be one of:
@@ -28,26 +28,26 @@ public:
   //
   // (although mtx_timed seems not to be actually implemented)
   Mutex(int type) {
-    if (mtx_init(&_m, type) != thrd_success) {
+    if (tct_mtx_init(&_m, type) != tct_thrd_success) {
       throw std::runtime_error("Mutex creation failed");
     }
   }
   
   virtual ~Mutex() {
-    mtx_destroy(&_m);
+    tct_mtx_destroy(&_m);
   }
   
   void lock() {
-    if (mtx_lock(&_m) != thrd_success) {
+    if (tct_mtx_lock(&_m) != tct_thrd_success) {
       throw std::runtime_error("Mutex failed to lock");
     }
   }
   
   bool tryLock() {
-    int res = mtx_trylock(&_m);
-    if (res == thrd_success) {
+    int res = tct_mtx_trylock(&_m);
+    if (res == tct_thrd_success) {
       return true;
-    } else if (res == thrd_busy) {
+    } else if (res == tct_thrd_busy) {
       return false;
     } else {
       throw std::runtime_error("Mutex failed to trylock");
@@ -55,7 +55,7 @@ public:
   }
   
   void unlock() {
-    if (mtx_unlock(&_m) != thrd_success) {
+    if (tct_mtx_unlock(&_m) != tct_thrd_success) {
       throw std::runtime_error("Mutex failed to unlock");
     }
   }
@@ -75,8 +75,8 @@ public:
 };
 
 class ConditionVariable : boost::noncopyable {
-  mtx_t* _m;
-  cnd_t _c;
+  tct_mtx_t* _m;
+  tct_cnd_t _c;
   
 public:
   ConditionVariable(Mutex& mutex) : _m(&mutex._m) {
@@ -89,28 +89,28 @@ public:
     if (!boost::is_signed<time_t>::value)
       throw std::runtime_error("Signed time_t type expected");
     
-    if (cnd_init(&_c) != thrd_success)
+    if (tct_cnd_init(&_c) != tct_thrd_success)
       throw std::runtime_error("Condition variable failed to initialize");
   }
   
   virtual ~ConditionVariable() {
-    cnd_destroy(&_c);
+    tct_cnd_destroy(&_c);
   }
   
   // Unblocks one thread (if any are waiting)
   void signal() {
-    if (cnd_signal(&_c) != thrd_success)
+    if (tct_cnd_signal(&_c) != tct_thrd_success)
       throw std::runtime_error("Condition variable failed to signal");
   }
   
   // Unblocks all waiting threads
   void broadcast() {
-    if (cnd_broadcast(&_c) != thrd_success)
+    if (tct_cnd_broadcast(&_c) != tct_thrd_success)
       throw std::runtime_error("Condition variable failed to broadcast");
   }
   
   void wait() {
-    if (cnd_wait(&_c, _m) != thrd_success)
+    if (tct_cnd_wait(&_c, _m) != tct_thrd_success)
       throw std::runtime_error("Condition variable failed to wait");
   }
   
@@ -122,10 +122,10 @@ public:
     
     ts = addSeconds(ts, timeoutSecs);
 
-    int res = cnd_timedwait(&_c, _m, &ts);
-    if (res == thrd_success) {
+    int res = tct_cnd_timedwait(&_c, _m, &ts);
+    if (res == tct_thrd_success) {
       return true;
-    } else if (res == thrd_timedout) {
+    } else if (res == tct_thrd_timedout) {
       return false;
     } else {
       throw std::runtime_error("Condition variable failed to timedwait");
