@@ -6,6 +6,8 @@
 
 * Fixed [issue #74](https://github.com/r-lib/later/issues/74): Using later with R at the terminal on POSIX could cause 100% CPU. This was caused by later accidentally provoking R to call its input handler continuously. [PR #76](https://github.com/r-lib/later/pull/76)
 
+* Fixed [issue #73](https://github.com/r-lib/later/issues/73): Linking later on ARM failed because `boost::atomic` requires the `-lboost_atomic` flag. Now later tries to use `std::atomic` when available (when the compiler supports C++11), and falls back to `boost::atomic` if not. [PR #80](https://github.com/r-lib/later/pull/80)
+
 ## later 0.7.5
 
 * Fixed issue where the order of callbacks scheduled by native later::later could be nondeterministic if they are scheduled too quickly. This was because callbacks were sorted by the time at which they come due, which could be identical. Later now uses the order of insertion as a tiebreaker. [PR #69](https://github.com/r-lib/later/pull/69)

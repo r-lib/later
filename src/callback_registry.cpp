@@ -1,4 +1,3 @@
-#include <boost/atomic.hpp>
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
@@ -6,7 +5,16 @@
 #include "callback_registry.h"
 #include "debug.h"
 
-boost::atomic<uint64_t> nextCallbackNum(0);
+#if __cplusplus >= 201103L
+  #include <atomic>
+  std::atomic<uint64_t> nextCallbackNum(0);
+#else
+  // Fall back to boost::atomic if std::atomic isn't available. We want to
+  // avoid boost::atomic when possible because on ARM, it requires the
+  // -lboost_atomic linker flag. (https://github.com/r-lib/later/issues/73)
+  #include <boost/atomic.hpp>
+  boost::atomic<uint64_t> nextCallbackNum(0);
+#endif
 
 Callback::Callback(Timestamp when, Task func) : when(when), func(func) {
   this->callbackNum = nextCallbackNum++;
