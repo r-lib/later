@@ -1,4 +1,4 @@
-## later 0.7.5.9001
+## later 0.8.0
 
 * Fixed [issue #77](https://github.com/r-lib/later/issues/77): On some platforms, the system's C library has support for C11-style threads, but there is no `threads.h` header file. In this case, later's configure script tried to use the tinycthread, but upon linking, there were function name conflicts between tinycthread and the system's C library. Later no longer tries to use the system's `threads.h`, and the functions in tinycthread were renamed so that they do not accidentally link to the system C library's C11-style thread functions. [PR #79](https://github.com/r-lib/later/pull/79)
 

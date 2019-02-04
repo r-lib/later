@@ -1,9 +1,11 @@
 Package: later
 Type: Package
 Title: Utilities for Delaying Function Execution
-Version: 0.7.5.9001
+Version: 0.8.0
 Authors@R: c(
     person("Joe", "Cheng", role = c("aut", "cre"), email = "joe@rstudio.com"),
+    person(family = "RStudio", role = "cph"),
+    person("Winston", "Chang", role = c("aut"), email = "winston@rstudio.com"),
     person(family = "RStudio", role = "cph"),
     person("Marcus", "Geelnard", role = c("ctb", "cph"), comment = "TinyCThread library, https://tinycthread.github.io/"),
     person("Evan", "Nemerson", role = c("ctb", "cph"), comment = "TinyCThread library, https://tinycthread.github.io/")
