@@ -21,6 +21,10 @@ deleteCallbackRegistry <- function(loop) {
     .Call('_later_deleteCallbackRegistry', PACKAGE = 'later', loop)
 }
 
+list_queue_ <- function(loop) {
+    .Call('_later_list_queue_', PACKAGE = 'later', loop)
+}
+
 execCallbacks <- function(timeoutSecs, runAll, loop) {
     .Call('_later_execCallbacks', PACKAGE = 'later', timeoutSecs, runAll, loop)
 }

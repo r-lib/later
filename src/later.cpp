@@ -118,6 +118,12 @@ bool deleteCallbackRegistry(int loop) {
   else return true;
 }
 
+// [[Rcpp::export]]
+Rcpp::List list_queue_(int loop) {
+  ASSERT_MAIN_THREAD()
+  return getCallbackRegistry(loop)->list();
+}
+
 
 // [[Rcpp::export]]
 bool execCallbacks(double timeoutSecs, bool runAll, int loop) {

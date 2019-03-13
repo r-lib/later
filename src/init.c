@@ -17,7 +17,7 @@ extern SEXP _later_testCallbackOrdering();
 extern SEXP _later_createCallbackRegistry(SEXP);
 extern SEXP _later_deleteCallbackRegistry(SEXP);
 extern SEXP _later_existsCallbackRegistry(SEXP);
-
+extern SEXP _later_list_queue_(SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
   {"_later_ensureInitialized",   (DL_FUNC) &_later_ensureInitialized,   0},
@@ -29,6 +29,7 @@ static const R_CallMethodDef CallEntries[] = {
   {"_later_createCallbackRegistry", (DL_FUNC) &_later_createCallbackRegistry, 1},
   {"_later_deleteCallbackRegistry", (DL_FUNC) &_later_deleteCallbackRegistry, 1},
   {"_later_existsCallbackRegistry", (DL_FUNC) &_later_existsCallbackRegistry, 1},
+  {"_later_list_queue_",         (DL_FUNC) &_later_list_queue_,      1},
   {NULL, NULL, 0}
 };
 

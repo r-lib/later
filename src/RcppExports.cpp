@@ -57,6 +57,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// list_queue_
+Rcpp::List list_queue_(int loop);
+RcppExport SEXP _later_list_queue_(SEXP loopSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type loop(loopSEXP);
+    rcpp_result_gen = Rcpp::wrap(list_queue_(loop));
+    return rcpp_result_gen;
+END_RCPP
+}
 // execCallbacks
 bool execCallbacks(double timeoutSecs, bool runAll, int loop);
 RcppExport SEXP _later_execCallbacks(SEXP timeoutSecsSEXP, SEXP runAllSEXP, SEXP loopSEXP) {

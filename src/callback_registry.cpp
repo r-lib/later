@@ -16,17 +16,64 @@
   boost::atomic<uint64_t> nextCallbackNum(0);
 #endif
 
-Callback::Callback(Timestamp when, Task func) : when(when), func(func) {
+// ============================================================================
+// BoostFunctionCallback
+// ============================================================================
+
+BoostFunctionCallback::BoostFunctionCallback(Timestamp when, boost::function<void(void)> func) :
+  Callback(when),
+  func(func)
+{
   this->callbackNum = nextCallbackNum++;
 }
 
+Rcpp::RObject BoostFunctionCallback::rRepresentation() const {
+  using namespace Rcpp;
+  ASSERT_MAIN_THREAD()
+
+  return List::create(
+    _["id"]       = callbackNum,
+    _["when"]     = when.diff_secs(Timestamp()),
+    _["callback"] = Rcpp::CharacterVector::create("C++ function")
+  );
+}
+
+
+// ============================================================================
+// RcppFunctionCallback
+// ============================================================================
+
+RcppFunctionCallback::RcppFunctionCallback(Timestamp when, Rcpp::Function func) :
+  Callback(when),
+  func(func)
+{
+  ASSERT_MAIN_THREAD()
+  this->callbackNum = nextCallbackNum++;
+}
+
+Rcpp::RObject RcppFunctionCallback::rRepresentation() const {
+  using namespace Rcpp;
+  ASSERT_MAIN_THREAD()
+
+  return List::create(
+    _["id"]       = callbackNum,
+    _["when"]     = when.diff_secs(Timestamp()),
+    _["callback"] = func
+  );
+}
+
+
+// ============================================================================
+// CallbackRegistry
+// ============================================================================
+
 // [[Rcpp::export]]
 void testCallbackOrdering() {
-  std::vector<Callback> callbacks;
+  std::vector<BoostFunctionCallback> callbacks;
   Timestamp ts;
-  Task func;
+  boost::function<void(void)> func;
   for (size_t i = 0; i < 100; i++) {
-    callbacks.push_back(Callback(ts, func));
+    callbacks.push_back(BoostFunctionCallback(ts, func));
   }
   for (size_t i = 1; i < 100; i++) {
     if (callbacks[i] < callbacks[i-1]) {
@@ -56,7 +103,7 @@ void CallbackRegistry::add(Rcpp::Function func, double secs) {
   // Copies of the Rcpp::Function should only be made on the main thread.
   ASSERT_MAIN_THREAD()
   Timestamp when(secs);
-  Callback_sp cb = boost::make_shared<Callback>(when, func);
+  Callback_sp cb = boost::make_shared<RcppFunctionCallback>(when, func);
   Guard guard(mutex);
   queue.push(cb);
   condvar.signal();
@@ -64,7 +111,7 @@ void CallbackRegistry::add(Rcpp::Function func, double secs) {
 
 void CallbackRegistry::add(void (*func)(void*), void* data, double secs) {
   Timestamp when(secs);
-  Callback_sp cb = boost::make_shared<Callback>(when, boost::bind(func, data));
+  Callback_sp cb = boost::make_shared<BoostFunctionCallback>(when, boost::bind(func, data));
   Guard guard(mutex);
   queue.push(cb);
   condvar.signal();
@@ -132,4 +179,22 @@ bool CallbackRegistry::wait(double timeoutSecs) const {
   }
   
   return due();
+}
+
+
+Rcpp::List CallbackRegistry::list() const {
+  ASSERT_MAIN_THREAD()
+  Guard guard(mutex);
+
+  std::priority_queue<Callback_sp, std::vector<Callback_sp>, pointer_greater_than<Callback_sp> >
+    temp_queue = queue;
+
+  Rcpp::List results;
+
+  while (!temp_queue.empty()) {
+    results.push_back(temp_queue.top()->rRepresentation());
+    temp_queue.pop();
+  }
+
+  return results;
 }

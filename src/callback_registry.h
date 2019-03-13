@@ -10,30 +10,68 @@
 #include "optional.h"
 #include "threadutils.h"
 
-typedef boost::function0<void> Task;
+// Callback is an abstract class with two subclasses. The reason that there
+// are two subclasses is because one of them is for C++ (boost::function)
+// callbacks, and the other is for R (Rcpp::Function) callbacks. Because
+// Callbacks can be created from either the main thread or a background
+// thread, the top-level Callback class cannot contain any Rcpp objects --
+// otherwise R objects could be allocated on a background thread, which will
+// cause memory corruption.
 
 class Callback : boost::operators<Callback> {
 
 public:
-  Callback(Timestamp when, Task func);
+  virtual ~Callback() {};
+  Callback(Timestamp when) : when(when) {};
   
   bool operator<(const Callback& other) const {
     return this->when < other.when ||
       (!(this->when > other.when) && this->callbackNum < other.callbackNum);
   }
   
-  void operator()() const {
-    func();
-  }
+  virtual void operator()() const = 0;
+
+  virtual Rcpp::RObject rRepresentation() const = 0;
 
   Timestamp when;
   
-private:
-  Task func;
+protected:
   // Used to break ties when comparing to a callback that has precisely the same
   // timestamp
   uint64_t callbackNum;
 };
+
+
+class BoostFunctionCallback : public Callback {
+public:
+  BoostFunctionCallback(Timestamp when, boost::function<void (void)> func);
+
+  void operator()() const {
+    func();
+  }
+
+  Rcpp::RObject rRepresentation() const;
+
+private:
+  boost::function<void (void)> func;
+};
+
+
+class RcppFunctionCallback : public Callback {
+public:
+  RcppFunctionCallback(Timestamp when, Rcpp::Function func);
+
+  void operator()() const {
+    func();
+  }
+
+  Rcpp::RObject rRepresentation() const;
+
+private:
+  Rcpp::Function func;
+};
+
+
 
 typedef boost::shared_ptr<Callback> Callback_sp;
 
@@ -81,6 +119,9 @@ public:
   std::vector<Callback_sp> take(size_t max = -1, const Timestamp& time = Timestamp());
   
   bool wait(double timeoutSecs) const;
+
+  // Return a List of items in the queue.
+  Rcpp::List list() const;
 };
 
 #endif // _CALLBACK_REGISTRY_H_

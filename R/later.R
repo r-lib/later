@@ -163,3 +163,10 @@ loop_empty <- function(loop = current_loop()) {
 next_op_secs <- function(loop = current_loop()) {
   nextOpSecs(loop)
 }
+
+
+# Get the contents of an event loop, as a list. (For debugging only, so it's
+# not exported.)
+list_queue <- function(loop = current_loop()) {
+  list_queue_(loop)
+}
