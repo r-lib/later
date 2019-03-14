@@ -5,37 +5,45 @@
 .onLoad <- function(...) {
   ensureInitialized()
   .globals$next_id <- 0L
-  create_loop()
+  .globals$global_loop <- create_loop()
+  .globals$current_loop <- .globals$global_loop
 }
 
 .globals <- new.env(parent = emptyenv())
 
 #' @export
 create_loop <- function() {
-  res <- .globals$next_id
-  .globals$next_id <- res + 1L
-  createCallbackRegistry(res)
-  res
+  id <- .globals$next_id
+  .globals$next_id <- id + 1L
+  createCallbackRegistry(id)
+
+  # Create the handle for the loop
+  loop <- new.env(parent = emptyenv())
+  class(loop) <- "event_loop"
+  loop$id <- id
+  lockBinding("id", loop)
+  # Automatically destroy the loop when the handle is GC'd
+  reg.finalizer(loop, destroy_loop)
+
+  loop
 }
 
 #' @export
 destroy_loop <- function(loop) {
-  deleteCallbackRegistry(loop)
+  # Make sure we don't destroy a loop twice
+  if (exists_loop(loop)) {
+    deleteCallbackRegistry(loop$id)
+  }
 }
 
 #' @export
 exists_loop <- function(loop) {
-  existsCallbackRegistry(loop)
+  existsCallbackRegistry(loop$id)
 }
 
 #' @export
 current_loop <- function() {
-  loop <- .globals$current_loop
-  if (is.null(loop)) {
-    global_loop()
-  } else {
-    loop
-  }
+  .globals$current_loop
 }
 
 #' @export
@@ -59,8 +67,20 @@ with_loop <- function(loop, expr) {
 
 #' @export
 global_loop <- function() {
-  0L
+  .globals$global_loop
 }
+
+
+#' @export
+format.event_loop <- function(x, ...) {
+  paste0("<event loop>\n  id: ", x$id)
+}
+
+#' @export
+print.event_loop <- function(x, ...) {
+  cat(format(x, ...))
+}
+
 
 #' Executes a function later
 #' 
@@ -102,7 +122,7 @@ global_loop <- function() {
 #' @export
 later <- function(func, delay = 0, loop = current_loop()) {
   f <- rlang::as_function(func)
-  execLater(f, delay, loop)
+  execLater(f, delay, loop$id)
 }
 
 #' Execute scheduled operations
@@ -138,7 +158,7 @@ run_now <- function(timeoutSecs = 0L, all = TRUE, loop = current_loop()) {
     stop("timeoutSecs must be numeric")
 
   with_loop(loop,
-    invisible(execCallbacks(timeoutSecs, all, loop))
+    invisible(execCallbacks(timeoutSecs, all, loop$id))
   )
 }
 
@@ -150,7 +170,7 @@ run_now <- function(timeoutSecs = 0L, all = TRUE, loop = current_loop()) {
 #' @keywords internal
 #' @export
 loop_empty <- function(loop = current_loop()) {
-  idle(loop)
+  idle(loop$id)
 }
 
 #' Relative time to next scheduled operation
@@ -161,12 +181,12 @@ loop_empty <- function(loop = current_loop()) {
 #'
 #' @export
 next_op_secs <- function(loop = current_loop()) {
-  nextOpSecs(loop)
+  nextOpSecs(loop$id)
 }
 
 
 # Get the contents of an event loop, as a list. (For debugging only, so it's
 # not exported.)
 list_queue <- function(loop = current_loop()) {
-  list_queue_(loop)
+  list_queue_(loop$id)
 }

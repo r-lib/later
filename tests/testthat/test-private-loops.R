@@ -77,6 +77,34 @@ test_that("Private event loops", {
   destroy_loop(l)
   gc()
   expect_identical(x, 1)
+  
+  
+  # A GC'd loop object will cause its queue to be deleted, which will allow GC
+  # of any resources
+  l <- create_loop()
+  x <- 0
+  gc()
+  with_loop(l, {
+    later(
+      local({
+        reg.finalizer(environment(), function(e) x <<-x + 1)
+        function() message("foo")
+      })
+    )
+  })
+  gc()
+  expect_identical(x, 0)
+  
+  # Delete the reference to the loop, and GC. This causes the queue to be
+  # deleted, which removes references to items in the queue. However, the items
+  # in the queue won't be GC'd yet. (At least not as of R 3.5.2.)
+  rm(l)
+  gc()
+  expect_identical(x, 0)
+  
+  # A second GC triggers the finalizer for an item that was in the queue.
+  gc()
+  expect_identical(x, 1)
 })
 
 
