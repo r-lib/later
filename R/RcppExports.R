@@ -9,6 +9,18 @@ ensureInitialized <- function() {
     invisible(.Call('_later_ensureInitialized', PACKAGE = 'later'))
 }
 
+existsCallbackRegistry <- function(loop) {
+    .Call('_later_existsCallbackRegistry', PACKAGE = 'later', loop)
+}
+
+createCallbackRegistry <- function(loop) {
+    .Call('_later_createCallbackRegistry', PACKAGE = 'later', loop)
+}
+
+deleteCallbackRegistry <- function(loop) {
+    .Call('_later_deleteCallbackRegistry', PACKAGE = 'later', loop)
+}
+
 execCallbacks <- function(timeoutSecs, runAll, loop) {
     .Call('_later_execCallbacks', PACKAGE = 'later', timeoutSecs, runAll, loop)
 }

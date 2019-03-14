@@ -4,15 +4,28 @@
 
 .onLoad <- function(...) {
   ensureInitialized()
-  .globals$next_id <- 1L
+  .globals$next_id <- 0L
+  create_loop()
 }
 
 .globals <- new.env(parent = emptyenv())
 
-next_loop_id <- function() {
+#' @export
+create_loop <- function() {
   res <- .globals$next_id
   .globals$next_id <- res + 1L
+  createCallbackRegistry(res)
   res
+}
+
+#' @export
+destroy_loop <- function(loop) {
+  deleteCallbackRegistry(loop)
+}
+
+#' @export
+exists_loop <- function(loop) {
+  existsCallbackRegistry(loop)
 }
 
 #' @export
@@ -26,17 +39,21 @@ current_loop <- function() {
 }
 
 #' @export
-with_private_loop <- function(expr) {
-  with_loop(next_loop_id(), expr)
+with_temp_loop <- function(expr) {
+  loop <- create_loop()
+  on.exit(destroy_loop(loop))
+
+  with_loop(loop, expr)
 }
 
+#' @export
 with_loop <- function(loop, expr) {
   if (!identical(loop, current_loop())) {
     old_loop <- .globals$current_loop
     .globals$current_loop <- loop
     on.exit(.globals$current_loop <- old_loop, add = TRUE)
   }
-  
+
   force(expr)
 }
 

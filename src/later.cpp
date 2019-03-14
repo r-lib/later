@@ -5,6 +5,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include "debug.h"
+#include "utils.h"
 
 #include "callback_registry.h"
 #include "interrupt.h"
@@ -72,14 +73,51 @@ bool at_top_level() {
   return nframe == 0;
 }
 
+
+// Each callback registry represents one event loop. Note that traversing and
+// modifying callbackRegistries should always happens on the same thread, to
+// avoid races.
 std::map<int, boost::shared_ptr<CallbackRegistry> > callbackRegistries;
+
+// [[Rcpp::export]]
+bool existsCallbackRegistry(int loop) {
+  ASSERT_MAIN_THREAD()
+  return (callbackRegistries.find(loop) != callbackRegistries.end());
+}
+
+// [[Rcpp::export]]
+bool createCallbackRegistry(int loop) {
+  ASSERT_MAIN_THREAD()
+  if (existsCallbackRegistry(loop)) {
+    Rcpp::stop("Can't create event loop %d because it already exists.", loop);
+  }
+  callbackRegistries[loop] = boost::make_shared<CallbackRegistry>();
+  return true;
+}
+
+// Gets a callback registry by ID. If registry doesn't exist, it will be created.
 boost::shared_ptr<CallbackRegistry> getCallbackRegistry(int loop) {
+  ASSERT_MAIN_THREAD()
   // TODO: clean up
-  if (callbackRegistries.find(loop) == callbackRegistries.end()) {
-    callbackRegistries[loop] = boost::make_shared<CallbackRegistry>();
+  if (!existsCallbackRegistry(loop)) {
+    Rcpp::stop("Event loop %d does not exist.", loop);
   }
   return callbackRegistries[loop];
 }
+
+// [[Rcpp::export]]
+bool deleteCallbackRegistry(int loop) {
+  ASSERT_MAIN_THREAD()
+  if (!existsCallbackRegistry(loop)) {
+    return false;
+  }
+
+  int n = callbackRegistries.erase(loop);
+  
+  if (n == 0) return false;
+  else return true;
+}
+
 
 // [[Rcpp::export]]
 bool execCallbacks(double timeoutSecs, bool runAll, int loop) {
@@ -88,7 +126,7 @@ bool execCallbacks(double timeoutSecs, bool runAll, int loop) {
   // include Rcpp code. (Should we also call wrap?)
   Rcpp::RNGScope rngscope;
   ProtectCallbacks pcscope;
-  
+
   if (!getCallbackRegistry(loop)->wait(timeoutSecs)) {
     return false;
   }

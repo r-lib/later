@@ -24,6 +24,39 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// existsCallbackRegistry
+bool existsCallbackRegistry(int loop);
+RcppExport SEXP _later_existsCallbackRegistry(SEXP loopSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type loop(loopSEXP);
+    rcpp_result_gen = Rcpp::wrap(existsCallbackRegistry(loop));
+    return rcpp_result_gen;
+END_RCPP
+}
+// createCallbackRegistry
+bool createCallbackRegistry(int loop);
+RcppExport SEXP _later_createCallbackRegistry(SEXP loopSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type loop(loopSEXP);
+    rcpp_result_gen = Rcpp::wrap(createCallbackRegistry(loop));
+    return rcpp_result_gen;
+END_RCPP
+}
+// deleteCallbackRegistry
+bool deleteCallbackRegistry(int loop);
+RcppExport SEXP _later_deleteCallbackRegistry(SEXP loopSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type loop(loopSEXP);
+    rcpp_result_gen = Rcpp::wrap(deleteCallbackRegistry(loop));
+    return rcpp_result_gen;
+END_RCPP
+}
 // execCallbacks
 bool execCallbacks(double timeoutSecs, bool runAll, int loop);
 RcppExport SEXP _later_execCallbacks(SEXP timeoutSecsSEXP, SEXP runAllSEXP, SEXP loopSEXP) {
