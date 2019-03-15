@@ -34,7 +34,7 @@ Rcpp::RObject BoostFunctionCallback::rRepresentation() const {
   return List::create(
     _["id"]       = callbackNum,
     _["when"]     = when.diff_secs(Timestamp()),
-    _["callback"] = Rcpp::CharacterVector::create("C++ function")
+    _["callback"] = Rcpp::CharacterVector::create("C/C++ function")
   );
 }
 
@@ -158,7 +158,7 @@ bool CallbackRegistry::wait(double timeoutSecs) const {
   }
 
   Timestamp expireTime(timeoutSecs);
-  
+
   Guard guard(mutex);
   while (true) {
     Timestamp end = expireTime;
@@ -177,7 +177,7 @@ bool CallbackRegistry::wait(double timeoutSecs) const {
     condvar.timedwait(waitFor);
     Rcpp::checkUserInterrupt();
   }
-  
+
   return due();
 }
 
