@@ -105,6 +105,10 @@ test_that("Private event loops", {
   # A second GC triggers the finalizer for an item that was in the queue.
   gc()
   expect_identical(x, 1)
+
+
+  # Can't destroy global loop
+  expect_error(destroy_loop(global_loop()))
 })
 
 
