@@ -18,7 +18,7 @@
 // otherwise R objects could be allocated on a background thread, which will
 // cause memory corruption.
 
-class Callback : boost::operators<Callback> {
+class Callback {
 
 public:
   virtual ~Callback() {};
@@ -27,6 +27,10 @@ public:
   bool operator<(const Callback& other) const {
     return this->when < other.when ||
       (!(this->when > other.when) && this->callbackNum < other.callbackNum);
+  }
+
+  bool operator>(const Callback& other) const {
+    return other < *this;
   }
   
   virtual void operator()() const = 0;
