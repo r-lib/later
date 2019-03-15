@@ -6,6 +6,9 @@
 \usage{
 next_op_secs(loop = current_loop())
 }
+\arguments{
+\item{loop}{A handle to an event loop.}
+}
 \description{
 Returns the duration between now and the earliest operation that is currently
 scheduled, in seconds. If the operation is in the past, the value will be

@@ -6,6 +6,9 @@
 \usage{
 loop_empty(loop = current_loop())
 }
+\arguments{
+\item{loop}{A handle to an event loop.}
+}
 \description{
 Returns true if there are currently no callbacks that are scheduled to
 execute in the present or future.

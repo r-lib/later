@@ -12,6 +12,8 @@ later(func, delay = 0, loop = current_loop())
 \item{delay}{Number of seconds in the future to delay execution. There is no
 guarantee that the function will be executed at the desired time, but it
 should not execute earlier.}
+
+\item{loop}{A handle to an event loop. Defaults to the currently-active loop.}
 }
 \description{
 Schedule an R function or formula to run after a specified period of time.
@@ -44,5 +46,5 @@ later(~cat("Hello from the past\\n"), 3)
 later(function() {
   print(summary(cars))
 }, 2)
-  
+
 }

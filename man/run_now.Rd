@@ -15,6 +15,8 @@ long as it takes (if none are scheduled, then this will block forever).}
 \item{all}{If \code{FALSE}, \code{run_now()} will execute at most one scheduled
 operation (instead of all eligible operations). This can be useful in cases
 where you want to interleave scheduled operations with your own logic.}
+
+\item{loop}{A handle to an event loop. Defaults to the currently-active loop.}
 }
 \value{
 A logical indicating whether any callbacks were actually run.
