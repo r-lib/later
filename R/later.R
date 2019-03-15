@@ -236,8 +236,11 @@ next_op_secs <- function(loop = current_loop()) {
 }
 
 
-# Get the contents of an event loop, as a list. (For debugging only, so it's
-# not exported.)
+#' Get the contents of an event loop, as a list
+#'
+#' This function is for debugging only.
+#'
+#' @keywords internal
 list_queue <- function(loop = current_loop()) {
   list_queue_(loop$id)
 }
