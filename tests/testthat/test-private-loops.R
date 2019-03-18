@@ -29,7 +29,7 @@ describe("Private event loop", {
 
 
 test_that("Private event loops", {
-  l <- create_loop()
+  l <- create_loop(autorun = FALSE)
   x <- 0
   
   expect_true(exists_loop(l))
@@ -60,7 +60,7 @@ test_that("Private event loops", {
   expect_error(with_loop(l, run_now()))
   
   # GC with functions in destroyed loops, even if callback isn't executed.
-  l <- create_loop()
+  l <- create_loop(autorun = FALSE)
   x <- 0
   gc()
   with_loop(l, {
@@ -81,7 +81,7 @@ test_that("Private event loops", {
   
   # A GC'd loop object will cause its queue to be deleted, which will allow GC
   # of any resources
-  l <- create_loop()
+  l <- create_loop(autorun = FALSE)
   x <- 0
   gc()
   with_loop(l, {
@@ -173,7 +173,7 @@ test_that("Temporary event loops", {
 
 
 test_that("list_queue", {
-  l <- create_loop()
+  l <- create_loop(autorun = FALSE)
   q <- NULL
   f <- function() 1  # A dummy function
 

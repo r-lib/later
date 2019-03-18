@@ -10,7 +10,7 @@
 \alias{global_loop}
 \title{Private event loops}
 \usage{
-create_loop()
+create_loop(autorun = NULL)
 
 destroy_loop(loop)
 
@@ -25,6 +25,12 @@ with_loop(loop, expr)
 global_loop()
 }
 \arguments{
+\item{autorun}{Should this event loop automatically be run when its parent
+loop runs? Currently, only FALSE is allowed, but in the future TRUE will
+be implemented and the default. Because in the future the default will
+change, for now any code that calls \code{create_loop} must explicitly
+pass in \code{autorun=FALSE}.}
+
 \item{loop}{A handle to an event loop.}
 
 \item{expr}{An expression to evaluate.}

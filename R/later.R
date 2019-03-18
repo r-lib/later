@@ -5,7 +5,7 @@
 .onLoad <- function(...) {
   ensureInitialized()
   .globals$next_id <- 0L
-  .globals$global_loop <- create_loop()
+  .globals$global_loop <- create_loop(autorun = FALSE)
   .globals$current_loop <- .globals$global_loop
 }
 
@@ -47,10 +47,19 @@
 #'
 #' @param loop A handle to an event loop.
 #' @param expr An expression to evaluate.
+#' @param autorun Should this event loop automatically be run when its parent
+#'   loop runs? Currently, only FALSE is allowed, but in the future TRUE will
+#'   be implemented and the default. Because in the future the default will
+#'   change, for now any code that calls \code{create_loop} must explicitly
+#'   pass in \code{autorun=FALSE}.
 #' @rdname create_loop
 #'
 #' @export
-create_loop <- function() {
+create_loop <- function(autorun = NULL) {
+  if (!identical(autorun, FALSE)) {
+    stop("autorun must be set to FALSE (until TRUE is implemented).")
+  }
+
   id <- .globals$next_id
   .globals$next_id <- id + 1L
   createCallbackRegistry(id)
@@ -93,7 +102,7 @@ current_loop <- function() {
 #' @rdname create_loop
 #' @export
 with_temp_loop <- function(expr) {
-  loop <- create_loop()
+  loop <- create_loop(autorun = FALSE)
   on.exit(destroy_loop(loop))
 
   with_loop(loop, expr)
