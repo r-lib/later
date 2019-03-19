@@ -192,6 +192,7 @@ std::string execLater(Rcpp::Function callback, double delaySecs, int loop) {
 
 
 bool cancel(uint64_t callback_id, int loop) {
+  ASSERT_MAIN_THREAD()
   if (!existsCallbackRegistry(loop))
     return false;
 
@@ -204,6 +205,7 @@ bool cancel(uint64_t callback_id, int loop) {
 
 // [[Rcpp::export]]
 bool cancel(std::string callback_id_s, int loop) {
+  ASSERT_MAIN_THREAD()
   uint64_t callback_id;
   std::istringstream iss(callback_id_s);
   iss >> callback_id;
