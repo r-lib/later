@@ -93,15 +93,28 @@ BEGIN_RCPP
 END_RCPP
 }
 // execLater
-void execLater(Rcpp::Function callback, double delaySecs, int loop);
+std::string execLater(Rcpp::Function callback, double delaySecs, int loop);
 RcppExport SEXP _later_execLater(SEXP callbackSEXP, SEXP delaySecsSEXP, SEXP loopSEXP) {
 BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::Function >::type callback(callbackSEXP);
     Rcpp::traits::input_parameter< double >::type delaySecs(delaySecsSEXP);
     Rcpp::traits::input_parameter< int >::type loop(loopSEXP);
-    execLater(callback, delaySecs, loop);
-    return R_NilValue;
+    rcpp_result_gen = Rcpp::wrap(execLater(callback, delaySecs, loop));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cancel
+bool cancel(std::string callback_id_s, int loop);
+RcppExport SEXP _later_cancel(SEXP callback_id_sSEXP, SEXP loopSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type callback_id_s(callback_id_sSEXP);
+    Rcpp::traits::input_parameter< int >::type loop(loopSEXP);
+    rcpp_result_gen = Rcpp::wrap(cancel(callback_id_s, loop));
+    return rcpp_result_gen;
 END_RCPP
 }
 // nextOpSecs

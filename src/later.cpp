@@ -19,8 +19,8 @@ thrd_t __main_thread__;
 // later_posix.cpp and later_win32.cpp.
 // [[Rcpp::export]]
 void ensureInitialized();
-void doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp::Function callback, double delaySecs, bool resetTimer);
-void doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, void (*callback)(void*), void* data, double delaySecs, bool resetTimer);
+uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp::Function callback, double delaySecs, bool resetTimer);
+uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, void (*callback)(void*), void* data, double delaySecs, bool resetTimer);
 
 static size_t exec_callbacks_reentrancy_count = 0;
 
@@ -179,11 +179,44 @@ bool idle(int loop) {
 }
 
 // [[Rcpp::export]]
-void execLater(Rcpp::Function callback, double delaySecs, int loop) {
+std::string execLater(Rcpp::Function callback, double delaySecs, int loop) {
   ASSERT_MAIN_THREAD()
   ensureInitialized();
-  doExecLater(getCallbackRegistry(loop), callback, delaySecs, loop == GLOBAL_LOOP);
+  uint64_t callback_id = doExecLater(getCallbackRegistry(loop), callback, delaySecs, loop == GLOBAL_LOOP);
+
+  // We have to convert it to a string in order to maintain 64-bit precision,
+  // since R doesn't support 64 bit integers.
+  return toString(callback_id);
 }
+
+
+
+bool cancel(uint64_t callback_id, int loop) {
+  if (!existsCallbackRegistry(loop))
+    return false;
+
+  boost::shared_ptr<CallbackRegistry> reg = getCallbackRegistry(loop);
+  if (!reg)
+    return false;
+
+  return reg->cancel(callback_id);
+}
+
+// [[Rcpp::export]]
+bool cancel(std::string callback_id_s, int loop) {
+  uint64_t callback_id;
+  std::istringstream iss(callback_id_s);
+  iss >> callback_id;
+
+  // If the input is good (just a number with no other text) then eof will be
+  // 1 and fail will be 0.
+  if (! (iss.eof() && !iss.fail())) {
+    return false;
+  }
+
+  return cancel(callback_id, loop);
+}
+
 
 
 // [[Rcpp::export]]

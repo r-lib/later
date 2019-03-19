@@ -7,13 +7,13 @@
 
 #if __cplusplus >= 201103L
   #include <atomic>
-  std::atomic<uint64_t> nextCallbackNum(0);
+  std::atomic<uint64_t> nextCallbackId(0);
 #else
   // Fall back to boost::atomic if std::atomic isn't available. We want to
   // avoid boost::atomic when possible because on ARM, it requires the
   // -lboost_atomic linker flag. (https://github.com/r-lib/later/issues/73)
   #include <boost/atomic.hpp>
-  boost::atomic<uint64_t> nextCallbackNum(0);
+  boost::atomic<uint64_t> nextCallbackId(0);
 #endif
 
 // ============================================================================
@@ -24,7 +24,7 @@ BoostFunctionCallback::BoostFunctionCallback(Timestamp when, boost::function<voi
   Callback(when),
   func(func)
 {
-  this->callbackNum = nextCallbackNum++;
+  this->callbackId = nextCallbackId++;
 }
 
 Rcpp::RObject BoostFunctionCallback::rRepresentation() const {
@@ -32,7 +32,7 @@ Rcpp::RObject BoostFunctionCallback::rRepresentation() const {
   ASSERT_MAIN_THREAD()
 
   return List::create(
-    _["id"]       = callbackNum,
+    _["id"]       = callbackId,
     _["when"]     = when.diff_secs(Timestamp()),
     _["callback"] = Rcpp::CharacterVector::create("C/C++ function")
   );
@@ -48,7 +48,7 @@ RcppFunctionCallback::RcppFunctionCallback(Timestamp when, Rcpp::Function func) 
   func(func)
 {
   ASSERT_MAIN_THREAD()
-  this->callbackNum = nextCallbackNum++;
+  this->callbackId = nextCallbackId++;
 }
 
 Rcpp::RObject RcppFunctionCallback::rRepresentation() const {
@@ -56,7 +56,7 @@ Rcpp::RObject RcppFunctionCallback::rRepresentation() const {
   ASSERT_MAIN_THREAD()
 
   return List::create(
-    _["id"]       = callbackNum,
+    _["id"]       = callbackId,
     _["when"]     = when.diff_secs(Timestamp()),
     _["callback"] = func
   );
@@ -99,22 +99,38 @@ void testCallbackOrdering() {
 CallbackRegistry::CallbackRegistry() : mutex(tct_mtx_recursive), condvar(mutex) {
 }
 
-void CallbackRegistry::add(Rcpp::Function func, double secs) {
+uint64_t CallbackRegistry::add(Rcpp::Function func, double secs) {
   // Copies of the Rcpp::Function should only be made on the main thread.
   ASSERT_MAIN_THREAD()
   Timestamp when(secs);
   Callback_sp cb = boost::make_shared<RcppFunctionCallback>(when, func);
   Guard guard(mutex);
-  queue.push(cb);
+  queue.insert(cb);
   condvar.signal();
+  return cb->getCallbackId();
 }
 
-void CallbackRegistry::add(void (*func)(void*), void* data, double secs) {
+uint64_t CallbackRegistry::add(void (*func)(void*), void* data, double secs) {
   Timestamp when(secs);
   Callback_sp cb = boost::make_shared<BoostFunctionCallback>(when, boost::bind(func, data));
   Guard guard(mutex);
-  queue.push(cb);
+  queue.insert(cb);
   condvar.signal();
+  return cb->getCallbackId();
+}
+
+bool CallbackRegistry::cancel(uint64_t id) {
+  Guard guard(mutex);
+
+  cbSet::const_iterator it;
+  for (it = queue.begin(); it != queue.end(); ++it) {
+    if ((*it)->getCallbackId() == id) {
+      queue.erase(it);
+      return true;
+    }
+  }
+
+  return false;
 }
 
 // The smallest timestamp present in the registry, if any.
@@ -124,7 +140,8 @@ Optional<Timestamp> CallbackRegistry::nextTimestamp() const {
   if (this->queue.empty()) {
     return Optional<Timestamp>();
   } else {
-    return Optional<Timestamp>(this->queue.top()->when);
+    cbSet::const_iterator it = queue.begin();
+    return Optional<Timestamp>((*it)->when);
   }
 }
 
@@ -136,7 +153,8 @@ bool CallbackRegistry::empty() const {
 // Returns true if the smallest timestamp exists and is not in the future.
 bool CallbackRegistry::due(const Timestamp& time) const {
   Guard guard(mutex);
-  return !this->queue.empty() && !(this->queue.top()->when > time);
+  cbSet::const_iterator it = queue.begin();
+  return !this->queue.empty() && !((*it)->when > time);
 }
 
 std::vector<Callback_sp> CallbackRegistry::take(size_t max, const Timestamp& time) {
@@ -144,8 +162,9 @@ std::vector<Callback_sp> CallbackRegistry::take(size_t max, const Timestamp& tim
   Guard guard(mutex);
   std::vector<Callback_sp> results;
   while (this->due(time) && (max <= 0 || results.size() < max)) {
-    results.push_back(this->queue.top());
-    this->queue.pop();
+    cbSet::iterator it = queue.begin();
+    results.push_back(*it);
+    this->queue.erase(it);
   }
   return results;
 }
@@ -186,14 +205,12 @@ Rcpp::List CallbackRegistry::list() const {
   ASSERT_MAIN_THREAD()
   Guard guard(mutex);
 
-  std::priority_queue<Callback_sp, std::vector<Callback_sp>, pointer_greater_than<Callback_sp> >
-    temp_queue = queue;
-
   Rcpp::List results;
 
-  while (!temp_queue.empty()) {
-    results.push_back(temp_queue.top()->rRepresentation());
-    temp_queue.pop();
+  cbSet::const_iterator it;
+
+  for (it = queue.begin(); it != queue.end(); it++) {
+    results.push_back((*it)->rRepresentation());
   }
 
   return results;

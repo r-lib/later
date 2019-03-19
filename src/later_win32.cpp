@@ -102,15 +102,17 @@ void ensureInitialized() {
   }
 }
 
-void doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp::Function callback, double delaySecs, bool resetTimer) {
-  callbackRegistry->add(callback, delaySecs);
+uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp::Function callback, double delaySecs, bool resetTimer) {
+  uint64_t callback_id = callbackRegistry->add(callback, delaySecs);
 
-  if (resetTimer)  
+  if (resetTimer)
     setupTimer();
+
+  return callback_id;
 }
 
-void doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, void (*func)(void*), void* data, double delaySecs, bool resetTimer) {
-  callbackRegistry->add(func, data, delaySecs);
+uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, void (*func)(void*), void* data, double delaySecs, bool resetTimer) {
+  uint64_t callback_id = callbackRegistry->add(func, data, delaySecs);
 
   if (resetTimer) {
     if (GetCurrentThreadId() == GetWindowThreadProcessId(hwnd, NULL)) {
@@ -121,6 +123,8 @@ void doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, void (*fu
       PostMessage(hwnd, WM_SETUPTIMER, 0, 0);
     }
   }
+
+  return callback_id;
 }
 
 #endif // ifdef _WIN32
