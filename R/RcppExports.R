@@ -34,7 +34,11 @@ idle <- function(loop) {
 }
 
 execLater <- function(callback, delaySecs, loop) {
-    invisible(.Call('_later_execLater', PACKAGE = 'later', callback, delaySecs, loop))
+    .Call('_later_execLater', PACKAGE = 'later', callback, delaySecs, loop)
+}
+
+cancel <- function(callback_id_s, loop) {
+    .Call('_later_cancel', PACKAGE = 'later', callback_id_s, loop)
 }
 
 nextOpSecs <- function(loop) {

@@ -167,6 +167,11 @@ print.event_loop <- function(x, ...) {
 #'   should not execute earlier.
 #' @param loop A handle to an event loop. Defaults to the currently-active loop.
 #'
+#' @return A function, which, if invoked, will cancel the callback. The
+#'   function will return \code{TRUE} if the callback was successfully
+#'   cancelled and \code{FALSE} if not (this occurs if the callback has
+#'   executed or has been cancelled already).
+#'
 #' @examples
 #' # Example of formula style
 #' later(~cat("Hello from the past\n"), 3)
@@ -179,7 +184,18 @@ print.event_loop <- function(x, ...) {
 #' @export
 later <- function(func, delay = 0, loop = current_loop()) {
   f <- rlang::as_function(func)
-  execLater(f, delay, loop$id)
+  id <- execLater(f, delay, loop$id)
+
+  invisible(create_canceller(id, loop))
+}
+
+# Returns a function that will cancel a callback with the given ID. If the
+# callback has already been executed or canceled, then the function has no
+# effect.
+create_canceller <- function(id, loop) {
+  function() {
+    invisible(cancel(id, loop$id))
+  }
 }
 
 #' Execute scheduled operations
