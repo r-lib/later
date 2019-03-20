@@ -81,10 +81,8 @@ destroy_loop <- function(loop) {
   if (identical(loop, global_loop())) {
     stop("Can't destroy global loop.")
   }
-  # Make sure we don't destroy a loop twice
-  if (exists_loop(loop)) {
-    deleteCallbackRegistry(loop$id)
-  }
+
+  deleteCallbackRegistry(loop$id)
 }
 
 #' @rdname create_loop

@@ -4,6 +4,7 @@
 #include <queue>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/scope_exit.hpp>
 #include "debug.h"
 #include "utils.h"
 
@@ -105,15 +106,30 @@ boost::shared_ptr<CallbackRegistry> getCallbackRegistry(int loop) {
   return callbackRegistries[loop];
 }
 
+
+bool deletingCallbackRegistry = false;
 // [[Rcpp::export]]
 bool deleteCallbackRegistry(int loop) {
   ASSERT_MAIN_THREAD()
+
+  // Detect re-entrant calls to this function and just return in that case.
+  // This can hypothetically happen if as we're deleting a callback registry,
+  // an R finalizer runs while we're removing references to the Rcpp::Function
+  // objects, and the finalizer calls this function.
+  if (deletingCallbackRegistry) {
+    return false;
+  }
+  deletingCallbackRegistry = true;
+  BOOST_SCOPE_EXIT(void) {
+    deletingCallbackRegistry = false;
+  } BOOST_SCOPE_EXIT_END
+
   if (!existsCallbackRegistry(loop)) {
     return false;
   }
 
   int n = callbackRegistries.erase(loop);
-  
+
   if (n == 0) return false;
   else return true;
 }
