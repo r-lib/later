@@ -98,7 +98,7 @@ test_that("Cancelling callbacks on temporary event loops", {
   cancel <- NULL
   x <- 0
   with_temp_loop({
-    cancel <<- later(function() { x <<- x + 1 })
+    cancel <- later(function() { x <<- x + 1 })
   })
   expect_false(cancel())
   expect_identical(x, 0)
@@ -113,7 +113,7 @@ test_that("Cancelling callbacks on persistent private loops", {
   cancel <- NULL
   x <- 0
   with_loop(l1, {
-    cancel <<- later(function() { x <<- x + 1 })
+    cancel <- later(function() { x <<- x + 1 })
   })
   expect_true(cancel())
   expect_false(cancel())
@@ -124,7 +124,7 @@ test_that("Cancelling callbacks on persistent private loops", {
 
   # Make sure it doesn't interfere with other event loops
   with_loop(l1, {
-    cancel <<- later(function() { x <<- x + 1 })
+    cancel <- later(function() { x <<- x + 1 })
   })
   with_loop(l2, {
     later(function() { x <<- x + 2 })
@@ -142,7 +142,7 @@ test_that("Cancelling callbacks on persistent private loops", {
   cancel <- NULL
   x <- 0
   with_loop(l3, {
-    cancel <<- later(function() { x <<- x + 1 })
+    cancel <- later(function() { x <<- x + 1 })
   })
   destroy_loop(l3)
   expect_false(cancel())
