@@ -331,9 +331,9 @@ int tct_cnd_timedwait(tct_cnd_t *cond, tct_mtx_t *mtx, const struct timespec *ts
 
 /* Thread */
 #if defined(_TTHREAD_WIN32_)
-typedef HANDLE thrd_t;
+typedef HANDLE tct_thrd_t;
 #else
-typedef pthread_t thrd_t;
+typedef pthread_t tct_thrd_t;
 #endif
 
 /** Thread start function.
@@ -358,24 +358,24 @@ typedef int (*tct_thrd_start_t)(void *arg);
 * original thread has exited and either been detached or joined to another
 * thread.
 */
-int tct_thrd_create(thrd_t *thr, tct_thrd_start_t func, void *arg);
+int tct_thrd_create(tct_thrd_t *thr, tct_thrd_start_t func, void *arg);
 
 /** Identify the calling thread.
 * @return The identifier of the calling thread.
 */
-thrd_t tct_thrd_current(void);
+tct_thrd_t tct_thrd_current(void);
 
 /** Dispose of any resources allocated to the thread when that thread exits.
  * @return thrd_success, or thrd_error on error
 */
-int tct_thrd_detach(thrd_t thr);
+int tct_thrd_detach(tct_thrd_t thr);
 
 /** Compare two thread identifiers.
 * The function determines if two thread identifiers refer to the same thread.
 * @return Zero if the two thread identifiers refer to different threads.
 * Otherwise a nonzero value is returned.
 */
-int tct_thrd_equal(thrd_t thr0, thrd_t thr1);
+int tct_thrd_equal(tct_thrd_t thr0, tct_thrd_t thr1);
 
 /** Terminate execution of the calling thread.
 * @param res Result code of the calling thread.
@@ -391,7 +391,7 @@ TTHREAD_NORETURN void tct_thrd_exit(int res);
 * @return @ref thrd_success on success, or @ref thrd_error if the request could
 * not be honored.
 */
-int tct_thrd_join(thrd_t thr, int *res);
+int tct_thrd_join(tct_thrd_t thr, int *res);
 
 /** Put the calling thread to sleep.
 * Suspend execution of the calling thread.

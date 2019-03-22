@@ -589,7 +589,7 @@ static void * _thrd_wrapper_function(void * aArg)
 #endif
 }
 
-int tct_thrd_create(thrd_t *thr, tct_thrd_start_t func, void *arg)
+int tct_thrd_create(tct_thrd_t *thr, tct_thrd_start_t func, void *arg)
 {
   /* Fill out the thread startup information (passed to the thread wrapper,
      which will eventually free it) */
@@ -621,7 +621,7 @@ int tct_thrd_create(thrd_t *thr, tct_thrd_start_t func, void *arg)
   return tct_thrd_success;
 }
 
-thrd_t tct_thrd_current(void)
+tct_thrd_t tct_thrd_current(void)
 {
 #if defined(_TTHREAD_WIN32_)
   return GetCurrentThread();
@@ -630,7 +630,7 @@ thrd_t tct_thrd_current(void)
 #endif
 }
 
-int tct_thrd_detach(thrd_t thr)
+int tct_thrd_detach(tct_thrd_t thr)
 {
 #if defined(_TTHREAD_WIN32_)
   /* https://stackoverflow.com/questions/12744324/how-to-detach-a-thread-on-windows-c#answer-12746081 */
@@ -640,7 +640,7 @@ int tct_thrd_detach(thrd_t thr)
 #endif
 }
 
-int tct_thrd_equal(thrd_t thr0, thrd_t thr1)
+int tct_thrd_equal(tct_thrd_t thr0, tct_thrd_t thr1)
 {
 #if defined(_TTHREAD_WIN32_)
   return GetThreadId(thr0) == GetThreadId(thr1);
@@ -663,7 +663,7 @@ void tct_thrd_exit(int res)
 #endif
 }
 
-int tct_thrd_join(thrd_t thr, int *res)
+int tct_thrd_join(tct_thrd_t thr, int *res)
 {
 #if defined(_TTHREAD_WIN32_)
   DWORD dwRes;
