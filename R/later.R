@@ -69,8 +69,15 @@ create_loop <- function(autorun = NULL) {
   class(loop) <- "event_loop"
   loop$id <- id
   lockBinding("id", loop)
-  # Automatically destroy the loop when the handle is GC'd
-  reg.finalizer(loop, destroy_loop)
+  if (id != 0L) {
+    # Automatically destroy the loop when the handle is GC'd (unless it's the
+    # global loop.) The global loop handle never gets GC'd under normal
+    # circumstances because .globals$global_loop refers to it. However, if the
+    # package is unloaded it can get GC'd, and we don't want the
+    # destroy_loop() finalizer to give an error message about not being able
+    # to destroy the global loop.
+    reg.finalizer(loop, destroy_loop)
+  }
 
   loop
 }
