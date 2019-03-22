@@ -72,7 +72,7 @@ void Timer::set(const Timestamp& timestamp) {
 
   // If the thread has not yet been created, created it.
   if (this->bgthread == boost::none) {
-    thrd_t thread;
+    tct_thrd_t thread;
     tct_thrd_create(&thread, &bg_main_func, this);
     this->bgthread = thread;
   }

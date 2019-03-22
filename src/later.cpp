@@ -14,7 +14,7 @@
 
 // For debug.h
 #if defined(DEBUG_THREAD)
-thrd_t __main_thread__;
+tct_thrd_t __main_thread__;
 #endif
 
 // Declare platform-specific functions that are implemented in

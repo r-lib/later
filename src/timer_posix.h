@@ -15,7 +15,7 @@ class Timer {
   // Stores the handle to a bgthread, which is created upon demand. (Previously
   // the thread was created in the constructor, but addressed sanitized (ASAN)
   // builds of R would hang when pthread_create was called during dlopen.)
-  boost::optional<thrd_t> bgthread;
+  boost::optional<tct_thrd_t> bgthread;
   boost::optional<Timestamp> wakeAt;
   bool stopped;
   
