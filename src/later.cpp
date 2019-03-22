@@ -7,6 +7,7 @@
 #include <boost/scope_exit.hpp>
 #include "debug.h"
 #include "utils.h"
+#include "threadutils.h"
 
 #include "callback_registry.h"
 #include "interrupt.h"
@@ -80,15 +81,20 @@ bool at_top_level() {
 // avoid races.
 std::map<int, boost::shared_ptr<CallbackRegistry> > callbackRegistries;
 
+// Functions that search or manipulate callbackRegistries must use this mutex.
+// Some functions also have ASSERT_MAIN_THREAD in order to make sure that
+Mutex callbackRegistriesMutex(tct_mtx_plain | tct_mtx_recursive);
+
 // [[Rcpp::export]]
 bool existsCallbackRegistry(int loop) {
-  ASSERT_MAIN_THREAD()
+  Guard guard(callbackRegistriesMutex);
   return (callbackRegistries.find(loop) != callbackRegistries.end());
 }
 
 // [[Rcpp::export]]
 bool createCallbackRegistry(int loop) {
   ASSERT_MAIN_THREAD()
+  Guard guard(callbackRegistriesMutex);
   if (existsCallbackRegistry(loop)) {
     Rcpp::stop("Can't create event loop %d because it already exists.", loop);
   }
@@ -96,12 +102,13 @@ bool createCallbackRegistry(int loop) {
   return true;
 }
 
-// Gets a callback registry by ID. If registry doesn't exist, it will be created.
+// Gets a callback registry by ID.
 boost::shared_ptr<CallbackRegistry> getCallbackRegistry(int loop) {
-  ASSERT_MAIN_THREAD()
-  // TODO: clean up
+  Guard guard(callbackRegistriesMutex);
   if (!existsCallbackRegistry(loop)) {
-    Rcpp::stop("Event loop %d does not exist.", loop);
+    // This function can be called from different threads so we can't use
+    // Rcpp::stop().
+    throw std::runtime_error("Callback registry (loop) " + toString(loop) + " not found.");
   }
   return callbackRegistries[loop];
 }
@@ -111,14 +118,18 @@ bool deletingCallbackRegistry = false;
 // [[Rcpp::export]]
 bool deleteCallbackRegistry(int loop) {
   ASSERT_MAIN_THREAD()
-
   // Detect re-entrant calls to this function and just return in that case.
   // This can hypothetically happen if as we're deleting a callback registry,
   // an R finalizer runs while we're removing references to the Rcpp::Function
-  // objects, and the finalizer calls this function.
+  // objects, and the finalizer calls this function. Since this function is
+  // always called from the same thread, we don't have to worry about races
+  // with this variable.
   if (deletingCallbackRegistry) {
     return false;
   }
+
+  Guard guard(callbackRegistriesMutex);
+
   deletingCallbackRegistry = true;
   BOOST_SCOPE_EXIT(void) {
     deletingCallbackRegistry = false;
@@ -137,6 +148,7 @@ bool deleteCallbackRegistry(int loop) {
 // [[Rcpp::export]]
 Rcpp::List list_queue_(int loop) {
   ASSERT_MAIN_THREAD()
+  Guard guard(callbackRegistriesMutex);
   return getCallbackRegistry(loop)->list();
 }
 
@@ -149,16 +161,25 @@ bool execCallbacks(double timeoutSecs, bool runAll, int loop) {
   Rcpp::RNGScope rngscope;
   ProtectCallbacks pcscope;
 
-  if (!getCallbackRegistry(loop)->wait(timeoutSecs)) {
+  boost::shared_ptr<CallbackRegistry> callback_registry;
+  {
+    // Only lock callbackRegistries for this scope so that when we're waiting
+    // or running callbacks later in this function, we won't block other
+    // threads from adding items to the registry.
+    Guard guard(callbackRegistriesMutex);
+    callback_registry = getCallbackRegistry(loop);
+  }
+
+  if (!callback_registry->wait(timeoutSecs)) {
     return false;
   }
-  
+
   Timestamp now;
-  
+
   do {
-    // We only take one at a time, because we don't want to lose callbacks if 
+    // We only take one at a time, because we don't want to lose callbacks if
     // one of the callbacks throws an error
-    std::vector<Callback_sp> callbacks = getCallbackRegistry(loop)->take(1, now);
+    std::vector<Callback_sp> callbacks = callback_registry->take(1, now);
     if (callbacks.size() == 0) {
       break;
     }
@@ -191,6 +212,7 @@ bool execCallbacksForTopLevel() {
 // [[Rcpp::export]]
 bool idle(int loop) {
   ASSERT_MAIN_THREAD()
+  Guard guard(callbackRegistriesMutex);
   return getCallbackRegistry(loop)->empty();
 }
 
@@ -198,6 +220,7 @@ bool idle(int loop) {
 std::string execLater(Rcpp::Function callback, double delaySecs, int loop) {
   ASSERT_MAIN_THREAD()
   ensureInitialized();
+  Guard guard(callbackRegistriesMutex);
   uint64_t callback_id = doExecLater(getCallbackRegistry(loop), callback, delaySecs, loop == GLOBAL_LOOP);
 
   // We have to convert it to a string in order to maintain 64-bit precision,
@@ -209,6 +232,7 @@ std::string execLater(Rcpp::Function callback, double delaySecs, int loop) {
 
 bool cancel(uint64_t callback_id, int loop) {
   ASSERT_MAIN_THREAD()
+  Guard guard(callbackRegistriesMutex);
   if (!existsCallbackRegistry(loop))
     return false;
 
@@ -240,6 +264,7 @@ bool cancel(std::string callback_id_s, int loop) {
 // [[Rcpp::export]]
 double nextOpSecs(int loop) {
   ASSERT_MAIN_THREAD()
+  Guard guard(callbackRegistriesMutex);
   Optional<Timestamp> nextTime = getCallbackRegistry(loop)->nextTimestamp();
   if (!nextTime.has_value()) {
     return R_PosInf;
@@ -251,6 +276,7 @@ double nextOpSecs(int loop) {
 
 extern "C" void execLaterNative(void (*func)(void*), void* data, double delaySecs) {
   ensureInitialized();
+  Guard guard(callbackRegistriesMutex);
   int loop = GLOBAL_LOOP;
   doExecLater(getCallbackRegistry(GLOBAL_LOOP), func, data, delaySecs, loop == GLOBAL_LOOP);
 }
