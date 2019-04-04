@@ -274,9 +274,13 @@ double nextOpSecs(int loop) {
   }
 }
 
+
 extern "C" void execLaterNative(void (*func)(void*), void* data, double delaySecs) {
+  execLaterNativeLoop(func, data, delaySecs, GLOBAL_LOOP);
+}
+
+extern "C" void execLaterNativeLoop(void (*func)(void*), void* data, double delaySecs, int loop) {
   ensureInitialized();
   Guard guard(callbackRegistriesMutex);
-  int loop = GLOBAL_LOOP;
-  doExecLater(getCallbackRegistry(GLOBAL_LOOP), func, data, delaySecs, loop == GLOBAL_LOOP);
+  doExecLater(getCallbackRegistry(loop), func, data, delaySecs, loop);
 }

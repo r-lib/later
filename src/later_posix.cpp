@@ -197,6 +197,10 @@ uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp:
   ASSERT_MAIN_THREAD()
   uint64_t callback_id = callbackRegistry->add(callback, delaySecs);
 
+  // The timer needs to be reset only if we're using the global loop, because
+  // this usage of the timer is relevant only when the event loop is driven by
+  // R's input handler (at the idle console), and only the global loop is by
+  // that.
   if (resetTimer)
     timer.set(*(callbackRegistry->nextTimestamp()));
 

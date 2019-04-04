@@ -16,5 +16,6 @@ bool execCallbacks(double timeoutSecs = 0, bool runAll = true, int loop = GLOBAL
 bool idle(int loop);
 
 extern "C" void execLaterNative(void (*func)(void*), void* data, double secs);
+extern "C" void execLaterNativeLoop(void (*func)(void*), void* data, double secs, int loop);
 
 #endif // _LATER_H_
