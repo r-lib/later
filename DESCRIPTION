@@ -10,7 +10,8 @@ Authors@R: c(
     person("Evan", "Nemerson", role = c("ctb", "cph"), comment = "TinyCThread library, https://tinycthread.github.io/")
     )
 Description: Executes arbitrary R or C functions some time after the current
-    time, after the R execution stack has emptied.
+    time, after the R execution stack has emptied. The functions are scheduled
+    in an event loop.
 URL: https://github.com/r-lib/later
 BugReports: https://github.com/r-lib/later/issues
 License: GPL (>= 2)
