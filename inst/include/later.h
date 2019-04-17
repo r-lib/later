@@ -5,6 +5,10 @@
 #include <iostream>
 #include <Rcpp.h>
 
+#ifdef _AIX
+#include <pthread.h>
+#endif
+
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 // Taken from http://tolstoy.newcastle.edu.au/R/e2/devel/06/11/1242.html
