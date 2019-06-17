@@ -7,13 +7,13 @@
 
 #if __cplusplus >= 201103L
   #include <atomic>
-  std::atomic<uint64_t> nextCallbackId(0);
+  std::atomic<uint64_t> nextCallbackId(1);
 #else
   // Fall back to boost::atomic if std::atomic isn't available. We want to
   // avoid boost::atomic when possible because on ARM, it requires the
   // -lboost_atomic linker flag. (https://github.com/r-lib/later/issues/73)
   #include <boost/atomic.hpp>
-  boost::atomic<uint64_t> nextCallbackId(0);
+  boost::atomic<uint64_t> nextCallbackId(1);
 #endif
 
 // ============================================================================

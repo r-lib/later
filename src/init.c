@@ -3,7 +3,7 @@
 #include <stdlib.h> // for NULL
 #include <R_ext/Rdynload.h>
 
-/* FIXME: 
+/* FIXME:
 Check these declarations against the C/Fortran source code.
 */
 
@@ -35,7 +35,7 @@ static const R_CallMethodDef CallEntries[] = {
   {NULL, NULL, 0}
 };
 
-void execLaterNative(void (*func)(void*), void* data, double secs);
+uint64_t execLaterNative(void (*func)(void*), void* data, double secs);
 
 void R_init_later(DllInfo *dll)
 {
