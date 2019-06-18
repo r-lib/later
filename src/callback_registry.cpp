@@ -16,6 +16,93 @@
   boost::atomic<uint64_t> nextCallbackId(1);
 #endif
 
+
+// ============================================================================
+// Invoke functions
+// ============================================================================
+
+enum InvokeResult {
+  INVOKE_IN_PROGRESS,
+  INVOKE_INTERRUPT,
+  INVOKE_ERROR,
+  INVOKE_CPP_ERROR,
+  INVOKE_OK
+};
+
+// This is set by invoke_c(). I
+InvokeResult last_invoke_result;
+std::string last_invoke_message;
+
+// A wrapper for calling R_CheckUserInterrupt via R_ToplevelExec.
+void checkInterruptFn(void*) {
+  R_CheckUserInterrupt();
+}
+
+// The purpose of this function is to provide a plain C function to be called
+// by R_ToplevelExec. Because it's called as a C function, it must not throw
+// exceptions. Because this function returns void, the way for it to report
+// the result to its caller is by setting last_invoke_result.
+extern "C" void invoke_c(void* callback_p) {
+  ASSERT_MAIN_THREAD()
+  last_invoke_result = INVOKE_IN_PROGRESS;
+  last_invoke_message = "";
+  // Callback_sp callback_sp = *((Callback_sp*)callback_sp_p);
+
+  Callback* cb_p = (Callback*)callback_p;
+
+  try {
+    cb_p->invoke();
+  }
+  catch(Rcpp::internal::InterruptedException &e) {
+    // Reaches here if the callback is R code and an interrupt occurs.
+    last_invoke_result = INVOKE_INTERRUPT;
+    return;
+  }
+  catch(std::exception& e){
+    // Reaches here if a C++ error occurs, or if an R function called via Rcpp
+    // throws an error (Rcpp will convert it to an Rcpp::exception).
+    // TODO: What about if an R function not called from Rcpp throws an error?
+    last_invoke_result = INVOKE_ERROR;
+    last_invoke_message = e.what();
+    return;
+  }
+  catch( ... ){
+    last_invoke_result = INVOKE_CPP_ERROR;
+    return;
+  }
+
+  if (R_ToplevelExec(checkInterruptFn, NULL) == FALSE) {
+    // Reaches here if the callback is C/C++ code and an interrupt occurs.
+    last_invoke_result = INVOKE_INTERRUPT;
+    return;
+  }
+  last_invoke_result = INVOKE_OK;
+}
+
+// Wrapper method for invoking a callback. The Callback object has an
+// invoke() method, but instead of invoking it directly, this method should
+// generally be used instead. The purpose of this method is to call invoke(),
+// but wrap it in a R_ToplevelExec, so that any exceptions (or LONGJMPs) won't
+// cross that barrier in the call stack. If exceptions do occur, this function
+// throws a C++ exception, which will be caught by Rcpp and turned into an R
+// error.
+void Callback::invoke_wrapped() const {
+  ASSERT_MAIN_THREAD()
+  R_ToplevelExec(invoke_c, (void*)this);
+
+  switch (last_invoke_result) {
+  case INVOKE_INTERRUPT:
+    throw Rcpp::internal::InterruptedException();
+  case INVOKE_ERROR:
+    throw std::runtime_error(last_invoke_message);
+  case INVOKE_CPP_ERROR:
+    throw std::runtime_error("later: c++ exception (unknown reason) occurred while executing callback.");
+  default:
+    return;
+  }
+}
+
+
 // ============================================================================
 // BoostFunctionCallback
 // ============================================================================

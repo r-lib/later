@@ -184,11 +184,15 @@ bool execCallbacks(double timeoutSecs, bool runAll, int loop) {
       break;
     }
     // This line may throw errors!
-    (*callbacks[0])();
+    callbacks[0]->invoke_wrapped();
   } while (runAll);
   return true;
 }
 
+
+// This function is called from the input handler on Unix, or the Windows
+// equivalent. It may throw exceptions.
+//
 // Invoke execCallbacks up to 20 times. At the first iteration where no work is
 // done, terminate. We call this from the top level instead of just calling
 // execCallbacks because the top level only gets called occasionally (every 10's

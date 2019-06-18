@@ -23,7 +23,7 @@ class Callback {
 public:
   virtual ~Callback() {};
   Callback(Timestamp when) : when(when) {};
-  
+
   bool operator<(const Callback& other) const {
     return this->when < other.when ||
       (!(this->when > other.when) && this->callbackId < other.callbackId);
@@ -37,12 +37,14 @@ public:
     return callbackId;
   };
 
-  virtual void operator()() const = 0;
+  virtual void invoke() const = 0;
+
+  void invoke_wrapped() const;
 
   virtual Rcpp::RObject rRepresentation() const = 0;
 
   Timestamp when;
-  
+
 protected:
   // Used to break ties when comparing to a callback that has precisely the same
   // timestamp
@@ -54,7 +56,7 @@ class BoostFunctionCallback : public Callback {
 public:
   BoostFunctionCallback(Timestamp when, boost::function<void (void)> func);
 
-  void operator()() const {
+  void invoke() const {
     func();
   }
 
@@ -69,7 +71,7 @@ class RcppFunctionCallback : public Callback {
 public:
   RcppFunctionCallback(Timestamp when, Rcpp::Function func);
 
-  void operator()() const {
+  void invoke() const {
     func();
   }
 
@@ -123,16 +125,16 @@ public:
   // The smallest timestamp present in the registry, if any.
   // Use this to determine the next time we need to pump events.
   Optional<Timestamp> nextTimestamp() const;
-  
+
   // Is the registry completely empty?
   bool empty() const;
-  
+
   // Is anything ready to execute?
   bool due(const Timestamp& time = Timestamp()) const;
-  
+
   // Pop and return an ordered list of functions to execute now.
   std::vector<Callback_sp> take(size_t max = -1, const Timestamp& time = Timestamp());
-  
+
   bool wait(double timeoutSecs) const;
 
   // Return a List of items in the queue.
