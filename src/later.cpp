@@ -202,7 +202,7 @@ bool execCallbacks(double timeoutSecs, bool runAll, int loop) {
 bool execCallbacksForTopLevel() {
   bool any = false;
   for (size_t i = 0; i < 20; i++) {
-    if (!execCallbacks(0, GLOBAL_LOOP))
+    if (!execCallbacks(0, true, GLOBAL_LOOP))
       return any;
     any = true;
   }
