@@ -35,7 +35,7 @@ static const R_CallMethodDef CallEntries[] = {
   {NULL, NULL, 0}
 };
 
-uint64_t execLaterNative(void (*func)(void*), void* data, double secs);
+uint64_t execLaterNative(void (*func)(void*), void* data, double secs, int loop);
 
 void R_init_later(DllInfo *dll)
 {

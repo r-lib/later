@@ -36,7 +36,7 @@ inline void later(void (*func)(void*), void* data, double secs, int loop) {
   // do not want the static initialization to happen there.
 
   // The function type for the real execLaterNative
-  typedef void (*elnfun)(void (*func)(void*), void*, double);
+  typedef void (*elnfun)(void (*func)(void*), void*, double, int);
   static elnfun eln = NULL;
   if (!eln) {
     // Initialize if necessary
@@ -56,7 +56,7 @@ inline void later(void (*func)(void*), void* data, double secs, int loop) {
     return;
   }
 
-  eln(func, data, secs);
+  eln(func, data, secs, loop);
 }
 
 inline void later(void (*func)(void*), void* data, double secs) {

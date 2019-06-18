@@ -274,21 +274,15 @@ double nextOpSecs(int loop) {
   }
 }
 
-// Schedules a C function to execute on global event loop. Returns callback ID
-// on success, or 0 on error.
-extern "C" uint64_t execLaterNative(void (*func)(void*), void* data, double delaySecs) {
-  return execLaterNativeLoop(func, data, delaySecs, GLOBAL_LOOP);
-}
-
 // Schedules a C function to execute on a specific event loop. Returns
 // callback ID on success, or 0 on error.
-extern "C" uint64_t execLaterNativeLoop(void (*func)(void*), void* data, double delaySecs, int loop) {
+extern "C" uint64_t execLaterNative(void (*func)(void*), void* data, double delaySecs, int loop) {
   ensureInitialized();
   Guard guard(callbackRegistriesMutex);
   // This try is because getCallbackRegistry can throw, and if it happens on a
   // background thread the process will stop.
   try {
-    return doExecLater(getCallbackRegistry(loop), func, data, delaySecs, loop);
+    return doExecLater(getCallbackRegistry(loop), func, data, delaySecs, loop == GLOBAL_LOOP);
   } catch (...) {
     return 0;
   }
