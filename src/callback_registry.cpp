@@ -23,10 +23,10 @@
 
 enum InvokeResult {
   INVOKE_IN_PROGRESS,
-  INVOKE_INTERRUPT,
+  INVOKE_INTERRUPTED,
   INVOKE_ERROR,
   INVOKE_CPP_ERROR,
-  INVOKE_OK
+  INVOKE_COMPLETED
 };
 
 // This is set by invoke_c(). I
@@ -42,11 +42,52 @@ void checkInterruptFn(void*) {
 // by R_ToplevelExec. Because it's called as a C function, it must not throw
 // exceptions. Because this function returns void, the way for it to report
 // the result to its caller is by setting last_invoke_result.
+//
+// This code needs to be able to handle interrupts, R errors, and C++
+// exceptions. There are many ways these things can happen.
+//
+// * If the Callback object is a RcppFunctionCallback, then in the case of an
+//   interrupt or an R error, it will throw a C++ exception. These exceptions
+//   are the ones defined by Rcpp, and they will be caught by the try-catch in
+//   this function.
+// * It could be a BoostFunctionCallback with C or C++ code.
+//   * If the function invokes an Rcpp::Function and an interrupt or R error
+//     happens within the Rcpp::Function, it will throw exceptions just like
+//     the RcppFunctionCallback case, and they will be caught.
+//   * If some other C++ exception occurs, it will be caught.
+//   * If an interrupt (Ctrl-C, or Esc in RStudio) is received (outside of an
+//     Rcpp::Function), this function will continue through to the end (and
+//     set the state to INVOKE_COMPLETED). Later, when the invoke_wrapper()
+//     function (which called this one) checks to see if the interrupt
+//     happened, it will set the state to INVOKE_INTERRUPTED. (Note that it is
+//     potentially possible for an interrupt and an exception to occur, in
+//     which case we set the state to INVOKE_ERROR.)
+//   * If the function calls R code with Rf_eval(), an interrupt or R error
+//     could occur. If it's an interrupt, then it will be detect as in the
+//     previous case. If an error occurs, then that error will be detected by
+//     the invoke_wrapper() function (which called this one) and the state
+//     will be set to INVOKE_ERROR.
+//
+// Note that the last case has one potentially problematic issue. If an error
+// occurs in R code, then it will longjmp out of of this function, back to its
+// caller, invoke_wrapped(). This will longjmp out of a try statement, which
+// is generally not a good idea. We don't know ahead of time whether the
+// Callback may longjmp or throw an exception -- some Callbacks could
+// potentially do both.
+//
+// The alternative is to move the try-catch out of this function and into
+// invoke_wrapped(), surrounding the `R_ToplevelExec(invoke_c, ...)`. However,
+// if we do this, then exceptions would pass through the R_ToplevelExec, which
+// is dangerous because it is plain C code. The current way of doing it is
+// imperfect, but less dangerous.
+//
+// There does not seem to be a 100% safe way to call functions which could
+// either longjmp or throw exceptions. If we do figure out a way to do that,
+// it should be used here.
 extern "C" void invoke_c(void* callback_p) {
   ASSERT_MAIN_THREAD()
   last_invoke_result = INVOKE_IN_PROGRESS;
   last_invoke_message = "";
-  // Callback_sp callback_sp = *((Callback_sp*)callback_sp_p);
 
   Callback* cb_p = (Callback*)callback_p;
 
@@ -54,49 +95,60 @@ extern "C" void invoke_c(void* callback_p) {
     cb_p->invoke();
   }
   catch(Rcpp::internal::InterruptedException &e) {
-    // Reaches here if the callback is R code and an interrupt occurs.
-    last_invoke_result = INVOKE_INTERRUPT;
+    // Reaches here if the callback is in Rcpp code and an interrupt occurs.
+    last_invoke_result = INVOKE_INTERRUPTED;
     return;
   }
-  catch(std::exception& e){
-    // Reaches here if a C++ error occurs, or if an R function called via Rcpp
-    // throws an error (Rcpp will convert it to an Rcpp::exception).
-    // TODO: What about if an R function not called from Rcpp throws an error?
+  catch(Rcpp::exception& e) {
+    // Reaches here if an R-level error happens in an Rcpp::Function.
     last_invoke_result = INVOKE_ERROR;
     last_invoke_message = e.what();
     return;
   }
-  catch( ... ){
+  catch(std::exception& e) {
+    // Reaches here if some other (non-Rcpp) C++ exception is thrown.
+    last_invoke_result = INVOKE_CPP_ERROR;
+    last_invoke_message = e.what();
+    return;
+  }
+  catch( ... ) {
+    // Reaches here if a non-exception C++ object is thrown.
     last_invoke_result = INVOKE_CPP_ERROR;
     return;
   }
 
-  if (R_ToplevelExec(checkInterruptFn, NULL) == FALSE) {
-    // Reaches here if the callback is C/C++ code and an interrupt occurs.
-    last_invoke_result = INVOKE_INTERRUPT;
-    return;
-  }
-  last_invoke_result = INVOKE_OK;
+  // Reaches here if no exceptions are thrown. It's possible to get here if an
+  // interrupt was received outside of Rcpp code, or if an R error happened
+  // using Rf_eval().
+  last_invoke_result = INVOKE_COMPLETED;
 }
 
-// Wrapper method for invoking a callback. The Callback object has an
-// invoke() method, but instead of invoking it directly, this method should
-// generally be used instead. The purpose of this method is to call invoke(),
-// but wrap it in a R_ToplevelExec, so that any exceptions (or LONGJMPs) won't
-// cross that barrier in the call stack. If exceptions do occur, this function
-// throws a C++ exception, which will be caught by Rcpp and turned into an R
-// error.
+// Wrapper method for invoking a callback. The Callback object has an invoke()
+// method, but instead of invoking it directly, this method should be used
+// instead. The purpose of this method is to call invoke(), but wrap it in a
+// R_ToplevelExec, so that any LONGJMPs (due to errors in R functions) won't
+// cross that barrier in the call stack. If interrupts, exceptions, or
+// LONGJMPs do occur, this function throws a C++ exception.
 void Callback::invoke_wrapped() const {
   ASSERT_MAIN_THREAD()
-  R_ToplevelExec(invoke_c, (void*)this);
+  Rboolean result = R_ToplevelExec(invoke_c, (void*)this);
+
+  if (!result) {
+    last_invoke_result = INVOKE_ERROR;
+  }
+
+  if (R_ToplevelExec(checkInterruptFn, NULL) == FALSE) {
+    // Reaches here if the callback is C/C++ code and an interrupt occurs.
+    last_invoke_result = INVOKE_INTERRUPTED;
+  }
 
   switch (last_invoke_result) {
-  case INVOKE_INTERRUPT:
+  case INVOKE_INTERRUPTED:
     throw Rcpp::internal::InterruptedException();
   case INVOKE_ERROR:
-    throw std::runtime_error(last_invoke_message);
+    throw Rcpp::exception(last_invoke_message.c_str());
   case INVOKE_CPP_ERROR:
-    throw std::runtime_error("later: c++ exception (unknown reason) occurred while executing callback.");
+    throw std::runtime_error("invoke_wrapped: throwing std::runtime_error");
   default:
     return;
   }
