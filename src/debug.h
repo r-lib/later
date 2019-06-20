@@ -24,5 +24,11 @@ extern tct_thrd_t __background_thread__;
 
 #endif // defined(DEBUG_THREAD)
 
+inline void trace(const std::string& msg) {
+#ifdef DEBUG_TRACE
+  std::cerr << msg;
+#endif
+}
+
 
 #endif

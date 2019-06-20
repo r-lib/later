@@ -96,23 +96,27 @@ extern "C" void invoke_c(void* callback_p) {
   }
   catch(Rcpp::internal::InterruptedException &e) {
     // Reaches here if the callback is in Rcpp code and an interrupt occurs.
+    trace("invoke_c: caught Rcpp::internal::InterruptedException\n");
     last_invoke_result = INVOKE_INTERRUPTED;
     return;
   }
   catch(Rcpp::exception& e) {
     // Reaches here if an R-level error happens in an Rcpp::Function.
+    trace("invoke_c: caught Rcpp::exception\n");
     last_invoke_result = INVOKE_ERROR;
     last_invoke_message = e.what();
     return;
   }
   catch(std::exception& e) {
     // Reaches here if some other (non-Rcpp) C++ exception is thrown.
+    trace("invoke_c: caught std::exception\n");
     last_invoke_result = INVOKE_CPP_ERROR;
     last_invoke_message = e.what();
     return;
   }
   catch( ... ) {
     // Reaches here if a non-exception C++ object is thrown.
+    trace("invoke_c: caught unknown object\n");
     last_invoke_result = INVOKE_CPP_ERROR;
     return;
   }
@@ -120,6 +124,7 @@ extern "C" void invoke_c(void* callback_p) {
   // Reaches here if no exceptions are thrown. It's possible to get here if an
   // interrupt was received outside of Rcpp code, or if an R error happened
   // using Rf_eval().
+  trace("invoke_c: COMPLETED\n");
   last_invoke_result = INVOKE_COMPLETED;
 }
 
@@ -134,18 +139,22 @@ void Callback::invoke_wrapped() const {
   Rboolean result = R_ToplevelExec(invoke_c, (void*)this);
 
   if (!result) {
+    trace("invoke_wrapped: R_ToplevelExec return is FALSE; error or interrupt occurred in R code\n");
     last_invoke_result = INVOKE_ERROR;
   }
 
   if (R_ToplevelExec(checkInterruptFn, NULL) == FALSE) {
     // Reaches here if the callback is C/C++ code and an interrupt occurs.
+    trace("invoke_wrapped: interrupt (outside of R code) detected by R_CheckUserInterrupt\n");
     last_invoke_result = INVOKE_INTERRUPTED;
   }
 
   switch (last_invoke_result) {
   case INVOKE_INTERRUPTED:
+    trace("invoke_wrapped: throwing Rcpp::internal::InterruptedException\n");
     throw Rcpp::internal::InterruptedException();
   case INVOKE_ERROR:
+    trace("invoke_wrapped: throwing Rcpp::exception\n");
     throw Rcpp::exception(last_invoke_message.c_str());
   case INVOKE_CPP_ERROR:
     throw std::runtime_error("invoke_wrapped: throwing std::runtime_error");
