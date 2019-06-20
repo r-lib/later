@@ -122,7 +122,7 @@ static void async_input_handler(void *data) {
     execCallbacksForTopLevel();
   }
   catch(Rcpp::internal::InterruptedException &e) {
-    REprintf("later: interrupt occurred while executing callback.");
+    REprintf("later: interrupt occurred while executing callback.\n");
   }
   catch(std::exception& e){
     std::string msg = "later: exception occurred while executing callback: \n";
@@ -131,7 +131,7 @@ static void async_input_handler(void *data) {
     REprintf(msg.c_str());
   }
   catch( ... ){
-    REprintf("later: c++ exception (unknown reason) occurred while executing callback.");
+    REprintf("later: c++ exception (unknown reason) occurred while executing callback.\n");
   }
 }
 
