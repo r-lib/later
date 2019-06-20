@@ -2,6 +2,7 @@
 #include <Rinternals.h>
 #include <stdlib.h> // for NULL
 #include <R_ext/Rdynload.h>
+#include <stdint.h> // for uint64_t
 
 /* FIXME:
 Check these declarations against the C/Fortran source code.
