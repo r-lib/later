@@ -24,11 +24,31 @@ extern tct_thrd_t __background_thread__;
 
 #endif // defined(DEBUG_THREAD)
 
-inline void trace(const std::string& msg) {
-#ifdef DEBUG_TRACE
-  std::cerr << msg;
-#endif
-}
 
+// ============================================================================
+// Logging
+// ============================================================================
+
+void err_printf(const char *fmt, ...);
+
+enum LogLevel {
+  OFF,
+  ERROR,
+  WARN,
+  INFO,
+  DEBUG
+};
+
+extern LogLevel log_level_;
+
+// This is a macro instead of a function, so that if msg is an expression that
+// involves constructing a string, the string construction does not need to be
+// executed when the message is not being logged. If it were a function, the
+// expression would need to be executed even when the message is not actually
+// logged.
+//
+// Conversion to std::string is done so that msg can be a char* or a
+// std::string. This method is needed because macros can't be overloaded.
+#define DEBUG_LOG(msg, level) if (log_level_ >= level) err_printf("%s\n", std::string(msg).c_str());
 
 #endif

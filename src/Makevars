@@ -1,11 +1,9 @@
 # Use C++11 if available
 CXX_STD=CXX11
 
-PKG_CPPFLAGS = -pthread
+PKG_CPPFLAGS = -pthread -DSTRICT_R_HEADERS
 PKG_LIBS = -pthread
 
 #### Debugging flags ####
 # Uncomment to enable thread assertions
 # PKG_CPPFLAGS += -DDEBUG_THREAD -UNDEBUG
-# Uncomment to enable printing of trace() messages
-# PKG_CPPFLAGS += -DDEBUG_TRACE

@@ -15,6 +15,17 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// log_level
+std::string log_level(std::string level);
+RcppExport SEXP _later_log_level(SEXP levelSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type level(levelSEXP);
+    rcpp_result_gen = Rcpp::wrap(log_level(level));
+    return rcpp_result_gen;
+END_RCPP
+}
 // ensureInitialized
 void ensureInitialized();
 RcppExport SEXP _later_ensureInitialized() {

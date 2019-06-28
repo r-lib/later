@@ -5,6 +5,10 @@ testCallbackOrdering <- function() {
     invisible(.Call('_later_testCallbackOrdering', PACKAGE = 'later'))
 }
 
+log_level <- function(level) {
+    .Call('_later_log_level', PACKAGE = 'later', level)
+}
+
 ensureInitialized <- function() {
     invisible(.Call('_later_ensureInitialized', PACKAGE = 'later'))
 }

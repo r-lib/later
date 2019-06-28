@@ -66,7 +66,7 @@ namespace {
 void fd_on() {
   set_fd(true);
 }
-  
+
 Timer timer(fd_on);
 } // namespace
 
@@ -86,11 +86,11 @@ public:
 static void async_input_handler(void *data) {
   ASSERT_MAIN_THREAD()
   set_fd(false);
-  
+
   if (!at_top_level()) {
     // It's not safe to run arbitrary callbacks when other R code
     // is already running. Wait until we're back at the top level.
-    
+
     // jcheng 2017-08-02: We can't just leave the file descriptor hot and let
     // async_input_handler get invoked as fast as possible. Previously we did
     // this, but on POSIX systems, it interferes with R_SocketWait.
@@ -122,11 +122,11 @@ static void async_input_handler(void *data) {
     execCallbacksForTopLevel();
   }
   catch(Rcpp::internal::InterruptedException &e) {
-    trace("async_input_handler: caught Rcpp::internal::InterruptedException\n");
+    DEBUG_LOG("async_input_handler: caught Rcpp::internal::InterruptedException", INFO);
     REprintf("later: interrupt occurred while executing callback.\n");
   }
   catch(std::exception& e){
-    trace("async_input_handler: caught exception\n");
+    DEBUG_LOG("async_input_handler: caught exception", INFO);
     std::string msg = "later: exception occurred while executing callback: \n";
     msg += e.what();
     msg += "\n";
@@ -154,7 +154,7 @@ void ensureInitialized() {
   if (!initialized) {
     REGISTER_MAIN_THREAD()
     buf = malloc(BUF_SIZE);
-    
+
     int pipes[2];
     if (pipe(pipes)) {
       free(buf);
@@ -163,7 +163,7 @@ void ensureInitialized() {
     }
     pipe_out = pipes[0];
     pipe_in = pipes[1];
-    
+
     inputHandlerHandle = addInputHandler(R_InputHandlers, pipe_out, async_input_handler, LATER_ACTIVITY);
 
     // Need to add a dummy input handler to avoid segfault when the "real"
