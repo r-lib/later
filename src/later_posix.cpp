@@ -191,7 +191,8 @@ void deInitialize() {
     initialized = 0;
 
     // Trigger remove_dummy_handler()
-    write(dummy_pipe_in, "a", 1);
+    // Store `ret` because otherwise it raises a significant warning.
+    ssize_t ret = write(dummy_pipe_in, "a", 1);
   }
 }
 
