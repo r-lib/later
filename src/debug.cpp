@@ -3,6 +3,7 @@
 #include <R.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <stdarg.h>
 
 
 // It's not safe to call REprintf from the background thread but we need some
