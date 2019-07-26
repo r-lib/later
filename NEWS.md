@@ -8,6 +8,8 @@
 
 * Fixed [issue #73](https://github.com/r-lib/later/issues/73): Linking later on ARM failed because `boost::atomic` requires the `-lboost_atomic` flag. Now later tries to use `std::atomic` when available (when the compiler supports C++11), and falls back to `boost::atomic` if not. [PR #80](https://github.com/r-lib/later/pull/80)
 
+* Added private event loops: these are event loops that can be run independently from the global event loop. These are useful when you have code that schedules callbacks with `later()`, and you want to call `run_now()` block and wait for those callbacks to execute before continuing. Without private event loops, if you call `run_now()` to wait until a particular callback has finished, you might inadvertantly run other callbacks that were scheduled by other code. With private event loops, you can create a private loop, schedule a callback on it, then call `run_now()` on that loop until it executes, all without interfering with the global loop. ([#84](https://github.com/r-lib/later/pull/84))
+
 ## later 0.7.5
 
 * Fixed issue where the order of callbacks scheduled by native later::later could be nondeterministic if they are scheduled too quickly. This was because callbacks were sorted by the time at which they come due, which could be identical. Later now uses the order of insertion as a tiebreaker. [PR #69](https://github.com/r-lib/later/pull/69)
