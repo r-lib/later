@@ -27,7 +27,7 @@
 #' which is useful when for scheduling tasks when you do not want to interfere
 #' with the global event loop.
 #'
-#' \code{destory_loop} destroys a private event loop.
+#' \code{destroy_loop} destroys a private event loop.
 #'
 #' \code{exists_loop} reports whether an event loop exists -- that is, that it
 #' has not been destroyed.
