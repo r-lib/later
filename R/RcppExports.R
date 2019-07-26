@@ -5,30 +5,47 @@ testCallbackOrdering <- function() {
     invisible(.Call('_later_testCallbackOrdering', PACKAGE = 'later'))
 }
 
+log_level <- function(level) {
+    .Call('_later_log_level', PACKAGE = 'later', level)
+}
+
 ensureInitialized <- function() {
     invisible(.Call('_later_ensureInitialized', PACKAGE = 'later'))
 }
 
-execCallbacks <- function(timeoutSecs, runAll) {
-    .Call('_later_execCallbacks', PACKAGE = 'later', timeoutSecs, runAll)
+existsCallbackRegistry <- function(loop) {
+    .Call('_later_existsCallbackRegistry', PACKAGE = 'later', loop)
 }
 
-idle <- function() {
-    .Call('_later_idle', PACKAGE = 'later')
+createCallbackRegistry <- function(loop) {
+    .Call('_later_createCallbackRegistry', PACKAGE = 'later', loop)
 }
 
-execLater <- function(callback, delaySecs) {
-    invisible(.Call('_later_execLater', PACKAGE = 'later', callback, delaySecs))
+deleteCallbackRegistry <- function(loop) {
+    .Call('_later_deleteCallbackRegistry', PACKAGE = 'later', loop)
 }
 
-#' Relative time to next scheduled operation
-#'
-#' Returns the duration between now and the earliest operation that is currently
-#' scheduled, in seconds. If the operation is in the past, the value will be
-#' negative. If no operation is currently scheduled, the value will be `Inf`.
-#'
-#' @export
-next_op_secs <- function() {
-    .Call('_later_next_op_secs', PACKAGE = 'later')
+list_queue_ <- function(loop) {
+    .Call('_later_list_queue_', PACKAGE = 'later', loop)
+}
+
+execCallbacks <- function(timeoutSecs, runAll, loop) {
+    .Call('_later_execCallbacks', PACKAGE = 'later', timeoutSecs, runAll, loop)
+}
+
+idle <- function(loop) {
+    .Call('_later_idle', PACKAGE = 'later', loop)
+}
+
+execLater <- function(callback, delaySecs, loop) {
+    .Call('_later_execLater', PACKAGE = 'later', callback, delaySecs, loop)
+}
+
+cancel <- function(callback_id_s, loop) {
+    .Call('_later_cancel', PACKAGE = 'later', callback_id_s, loop)
+}
+
+nextOpSecs <- function(loop) {
+    .Call('_later_nextOpSecs', PACKAGE = 'later', loop)
 }
 

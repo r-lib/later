@@ -4,7 +4,7 @@
 \alias{later}
 \title{Executes a function later}
 \usage{
-later(func, delay = 0)
+later(func, delay = 0, loop = current_loop())
 }
 \arguments{
 \item{func}{A function or formula (see \code{\link[rlang:as_function]{rlang::as_function()}}).}
@@ -12,6 +12,14 @@ later(func, delay = 0)
 \item{delay}{Number of seconds in the future to delay execution. There is no
 guarantee that the function will be executed at the desired time, but it
 should not execute earlier.}
+
+\item{loop}{A handle to an event loop. Defaults to the currently-active loop.}
+}
+\value{
+A function, which, if invoked, will cancel the callback. The
+function will return \code{TRUE} if the callback was successfully
+cancelled and \code{FALSE} if not (this occurs if the callback has
+executed or has been cancelled already).
 }
 \description{
 Schedule an R function or formula to run after a specified period of time.
@@ -44,5 +52,5 @@ later(~cat("Hello from the past\\n"), 3)
 later(function() {
   print(summary(cars))
 }, 2)
-  
+
 }

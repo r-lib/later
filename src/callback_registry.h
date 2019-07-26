@@ -10,37 +10,85 @@
 #include "optional.h"
 #include "threadutils.h"
 
-typedef boost::function0<void> Task;
+// Callback is an abstract class with two subclasses. The reason that there
+// are two subclasses is because one of them is for C++ (boost::function)
+// callbacks, and the other is for R (Rcpp::Function) callbacks. Because
+// Callbacks can be created from either the main thread or a background
+// thread, the top-level Callback class cannot contain any Rcpp objects --
+// otherwise R objects could be allocated on a background thread, which will
+// cause memory corruption.
 
-class Callback : boost::operators<Callback> {
+class Callback {
 
 public:
-  Callback(Timestamp when, Task func);
-  
+  virtual ~Callback() {};
+  Callback(Timestamp when) : when(when) {};
+
   bool operator<(const Callback& other) const {
     return this->when < other.when ||
-      (!(this->when > other.when) && this->callbackNum < other.callbackNum);
+      (!(this->when > other.when) && this->callbackId < other.callbackId);
   }
-  
-  void operator()() const {
+
+  bool operator>(const Callback& other) const {
+    return other < *this;
+  }
+
+  uint64_t getCallbackId() const {
+    return callbackId;
+  };
+
+  virtual void invoke() const = 0;
+
+  void invoke_wrapped() const;
+
+  virtual Rcpp::RObject rRepresentation() const = 0;
+
+  Timestamp when;
+
+protected:
+  // Used to break ties when comparing to a callback that has precisely the same
+  // timestamp
+  uint64_t callbackId;
+};
+
+
+class BoostFunctionCallback : public Callback {
+public:
+  BoostFunctionCallback(Timestamp when, boost::function<void (void)> func);
+
+  void invoke() const {
     func();
   }
 
-  Timestamp when;
-  
+  Rcpp::RObject rRepresentation() const;
+
 private:
-  Task func;
-  // Used to break ties when comparing to a callback that has precisely the same
-  // timestamp
-  uint64_t callbackNum;
+  boost::function<void (void)> func;
 };
+
+
+class RcppFunctionCallback : public Callback {
+public:
+  RcppFunctionCallback(Timestamp when, Rcpp::Function func);
+
+  void invoke() const {
+    func();
+  }
+
+  Rcpp::RObject rRepresentation() const;
+
+private:
+  Rcpp::Function func;
+};
+
+
 
 typedef boost::shared_ptr<Callback> Callback_sp;
 
 template <typename T>
-struct pointer_greater_than {
+struct pointer_less_than {
   const bool operator()(const T a, const T b) const {
-    return *a > *b;
+    return *a < *b;
   }
 };
 
@@ -48,11 +96,16 @@ struct pointer_greater_than {
 // Stores R function callbacks, ordered by timestamp.
 class CallbackRegistry {
 private:
+  // Most of the behavior of the registry is like a priority queue. However, a
+  // std::priority_queue only allows access to the top element, and when we
+  // cancel a callback or get an Rcpp::List representation, we need random
+  // access, so we'll use a std::set.
+  typedef std::set<Callback_sp, pointer_less_than<Callback_sp> > cbSet;
   // This is a priority queue of shared pointers to Callback objects. The
   // reason it is not a priority_queue<Callback> is because that can cause
   // objects to be copied on the wrong thread, and even trigger an R GC event
   // on the wrong thread. https://github.com/r-lib/later/issues/39
-  std::priority_queue<Callback_sp, std::vector<Callback_sp>, pointer_greater_than<Callback_sp> > queue;
+  cbSet queue;
   mutable Mutex mutex;
   mutable ConditionVariable condvar;
 
@@ -61,26 +114,31 @@ public:
 
   // Add a function to the registry, to be executed at `secs` seconds in
   // the future (i.e. relative to the current time).
-  void add(Rcpp::Function func, double secs);
-  
+  uint64_t add(Rcpp::Function func, double secs);
+
   // Add a C function to the registry, to be executed at `secs` seconds in
   // the future (i.e. relative to the current time).
-  void add(void (*func)(void*), void* data, double secs);
-  
+  uint64_t add(void (*func)(void*), void* data, double secs);
+
+  bool cancel(uint64_t id);
+
   // The smallest timestamp present in the registry, if any.
   // Use this to determine the next time we need to pump events.
   Optional<Timestamp> nextTimestamp() const;
-  
+
   // Is the registry completely empty?
   bool empty() const;
-  
+
   // Is anything ready to execute?
   bool due(const Timestamp& time = Timestamp()) const;
-  
+
   // Pop and return an ordered list of functions to execute now.
   std::vector<Callback_sp> take(size_t max = -1, const Timestamp& time = Timestamp());
-  
+
   bool wait(double timeoutSecs) const;
+
+  // Return a List of items in the queue.
+  Rcpp::List list() const;
 };
 
 #endif // _CALLBACK_REGISTRY_H_

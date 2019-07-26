@@ -1,22 +1,28 @@
 #include "later.h"
 #include <Rcpp.h>
+#include <map>
 #include <queue>
+#include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/scope_exit.hpp>
 #include "debug.h"
+#include "utils.h"
+#include "threadutils.h"
 
 #include "callback_registry.h"
 #include "interrupt.h"
 
 // For debug.h
 #if defined(DEBUG_THREAD)
-thrd_t __main_thread__;
+tct_thrd_t __main_thread__;
 #endif
 
 // Declare platform-specific functions that are implemented in
 // later_posix.cpp and later_win32.cpp.
 // [[Rcpp::export]]
 void ensureInitialized();
-void doExecLater(Rcpp::Function callback, double delaySecs);
-void doExecLater(void (*callback)(void*), void* data, double delaySecs);
+uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp::Function callback, double delaySecs, bool resetTimer);
+uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, void (*callback)(void*), void* data, double delaySecs, bool resetTimer);
 
 static size_t exec_callbacks_reentrancy_count = 0;
 
@@ -69,37 +75,124 @@ bool at_top_level() {
   return nframe == 0;
 }
 
-// The queue of user-provided callbacks that are scheduled to be
-// executed.
-CallbackRegistry callbackRegistry;
+
+// Each callback registry represents one event loop. Note that traversing and
+// modifying callbackRegistries should always happens on the same thread, to
+// avoid races.
+std::map<int, boost::shared_ptr<CallbackRegistry> > callbackRegistries;
+
+// Functions that search or manipulate callbackRegistries must use this mutex.
+// Some functions also have ASSERT_MAIN_THREAD in order to make sure that
+Mutex callbackRegistriesMutex(tct_mtx_plain | tct_mtx_recursive);
 
 // [[Rcpp::export]]
-bool execCallbacks(double timeoutSecs, bool runAll) {
+bool existsCallbackRegistry(int loop) {
+  Guard guard(callbackRegistriesMutex);
+  return (callbackRegistries.find(loop) != callbackRegistries.end());
+}
+
+// [[Rcpp::export]]
+bool createCallbackRegistry(int loop) {
+  ASSERT_MAIN_THREAD()
+  Guard guard(callbackRegistriesMutex);
+  if (existsCallbackRegistry(loop)) {
+    Rcpp::stop("Can't create event loop %d because it already exists.", loop);
+  }
+  callbackRegistries[loop] = boost::make_shared<CallbackRegistry>();
+  return true;
+}
+
+// Gets a callback registry by ID.
+boost::shared_ptr<CallbackRegistry> getCallbackRegistry(int loop) {
+  Guard guard(callbackRegistriesMutex);
+  if (!existsCallbackRegistry(loop)) {
+    // This function can be called from different threads so we can't use
+    // Rcpp::stop().
+    throw std::runtime_error("Callback registry (loop) " + toString(loop) + " not found.");
+  }
+  return callbackRegistries[loop];
+}
+
+
+bool deletingCallbackRegistry = false;
+// [[Rcpp::export]]
+bool deleteCallbackRegistry(int loop) {
+  ASSERT_MAIN_THREAD()
+  // Detect re-entrant calls to this function and just return in that case.
+  // This can hypothetically happen if as we're deleting a callback registry,
+  // an R finalizer runs while we're removing references to the Rcpp::Function
+  // objects, and the finalizer calls this function. Since this function is
+  // always called from the same thread, we don't have to worry about races
+  // with this variable.
+  if (deletingCallbackRegistry) {
+    return false;
+  }
+
+  Guard guard(callbackRegistriesMutex);
+
+  deletingCallbackRegistry = true;
+  BOOST_SCOPE_EXIT(void) {
+    deletingCallbackRegistry = false;
+  } BOOST_SCOPE_EXIT_END
+
+  if (!existsCallbackRegistry(loop)) {
+    return false;
+  }
+
+  int n = callbackRegistries.erase(loop);
+
+  if (n == 0) return false;
+  else return true;
+}
+
+// [[Rcpp::export]]
+Rcpp::List list_queue_(int loop) {
+  ASSERT_MAIN_THREAD()
+  Guard guard(callbackRegistriesMutex);
+  return getCallbackRegistry(loop)->list();
+}
+
+
+// [[Rcpp::export]]
+bool execCallbacks(double timeoutSecs, bool runAll, int loop) {
   ASSERT_MAIN_THREAD()
   // execCallbacks can be called directly from C code, and the callbacks may
   // include Rcpp code. (Should we also call wrap?)
   Rcpp::RNGScope rngscope;
   ProtectCallbacks pcscope;
-  
-  if (!callbackRegistry.wait(timeoutSecs)) {
+
+  boost::shared_ptr<CallbackRegistry> callback_registry;
+  {
+    // Only lock callbackRegistries for this scope so that when we're waiting
+    // or running callbacks later in this function, we won't block other
+    // threads from adding items to the registry.
+    Guard guard(callbackRegistriesMutex);
+    callback_registry = getCallbackRegistry(loop);
+  }
+
+  if (!callback_registry->wait(timeoutSecs)) {
     return false;
   }
-  
+
   Timestamp now;
-  
+
   do {
-    // We only take one at a time, because we don't want to lose callbacks if 
+    // We only take one at a time, because we don't want to lose callbacks if
     // one of the callbacks throws an error
-    std::vector<Callback_sp> callbacks = callbackRegistry.take(1, now);
+    std::vector<Callback_sp> callbacks = callback_registry->take(1, now);
     if (callbacks.size() == 0) {
       break;
     }
     // This line may throw errors!
-    (*callbacks[0])();
+    callbacks[0]->invoke_wrapped();
   } while (runAll);
   return true;
 }
 
+
+// This function is called from the input handler on Unix, or the Windows
+// equivalent. It may throw exceptions.
+//
 // Invoke execCallbacks up to 20 times. At the first iteration where no work is
 // done, terminate. We call this from the top level instead of just calling
 // execCallbacks because the top level only gets called occasionally (every 10's
@@ -113,7 +206,7 @@ bool execCallbacks(double timeoutSecs, bool runAll) {
 bool execCallbacksForTopLevel() {
   bool any = false;
   for (size_t i = 0; i < 20; i++) {
-    if (!execCallbacks())
+    if (!execCallbacks(0, true, GLOBAL_LOOP))
       return any;
     any = true;
   }
@@ -121,30 +214,62 @@ bool execCallbacksForTopLevel() {
 }
 
 // [[Rcpp::export]]
-bool idle() {
+bool idle(int loop) {
   ASSERT_MAIN_THREAD()
-  return callbackRegistry.empty();
+  Guard guard(callbackRegistriesMutex);
+  return getCallbackRegistry(loop)->empty();
 }
 
 // [[Rcpp::export]]
-void execLater(Rcpp::Function callback, double delaySecs) {
+std::string execLater(Rcpp::Function callback, double delaySecs, int loop) {
   ASSERT_MAIN_THREAD()
   ensureInitialized();
-  doExecLater(callback, delaySecs);
+  Guard guard(callbackRegistriesMutex);
+  uint64_t callback_id = doExecLater(getCallbackRegistry(loop), callback, delaySecs, loop == GLOBAL_LOOP);
+
+  // We have to convert it to a string in order to maintain 64-bit precision,
+  // since R doesn't support 64 bit integers.
+  return toString(callback_id);
 }
 
 
-//' Relative time to next scheduled operation
-//'
-//' Returns the duration between now and the earliest operation that is currently
-//' scheduled, in seconds. If the operation is in the past, the value will be
-//' negative. If no operation is currently scheduled, the value will be `Inf`.
-//'
-//' @export
-// [[Rcpp::export]]
-double next_op_secs() {
+
+bool cancel(uint64_t callback_id, int loop) {
   ASSERT_MAIN_THREAD()
-  Optional<Timestamp> nextTime = callbackRegistry.nextTimestamp();
+  Guard guard(callbackRegistriesMutex);
+  if (!existsCallbackRegistry(loop))
+    return false;
+
+  boost::shared_ptr<CallbackRegistry> reg = getCallbackRegistry(loop);
+  if (!reg)
+    return false;
+
+  return reg->cancel(callback_id);
+}
+
+// [[Rcpp::export]]
+bool cancel(std::string callback_id_s, int loop) {
+  ASSERT_MAIN_THREAD()
+  uint64_t callback_id;
+  std::istringstream iss(callback_id_s);
+  iss >> callback_id;
+
+  // If the input is good (just a number with no other text) then eof will be
+  // 1 and fail will be 0.
+  if (! (iss.eof() && !iss.fail())) {
+    return false;
+  }
+
+  return cancel(callback_id, loop);
+}
+
+
+
+// [[Rcpp::export]]
+double nextOpSecs(int loop) {
+  ASSERT_MAIN_THREAD()
+  Guard guard(callbackRegistriesMutex);
+  Optional<Timestamp> nextTime = getCallbackRegistry(loop)->nextTimestamp();
   if (!nextTime.has_value()) {
     return R_PosInf;
   } else {
@@ -153,7 +278,16 @@ double next_op_secs() {
   }
 }
 
-extern "C" void execLaterNative(void (*func)(void*), void* data, double delaySecs) {
+// Schedules a C function to execute on a specific event loop. Returns
+// callback ID on success, or 0 on error.
+extern "C" uint64_t execLaterNative(void (*func)(void*), void* data, double delaySecs, int loop) {
   ensureInitialized();
-  doExecLater(func, data, delaySecs);
+  Guard guard(callbackRegistriesMutex);
+  // This try is because getCallbackRegistry can throw, and if it happens on a
+  // background thread the process will stop.
+  try {
+    return doExecLater(getCallbackRegistry(loop), func, data, delaySecs, loop == GLOBAL_LOOP);
+  } catch (...) {
+    return 0;
+  }
 }

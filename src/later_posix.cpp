@@ -20,8 +20,6 @@ using namespace Rcpp;
 extern void* R_GlobalContext;
 extern void* R_TopLevelContext;
 
-extern CallbackRegistry callbackRegistry;
-
 // Whether we have initialized the input handler.
 int initialized = 0;
 
@@ -68,7 +66,7 @@ namespace {
 void fd_on() {
   set_fd(true);
 }
-  
+
 Timer timer(fd_on);
 } // namespace
 
@@ -78,7 +76,7 @@ public:
   }
   ~ResetTimerOnExit() {
     // Find the next event in the registry and, if there is one, set the timer.
-    Optional<Timestamp> nextEvent = callbackRegistry.nextTimestamp();
+    Optional<Timestamp> nextEvent = getCallbackRegistry(GLOBAL_LOOP)->nextTimestamp();
     if (nextEvent.has_value()) {
       timer.set(*nextEvent);
     }
@@ -88,11 +86,11 @@ public:
 static void async_input_handler(void *data) {
   ASSERT_MAIN_THREAD()
   set_fd(false);
-  
+
   if (!at_top_level()) {
     // It's not safe to run arbitrary callbacks when other R code
     // is already running. Wait until we're back at the top level.
-    
+
     // jcheng 2017-08-02: We can't just leave the file descriptor hot and let
     // async_input_handler get invoked as fast as possible. Previously we did
     // this, but on POSIX systems, it interferes with R_SocketWait.
@@ -124,16 +122,18 @@ static void async_input_handler(void *data) {
     execCallbacksForTopLevel();
   }
   catch(Rcpp::internal::InterruptedException &e) {
-    REprintf("later: interrupt occurred while executing callback.");
+    DEBUG_LOG("async_input_handler: caught Rcpp::internal::InterruptedException", INFO);
+    REprintf("later: interrupt occurred while executing callback.\n");
   }
   catch(std::exception& e){
+    DEBUG_LOG("async_input_handler: caught exception", INFO);
     std::string msg = "later: exception occurred while executing callback: \n";
     msg += e.what();
     msg += "\n";
     REprintf(msg.c_str());
   }
   catch( ... ){
-    REprintf("later: c++ exception (unknown reason) occurred while executing callback.");
+    REprintf("later: c++ exception (unknown reason) occurred while executing callback.\n");
   }
 }
 
@@ -154,7 +154,7 @@ void ensureInitialized() {
   if (!initialized) {
     REGISTER_MAIN_THREAD()
     buf = malloc(BUF_SIZE);
-    
+
     int pipes[2];
     if (pipe(pipes)) {
       free(buf);
@@ -163,7 +163,7 @@ void ensureInitialized() {
     }
     pipe_out = pipes[0];
     pipe_in = pipes[1];
-    
+
     inputHandlerHandle = addInputHandler(R_InputHandlers, pipe_out, async_input_handler, LATER_ACTIVITY);
 
     // Need to add a dummy input handler to avoid segfault when the "real"
@@ -191,21 +191,32 @@ void deInitialize() {
     initialized = 0;
 
     // Trigger remove_dummy_handler()
-    write(dummy_pipe_in, "a", 1);
+    // Store `ret` because otherwise it raises a significant warning.
+    ssize_t ret = write(dummy_pipe_in, "a", 1);
   }
 }
 
-void doExecLater(Rcpp::Function callback, double delaySecs) {
+uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp::Function callback, double delaySecs, bool resetTimer) {
   ASSERT_MAIN_THREAD()
-  callbackRegistry.add(callback, delaySecs);
-  
-  timer.set(*(callbackRegistry.nextTimestamp()));
+  uint64_t callback_id = callbackRegistry->add(callback, delaySecs);
+
+  // The timer needs to be reset only if we're using the global loop, because
+  // this usage of the timer is relevant only when the event loop is driven by
+  // R's input handler (at the idle console), and only the global loop is by
+  // that.
+  if (resetTimer)
+    timer.set(*(callbackRegistry->nextTimestamp()));
+
+  return callback_id;
 }
 
-void doExecLater(void (*callback)(void*), void* data, double delaySecs) {
-  callbackRegistry.add(callback, data, delaySecs);
-  
-  timer.set(*(callbackRegistry.nextTimestamp()));
+uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, void (*callback)(void*), void* data, double delaySecs, bool resetTimer) {
+  uint64_t callback_id = callbackRegistry->add(callback, data, delaySecs);
+
+  if (resetTimer)
+    timer.set(*(callbackRegistry->nextTimestamp()));
+
+  return callback_id;
 }
 
 #endif // ifndef _WIN32

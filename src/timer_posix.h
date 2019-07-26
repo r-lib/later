@@ -3,23 +3,23 @@
 
 #ifndef _WIN32
 
-#include "timestamp.h"
 #include <boost/function.hpp>
 #include <boost/optional.hpp>
-#include <pthread.h>
+#include "timestamp.h"
+#include "threadutils.h"
 
 class Timer {
   boost::function<void ()> callback;
-  pthread_mutex_t mutex;
-  pthread_cond_t cond;
+  Mutex mutex;
+  ConditionVariable cond;
   // Stores the handle to a bgthread, which is created upon demand. (Previously
   // the thread was created in the constructor, but addressed sanitized (ASAN)
   // builds of R would hang when pthread_create was called during dlopen.)
-  boost::optional<pthread_t> bgthread;
+  boost::optional<tct_thrd_t> bgthread;
   boost::optional<Timestamp> wakeAt;
   bool stopped;
   
-  static void* bg_main_func(void*);
+  static int bg_main_func(void*);
   void bg_main();
 public:
   Timer(const boost::function<void ()>& callback);

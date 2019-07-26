@@ -4,21 +4,20 @@
 #include <sys/time.h>
 
 #include "timer_posix.h"
-#include "timeconv.h"
 
-void* Timer::bg_main_func(void* data) {
+int Timer::bg_main_func(void* data) {
   reinterpret_cast<Timer*>(data)->bg_main();
   return 0;
 }
 
 void Timer::bg_main() {
-  pthread_mutex_lock(&this->mutex);
+  Guard guard(this->mutex);
   while (true) {
     
     // Guarded wait; we can't pass here until either the timer is stopped or we
     // have a wait time.
     while (!(this->stopped || this->wakeAt != boost::none)) {
-      pthread_cond_wait(&this->cond, &this->mutex);
+      this->cond.wait();
     }
     
     // We're stopped; return, which ends the thread.
@@ -33,19 +32,11 @@ void Timer::bg_main() {
     // 3. Wait for the wake time, and time elapses. Go ahead and execute now.
     double secs = (*this->wakeAt).diff_secs(Timestamp());
     if (secs > 0) {
-      // Sadly, the pthread_cond_timedwait API requires an absolute time, not
-      // a relative time. gettimeofday is the only way to do this that works
-      // on both Linux and Darwin.
-      timeval tv;
-      gettimeofday(&tv, NULL);
-      timespec ts = timevalToTimespec(tv);
-      ts = addSeconds(ts, secs);
-
-      int res = pthread_cond_timedwait(&this->cond, &this->mutex, &ts);
+      bool signalled = this->cond.timedwait(secs);
       if (this->stopped) {
         return;
       }
-      if (ETIMEDOUT != res) {
+      if (signalled) {
         // Time didn't elapse, we were woken up (probably). Start over.
         continue;
       }
@@ -57,10 +48,7 @@ void Timer::bg_main() {
 }
 
 Timer::Timer(const boost::function<void ()>& callback) :
-  callback(callback), stopped(false) {
-  
-  pthread_mutex_init(&this->mutex, NULL);
-  pthread_cond_init(&this->cond, NULL);
+  callback(callback), mutex(tct_mtx_recursive), cond(mutex), stopped(false) {
 }
 
 Timer::~Timer() {
@@ -69,32 +57,28 @@ Timer::~Timer() {
   // mutex. Calling pthread_cond_destroy on a condvar that's being waited
   // on results in undefined behavior--on Fedora 25+ it hangs.
   if (this->bgthread != boost::none) {
-    pthread_mutex_lock(&this->mutex);
-    this->stopped = true;
-    pthread_cond_signal(&this->cond);
-    pthread_mutex_unlock(&this->mutex);
-  
-    pthread_join(*this->bgthread, NULL);
-  }
+    {
+      Guard guard(this->mutex);
+      this->stopped = true;
+      this->cond.signal();
+    }
 
-  pthread_cond_destroy(&this->cond);
-  pthread_mutex_destroy(&this->mutex);
+    tct_thrd_join(*this->bgthread, NULL);
+  }
 }
 
 void Timer::set(const Timestamp& timestamp) {
-  pthread_mutex_lock(&this->mutex);
-  
+  Guard guard(this->mutex);
+
   // If the thread has not yet been created, created it.
   if (this->bgthread == boost::none) {
-    pthread_t thread;
-    pthread_create(&thread, NULL, &bg_main_func, this);
+    tct_thrd_t thread;
+    tct_thrd_create(&thread, &bg_main_func, this);
     this->bgthread = thread;
   }
   
   this->wakeAt = timestamp;
-  pthread_cond_signal(&this->cond);
-  
-  pthread_mutex_unlock(&this->mutex);
+  this->cond.signal();
 }
 
 #endif // _WIN32

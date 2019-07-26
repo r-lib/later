@@ -98,3 +98,44 @@ test_that("When callbacks have tied timestamps, they respect order of creation",
     ')
   checkLaterOrdering(); while (!later::loop_empty()) later::run_now()
 })
+
+
+test_that("Callbacks cannot affect the caller", {
+  # This is based on a pattern used in the callCC function. Normally, simply
+  # touching `throw` will cause the expression to be evaluated and f() to return
+  # early. (This test does not involve later.)
+  f <- function() {
+    delayedAssign("throw", return(100))
+    g <- function() { throw }
+    g()
+    return(200)
+  }
+  expect_equal(f(), 100)
+
+
+  # When later runs callbacks, it wraps the call in R_ToplevelExec(), which
+  # creates a boundary on the call stack that the early return can't cross.
+  f <- function() {
+    delayedAssign("throw", return(100))
+    later(function() { throw })
+
+    run_now(1)
+    return(200)
+  }
+  expect_error(f())
+
+
+  # In this case, f() should return normally, and then when g() causes later to
+  # run the callback with `throw`, it should be an error -- there's no function
+  # to return from because it (f()) already returned.
+  f <- function() {
+    delayedAssign("throw", return(100))
+    later(function() { throw }, 0.5)
+    return(200)
+  }
+  g <- function() {
+    run_now(1)
+  }
+  expect_equal(f(), 200)
+  expect_error(g())
+})

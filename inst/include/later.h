@@ -17,7 +17,9 @@
 
 namespace later {
 
-inline void later(void (*func)(void*), void* data, double secs) {
+#define GLOBAL_LOOP 0
+
+inline void later(void (*func)(void*), void* data, double secs, int loop) {
   // This function works by retrieving the later::execLaterNative function
   // pointer using R_GetCCallable the first time it's called (per compilation
   // unit, since it's inline). execLaterNative is designed to be safe to call
@@ -32,9 +34,9 @@ inline void later(void (*func)(void*), void* data, double secs) {
   // later.h/later_impl.h; it's because Rcpp treats $PACKAGE.h files
   // specially by including them in RcppExports.cpp, and we definitely
   // do not want the static initialization to happen there.
-  
+
   // The function type for the real execLaterNative
-  typedef void (*elnfun)(void (*func)(void*), void*, double);
+  typedef void (*elnfun)(void (*func)(void*), void*, double, int);
   static elnfun eln = NULL;
   if (!eln) {
     // Initialize if necessary
@@ -48,22 +50,27 @@ inline void later(void (*func)(void*), void* data, double secs) {
     }
     eln = (elnfun)R_GetCCallable("later", "execLaterNative");
   }
-  
+
   // We didn't want to execute anything, just initialize
   if (!func) {
     return;
   }
-  
-  eln(func, data, secs);
+
+  eln(func, data, secs, loop);
 }
+
+inline void later(void (*func)(void*), void* data, double secs) {
+  later(func, data, secs, GLOBAL_LOOP);
+}
+
 
 class BackgroundTask {
 
 public:
   BackgroundTask() {}
   virtual ~BackgroundTask() {}
-  
-  // Start executing the task  
+
+  // Start executing the task
   void begin() {
 #ifndef _WIN32
     pthread_attr_t attr;
@@ -91,7 +98,7 @@ protected:
   // to be passed into or out of the Execute method must be
   // included as fields on the Task subclass object.
   virtual void execute() = 0;
-  
+
   // A short task that runs on the main R thread after the
   // background task has completed. It's safe to access the
   // R runtime and R data structures from here.
@@ -105,14 +112,14 @@ private:
     later(&BackgroundTask::result_callback, task, 0);
     return NULL;
   }
-  
+
 #ifdef _WIN32
   static DWORD WINAPI task_main_win(LPVOID lpParameter) {
     task_main(lpParameter);
     return 1;
   }
 #endif
-  
+
   static void result_callback(void* data) {
     BackgroundTask* task = reinterpret_cast<BackgroundTask*>(data);
     // TODO: Error handling
