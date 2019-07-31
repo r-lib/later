@@ -87,7 +87,7 @@ typedef boost::shared_ptr<Callback> Callback_sp;
 
 template <typename T>
 struct pointer_less_than {
-  const bool operator()(const T a, const T b) const {
+  bool operator()(const T a, const T b) const {
     return *a < *b;
   }
 };
