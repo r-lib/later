@@ -96,20 +96,20 @@ extern "C" void invoke_c(void* callback_p) {
   }
   catch(Rcpp::internal::InterruptedException &e) {
     // Reaches here if the callback is in Rcpp code and an interrupt occurs.
-    DEBUG_LOG("invoke_c: caught Rcpp::internal::InterruptedException", INFO);
+    DEBUG_LOG("invoke_c: caught Rcpp::internal::InterruptedException", LOG_INFO);
     last_invoke_result = INVOKE_INTERRUPTED;
     return;
   }
   catch(Rcpp::eval_error &e) {
     // Reaches here if an R-level error happens in an Rcpp::Function.
-    DEBUG_LOG("invoke_c: caught Rcpp::eval_error", INFO);
+    DEBUG_LOG("invoke_c: caught Rcpp::eval_error", LOG_INFO);
     last_invoke_result = INVOKE_ERROR;
     last_invoke_message = e.what();
     return;
   }
   catch(Rcpp::exception& e) {
     // Reaches here if an R-level error happens in an Rcpp::Function.
-    DEBUG_LOG("invoke_c: caught Rcpp::exception", INFO);
+    DEBUG_LOG("invoke_c: caught Rcpp::exception", LOG_INFO);
     last_invoke_result = INVOKE_ERROR;
     last_invoke_message = e.what();
     return;
@@ -117,7 +117,7 @@ extern "C" void invoke_c(void* callback_p) {
   catch(std::exception& e) {
     // Reaches here if some other (non-Rcpp) C++ exception is thrown.
     DEBUG_LOG(std::string("invoke_c: caught std::exception: ") + typeid(e).name(),
-              INFO);
+              LOG_INFO);
     last_invoke_result = INVOKE_CPP_ERROR;
     last_invoke_message = e.what();
     return;
@@ -125,7 +125,7 @@ extern "C" void invoke_c(void* callback_p) {
   catch( ... ) {
     // Reaches here if a non-exception C++ object is thrown.
     DEBUG_LOG(std::string("invoke_c: caught unknown object: ") + typeid(std::current_exception()).name(),
-              INFO);
+              LOG_INFO);
     last_invoke_result = INVOKE_CPP_ERROR;
     return;
   }
@@ -133,7 +133,7 @@ extern "C" void invoke_c(void* callback_p) {
   // Reaches here if no exceptions are thrown. It's possible to get here if an
   // interrupt was received outside of Rcpp code, or if an R error happened
   // using Rf_eval().
-  DEBUG_LOG("invoke_c: COMPLETED", DEBUG);
+  DEBUG_LOG("invoke_c: COMPLETED", LOG_DEBUG);
   last_invoke_result = INVOKE_COMPLETED;
 }
 
@@ -148,22 +148,22 @@ void Callback::invoke_wrapped() const {
   Rboolean result = R_ToplevelExec(invoke_c, (void*)this);
 
   if (!result) {
-    DEBUG_LOG("invoke_wrapped: R_ToplevelExec return is FALSE; error or interrupt occurred in R code", INFO);
+    DEBUG_LOG("invoke_wrapped: R_ToplevelExec return is FALSE; error or interrupt occurred in R code", LOG_INFO);
     last_invoke_result = INVOKE_ERROR;
   }
 
   if (R_ToplevelExec(checkInterruptFn, NULL) == FALSE) {
     // Reaches here if the callback is C/C++ code and an interrupt occurs.
-    DEBUG_LOG("invoke_wrapped: interrupt (outside of R code) detected by R_CheckUserInterrupt", INFO);
+    DEBUG_LOG("invoke_wrapped: interrupt (outside of R code) detected by R_CheckUserInterrupt", LOG_INFO);
     last_invoke_result = INVOKE_INTERRUPTED;
   }
 
   switch (last_invoke_result) {
   case INVOKE_INTERRUPTED:
-    DEBUG_LOG("invoke_wrapped: throwing Rcpp::internal::InterruptedException", INFO);
+    DEBUG_LOG("invoke_wrapped: throwing Rcpp::internal::InterruptedException", LOG_INFO);
     throw Rcpp::internal::InterruptedException();
   case INVOKE_ERROR:
-    DEBUG_LOG("invoke_wrapped: throwing Rcpp::exception", INFO);
+    DEBUG_LOG("invoke_wrapped: throwing Rcpp::exception", LOG_INFO);
     throw Rcpp::exception(last_invoke_message.c_str());
   case INVOKE_CPP_ERROR:
     throw std::runtime_error("invoke_wrapped: throwing std::runtime_error");
