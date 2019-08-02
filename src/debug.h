@@ -32,11 +32,11 @@ extern tct_thrd_t __background_thread__;
 void err_printf(const char *fmt, ...);
 
 enum LogLevel {
-  OFF,
-  ERROR,
-  WARN,
-  INFO,
-  DEBUG
+  LOG_OFF,
+  LOG_ERROR,
+  LOG_WARN,
+  LOG_INFO,
+  LOG_DEBUG
 };
 
 extern LogLevel log_level_;
