@@ -1,6 +1,10 @@
 # later
 
+<!-- badges: start -->
 [![Build Status](https://travis-ci.org/r-lib/later.svg?branch=master)](https://travis-ci.org/r-lib/later)
+[![AppVeyor build status](https://ci.appveyor.com/api/projects/status/github/r-lib/later?branch=master&svg=true)](https://ci.appveyor.com/project/r-lib/later)
+<!-- badges: end -->
+
 
 Schedule an R function or formula to run after a specified period of time. Similar to JavaScript's `setTimeout` function. Like JavaScript, R is single-threaded so there's no guarantee that the operation will run exactly at the requested time, only that at least that much time will elapse.
 

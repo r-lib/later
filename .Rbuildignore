@@ -6,3 +6,4 @@
 /\.so$
 /\.dll$
 ^src/README.md$
+^appveyor\.yml$
