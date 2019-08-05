@@ -59,5 +59,6 @@ std::string log_level(std::string level) {
     case LOG_WARN:  return "WARN";
     case LOG_INFO:  return "INFO";
     case LOG_DEBUG: return "DEBUG";
+    default:        return "";
   }
 }
