@@ -38,11 +38,31 @@ static const R_CallMethodDef CallEntries[] = {
   {NULL, NULL, 0}
 };
 
-uint64_t execLaterNative(void (*func)(void*), void* data, double secs, int loop);
+uint64_t execLaterNative(void (*func)(void*), void* data, double secs);
+uint64_t execLaterNative2(void (*func)(void*), void* data, double secs, int loop);
 
 void R_init_later(DllInfo *dll)
 {
   R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
   R_useDynamicSymbols(dll, FALSE);
+  // 2019-08-06
+  // execLaterNative is registered here ONLY for backward compatibility; If
+  // someone installed a package which had `#include <later_api.h>` (like
+  // httpuv) then that package would have compiled the inline functions from
+  // inst/include/later.h, which in turn used `R_GetCCallable("later",
+  // "execLaterNative")`, then called that function with 3 arguments. For
+  // anyone who upgrades this package but does not upgrade the downstream
+  // dependency, that interface cannot change.
+  //
+  // So we register `execLaterNative` here, even though we don't actually call
+  // it from inst/include/later.h anymore. This ensures that downstream deps
+  // that were built with the previous version can still use
+  // `R_GetCCallable("later", "execLaterNative")` and have it work properly.
+  //
+  // In a future version, after no one is running downstream packages that are
+  // built against the previous version of later, we can remove this line.
+  //
+  // https://github.com/r-lib/later/issues/97
   R_RegisterCCallable("later", "execLaterNative", (DL_FUNC)&execLaterNative);
+  R_RegisterCCallable("later", "execLaterNative2", (DL_FUNC)&execLaterNative2);
 }

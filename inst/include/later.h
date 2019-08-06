@@ -20,22 +20,22 @@ namespace later {
 #define GLOBAL_LOOP 0
 
 inline void later(void (*func)(void*), void* data, double secs, int loop) {
-  // This function works by retrieving the later::execLaterNative function
+  // This function works by retrieving the later::execLaterNative2 function
   // pointer using R_GetCCallable the first time it's called (per compilation
-  // unit, since it's inline). execLaterNative is designed to be safe to call
+  // unit, since it's inline). execLaterNative2 is designed to be safe to call
   // from any thread, but R_GetCCallable is only safe to call from R's main
   // thread (otherwise you get stack imbalance warnings or worse). Therefore,
-  // we have to ensure that the first call to execLaterNative happens on the
+  // we have to ensure that the first call to execLaterNative2 happens on the
   // main thread. We accomplish this using a statically initialized object,
   // in later_api.h. Therefore, any other packages wanting to call
-  // execLaterNative need to use later_api.h, not later.h.
+  // execLaterNative2 need to use later_api.h, not later.h.
   //
   // You may wonder why we used the filenames later_api.h/later.h instead of
   // later.h/later_impl.h; it's because Rcpp treats $PACKAGE.h files
   // specially by including them in RcppExports.cpp, and we definitely
   // do not want the static initialization to happen there.
 
-  // The function type for the real execLaterNative
+  // The function type for the real execLaterNative2
   typedef void (*elnfun)(void (*func)(void*), void*, double, int);
   static elnfun eln = NULL;
   if (!eln) {
@@ -44,11 +44,11 @@ inline void later(void (*func)(void*), void* data, double secs, int loop) {
       // We're not initialized but someone's trying to actually schedule
       // some code to be executed!
       REprintf(
-        "Warning: later::execLaterNative called in uninitialized state. "
+        "Warning: later::execLaterNative2 called in uninitialized state. "
         "If you're using <later.h>, please switch to <later_api.h>.\n"
       );
     }
-    eln = (elnfun)R_GetCCallable("later", "execLaterNative");
+    eln = (elnfun)R_GetCCallable("later", "execLaterNative2");
   }
 
   // We didn't want to execute anything, just initialize
