@@ -1,3 +1,7 @@
+## later 0.8.0.9000
+
+* Added private event loops: these are event loops that can be run independently from the global event loop. These are useful when you have code that schedules callbacks with `later()`, and you want to call `run_now()` block and wait for those callbacks to execute before continuing. Without private event loops, if you call `run_now()` to wait until a particular callback has finished, you might inadvertantly run other callbacks that were scheduled by other code. With private event loops, you can create a private loop, schedule a callback on it, then call `run_now()` on that loop until it executes, all without interfering with the global loop. ([#84](https://github.com/r-lib/later/pull/84))
+
 ## later 0.8.0
 
 * Fixed [issue #77](https://github.com/r-lib/later/issues/77): On some platforms, the system's C library has support for C11-style threads, but there is no `threads.h` header file. In this case, later's configure script tried to use the tinycthread, but upon linking, there were function name conflicts between tinycthread and the system's C library. Later no longer tries to use the system's `threads.h`, and the functions in tinycthread were renamed so that they do not accidentally link to the system C library's C11-style thread functions. [PR #79](https://github.com/r-lib/later/pull/79)
@@ -7,8 +11,6 @@
 * Fixed [issue #74](https://github.com/r-lib/later/issues/74): Using later with R at the terminal on POSIX could cause 100% CPU. This was caused by later accidentally provoking R to call its input handler continuously. [PR #76](https://github.com/r-lib/later/pull/76)
 
 * Fixed [issue #73](https://github.com/r-lib/later/issues/73): Linking later on ARM failed because `boost::atomic` requires the `-lboost_atomic` flag. Now later tries to use `std::atomic` when available (when the compiler supports C++11), and falls back to `boost::atomic` if not. [PR #80](https://github.com/r-lib/later/pull/80)
-
-* Added private event loops: these are event loops that can be run independently from the global event loop. These are useful when you have code that schedules callbacks with `later()`, and you want to call `run_now()` block and wait for those callbacks to execute before continuing. Without private event loops, if you call `run_now()` to wait until a particular callback has finished, you might inadvertantly run other callbacks that were scheduled by other code. With private event loops, you can create a private loop, schedule a callback on it, then call `run_now()` on that loop until it executes, all without interfering with the global loop. ([#84](https://github.com/r-lib/later/pull/84))
 
 ## later 0.7.5
 
