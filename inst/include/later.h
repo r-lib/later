@@ -13,6 +13,8 @@
 // Also need to undefine the Free macro
 #undef Free
 #include <windows.h>
+#else // _WIN32
+#include <pthread.h>
 #endif // _WIN32
 
 namespace later {
