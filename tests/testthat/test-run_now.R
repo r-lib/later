@@ -245,25 +245,25 @@ test_that("interrupt and exception handling", {
     '
   )
 
-  r_sleep_interrupt <- function() {
+  # cpp_error() searches in the global environment for these R functions, so we
+  # need to define them there.
+  .GlobalEnv$r_sleep_interrupt <- function() {
     tools::pskill(Sys.getpid(), tools::SIGINT)
     Sys.sleep(3)
   }
-
-  r_error <- function() {
+  .GlobalEnv$r_error <- function() {
     stop("oopsie")
   }
+  on.exit(rm(r_sleep_interrupt, r_error, envir = .GlobalEnv), add = TRUE)
 
-  interrupted <- FALSE
-  errored     <- FALSE
+  errored <- FALSE
   tryCatch(
     { cpp_error(1); run_now() },
     error = function(e) errored <<- TRUE
   )
   expect_true(errored)
 
-  interrupted <- FALSE
-  error_obj <- NULL
+  errored <- FALSE
   tryCatch(
     { cpp_error(2); run_now() },
     error = function(e) errored <<- TRUE
@@ -277,14 +277,14 @@ test_that("interrupt and exception handling", {
   )
   expect_true(interrupted)
 
-  error_obj <- NULL
+  errored <- FALSE
   tryCatch(
     { cpp_error(4); run_now() },
     error = function(e) errored <<- TRUE
   )
   expect_true(errored)
 
-  error_obj <- NULL
+  errored <- FALSE
   tryCatch(
     { cpp_error(5); run_now() },
     error = function(e) errored <<- TRUE
