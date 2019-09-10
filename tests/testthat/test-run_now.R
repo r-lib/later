@@ -280,9 +280,9 @@ test_that("interrupt and exception handling", {
   errored <- FALSE
   tryCatch(
     { cpp_error(4); run_now() },
-    error = function(e) errored <<- TRUE
+    interrupt = function(e) interrupted <<- TRUE
   )
-  expect_true(errored)
+  expect_true(interrupted)
 
   errored <- FALSE
   tryCatch(
