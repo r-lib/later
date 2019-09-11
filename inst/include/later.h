@@ -19,7 +19,51 @@
 
 namespace later {
 
+
+// This should be incremented each time this file changes. If it mismatches
+// the result from apiVersion() (in later.cpp), then there's a problem.
+#define LATER_H_API_VERSION 2
+
 #define GLOBAL_LOOP 0
+
+// This header uses version 2 of the later C++ API, and another package's DLL
+// will be compiled with this header. However, it is possible that the later
+// DLL installed on the system will have a different version of API. If the
+// version is 2 or higher, then we can call the `apiVersion()` function. But
+// for version 1, that function did not exist, so we have to use a different
+// method to check for the V1 API: We'll evaluate the R expression
+// `packageVersion("later") < "0.8.0.9004"`. If it returns TRUE, then the
+// installed version of the later package provides the V1 C++ API. If it
+// returns FALSE, then the API is version 2 or greater.
+inline bool dll_has_v1_api() {
+  SEXP e, ret;
+  bool result;
+  Rprintf("Building expression\n");
+
+  // This is the expression `packageVersion("later") < "0.8.0.9004"`
+  e = PROTECT(
+    Rf_lang3(
+      Rf_install("<"),
+      Rf_lang2(Rf_install("packageVersion"), Rf_mkString("later")),
+      Rf_mkString("0.8.0.9004")
+    )
+  );
+  Rprintf("Evaluating code\n");
+  ret = PROTECT(Rf_eval(e, R_GlobalEnv));
+  Rprintf("Evaluated code\n");
+  // Rf_eval(Rf_lang2(Rf_install("print"), ret), R_GlobalEnv);
+
+  if (TYPEOF(ret) == LGLSXP && LOGICAL(ret)[0]) {
+    // If it's a logical vector and the first element is TRUE.
+    result = true;
+  } else {
+    result = false;
+  }
+
+  UNPROTECT(2);
+  Rprintf("Returning value\n");
+  return result;
+}
 
 inline void later(void (*func)(void*), void* data, double secs, int loop) {
   // This function works by retrieving the later::execLaterNative2 function
@@ -62,7 +106,46 @@ inline void later(void (*func)(void*), void* data, double secs, int loop) {
 }
 
 inline void later(void (*func)(void*), void* data, double secs) {
-  later(func, data, secs, GLOBAL_LOOP);
+
+  static bool has_run = false;
+  static bool v1_api;
+
+  if (!has_run) {
+    has_run = true;
+    v1_api = dll_has_v1_api();
+    if (v1_api) {
+      Rprintf("later DLL has v1 API\n");
+    } else {
+      Rprintf("later DLL has v2 API\n");
+    }
+  }
+
+  if (v1_api) {
+    typedef void (*elnfun)(void (*func)(void*), void*, double);
+    static elnfun eln = NULL;
+    if (!eln) {
+      // Initialize if necessary
+      if (func) {
+        // We're not initialized but someone's trying to actually schedule
+        // some code to be executed!
+        REprintf(
+          "Warning: later::execLaterNative called in uninitialized state. "
+          "If you're using <later.h>, please switch to <later_api.h>.\n"
+        );
+      }
+      eln = (elnfun)R_GetCCallable("later", "execLaterNative");
+    }
+
+    // We didn't want to execute anything, just initialize
+    if (!func) {
+      return;
+    }
+
+    eln(func, data, secs);
+
+  } else {
+    later(func, data, secs, GLOBAL_LOOP);
+  }
 }
 
 
