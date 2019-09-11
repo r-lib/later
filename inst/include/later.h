@@ -19,6 +19,17 @@
 
 namespace later {
 
+// This is the version of the later API provided by this file. Ideally, this
+// should match the version of the API provided by the later DLL that is
+// installed on the user's system. However, since this file is compiled into
+// other packages (like httpuv and promises), it is possible that there will
+// be a mismatch. In the future we will be able to compare at runtime it to
+// the result from apiVersion(), with:
+//
+// int (*dll_api_version)() = (int (*)()) R_GetCCallable("later", "apiVersion");
+// if (LATER_H_API_VERSION != (*dll_api_version)()) { ... }
+#define LATER_H_API_VERSION 2
+
 #define GLOBAL_LOOP 0
 
 inline void later(void (*func)(void*), void* data, double secs, int loop) {
