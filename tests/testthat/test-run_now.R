@@ -143,6 +143,11 @@ test_that("Callbacks cannot affect the caller", {
 
 
 test_that("interrupt and exception handling", {
+  # These tests may fail in automated test environments due to the way they
+  # handle interrupts. (See #102)
+  skip_on_ci()
+  skip_on_cran()
+
   # =======================================================
   # Errors and interrupts in R callbacks
   # =======================================================
