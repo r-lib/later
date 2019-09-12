@@ -40,6 +40,7 @@ static const R_CallMethodDef CallEntries[] = {
 
 uint64_t execLaterNative(void (*func)(void*), void* data, double secs);
 uint64_t execLaterNative2(void (*func)(void*), void* data, double secs, int loop);
+int apiVersion();
 
 void R_init_later(DllInfo *dll)
 {
@@ -63,6 +64,7 @@ void R_init_later(DllInfo *dll)
   // built against the previous version of later, we can remove this line.
   //
   // https://github.com/r-lib/later/issues/97
-  R_RegisterCCallable("later", "execLaterNative", (DL_FUNC)&execLaterNative);
+  R_RegisterCCallable("later", "execLaterNative",  (DL_FUNC)&execLaterNative);
   R_RegisterCCallable("later", "execLaterNative2", (DL_FUNC)&execLaterNative2);
+  R_RegisterCCallable("later", "apiVersion",       (DL_FUNC)&apiVersion);
 }

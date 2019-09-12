@@ -297,3 +297,7 @@ extern "C" uint64_t execLaterNative2(void (*func)(void*), void* data, double del
     return 0;
   }
 }
+
+extern "C" int apiVersion() {
+  return LATER_DLL_API_VERSION;
+}
