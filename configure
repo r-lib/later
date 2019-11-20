@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# Same as from src/Makevars
+PKG_LIBS="-pthread"
+PKG_CPPFLAGS="-pthread -DSTRICT_R_HEADERS"
+
+# Raspberry Pi check
+if [ -e /etc/os-release ];
+then
+  OS_RELEASE=$(cat /etc/os-release)
+  if test "${OS_RELEASE#*Raspbian}" != "$OS_RELEASE"
+  then
+    echo "Raspbian OS detected, make sure to install libboost-atomic-dev"
+    PKG_LIBS="$PKG_LIBS -latomic"
+  fi
+fi
+
+# Write to Makevars
+sed -e "s|@cppflags@|$PKG_CPPFLAGS|" -e "s|@libs@|$PKG_LIBS|" src/Makevars.in > src/Makevars
+
+# Success
+exit 0
