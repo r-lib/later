@@ -7,3 +7,7 @@ r:
   - oldrel
   - release
   - devel
+addons:
+  apt:
+    packages:
+      - devscripts  # For checkbashisms in R 4.0
