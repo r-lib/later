@@ -1,3 +1,7 @@
+## later 1.0.9001
+
+* Fixed [#73](https://github.com/r-lib/later/issues/73), [#109](https://github.com/r-lib/later/issues/109): Previously, later did not build on some platforms, notably ARM, because the `-latomic` linker was needed on those platforms. A configure script now detects when `-latomic` is needed. ([#114](https://github.com/r-lib/later/pull/114))
+
 ## later 1.0.0
 
 * Added private event loops: these are event loops that can be run independently from the global event loop. These are useful when you have code that schedules callbacks with `later()`, and you want to call `run_now()` block and wait for those callbacks to execute before continuing. Without private event loops, if you call `run_now()` to wait until a particular callback has finished, you might inadvertantly run other callbacks that were scheduled by other code. With private event loops, you can create a private loop, schedule a callback on it, then call `run_now()` on that loop until it executes, all without interfering with the global loop. ([#84](https://github.com/r-lib/later/pull/84))
