@@ -1,0 +1,28 @@
+#!/bin/sh
+
+echo "Running configure script"
+
+# Find compiler
+CC=$("${R_HOME}"/bin/R CMD config CC)
+
+# Detect whether -latomic is needed during linking. This is needed on some
+# platforms, notably ARM (Raspberry Pi).
+echo "#include <stdint.h>
+uint64_t v;
+int main() {
+    return (int)__atomic_load_n(&v, __ATOMIC_ACQUIRE);
+}" | ${CC} -x c - -o /dev/null > /dev/null 2>&1
+
+if [ $? -eq 0 ]; then
+  echo "-latomic linker flag not needed."
+else
+  echo "-latomic linker flag needed."
+  EXTRA_PKG_LIBS=-latomic
+fi
+
+
+# Write to Makevars
+sed -e "s|@extra_pkg_libs@|$EXTRA_PKG_LIBS|" src/Makevars.in > src/Makevars
+
+# Success
+exit 0
