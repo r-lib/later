@@ -2,7 +2,7 @@
 CXX_STD=CXX11
 
 PKG_CPPFLAGS = -pthread -DSTRICT_R_HEADERS
-PKG_LIBS = -pthread
+PKG_LIBS = -pthread @extra_pkg_libs@
 
 #### Debugging flags ####
 # Uncomment to enable thread assertions
