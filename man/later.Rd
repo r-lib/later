@@ -46,7 +46,7 @@ handling logic inside of \code{func}.
 }
 \examples{
 # Example of formula style
-later(~cat("Hello from the past\\n"), 3)
+later(~cat("Hello from the past\n"), 3)
 
 # Example of function style
 later(function() {
