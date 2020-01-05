@@ -7,3 +7,4 @@
 /\.dll$
 ^src/README.md$
 ^appveyor\.yml$
+^src/Makevars$

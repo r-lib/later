@@ -6,3 +6,4 @@
 *.so
 *.dll
 inst/doc
+src/Makevars
