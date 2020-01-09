@@ -5,6 +5,12 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+// For debug.h
+#if defined(DEBUG_THREAD)
+tct_thrd_t __main_thread__;
+tct_thrd_t __background_thread__;
+#endif
+
 
 // It's not safe to call REprintf from the background thread but we need some
 // way to output error messages. R CMD check does not it if the code uses the

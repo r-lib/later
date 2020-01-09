@@ -12,11 +12,6 @@
 #include "callback_registry.h"
 #include "interrupt.h"
 
-// For debug.h
-#if defined(DEBUG_THREAD)
-tct_thrd_t __main_thread__;
-#endif
-
 // Declare platform-specific functions that are implemented in
 // later_posix.cpp and later_win32.cpp.
 // [[Rcpp::export]]
