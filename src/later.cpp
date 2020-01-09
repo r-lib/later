@@ -72,12 +72,13 @@ bool at_top_level() {
 
 
 // Each callback registry represents one event loop. Note that traversing and
-// modifying callbackRegistries should always happens on the same thread, to
-// avoid races.
+// modifying callbackRegistries should always be guarded with
+// callbackRegistriesMutex, to avoid races between threads.
 std::map<int, boost::shared_ptr<CallbackRegistry> > callbackRegistries;
 
 // Functions that search or manipulate callbackRegistries must use this mutex.
 // Some functions also have ASSERT_MAIN_THREAD in order to make sure that
+// R-related code always runs on the main thread.
 Mutex callbackRegistriesMutex(tct_mtx_plain | tct_mtx_recursive);
 
 // [[Rcpp::export]]
@@ -148,8 +149,8 @@ Rcpp::List list_queue_(int loop) {
 }
 
 
-// [[Rcpp::export]]
-bool execCallbacks(double timeoutSecs, bool runAll, int loop) {
+// Execute callbacks for a single event loop.
+bool execCallbacksOne(double timeoutSecs, bool runAll, int loop) {
   ASSERT_MAIN_THREAD()
   // execCallbacks can be called directly from C code, and the callbacks may
   // include Rcpp code. (Should we also call wrap?)
@@ -182,6 +183,28 @@ bool execCallbacks(double timeoutSecs, bool runAll, int loop) {
     callbacks[0]->invoke_wrapped();
   } while (runAll);
   return true;
+}
+
+
+// Execute callbacks for an event loop and its children. Note that
+// [[Rcpp::export]]
+bool execCallbacks(double timeoutSecs, bool runAll, int loop) {
+  ASSERT_MAIN_THREAD()
+  execCallbacksOne(timeoutSecs, runAll, loop);
+
+  // Super crude way of getting internal functions and finding children
+  Rcpp::Function getNamespace  = Rcpp::Environment::base_namespace()["getNamespace"];
+  Rcpp::Environment later_ns   = getNamespace("later");
+  Rcpp::Function find_children = later_ns["find_children"];
+  Rcpp::NumericVector children = find_children(loop);
+
+  // Rcpp::Function rprint = Rcpp::Environment::base_namespace()["print"];
+  // rprint(children);
+
+  std::vector<int> children_i = Rcpp::as<std::vector<int> >(children);
+  for (std::vector<int>::iterator it = children_i.begin() ; it != children_i.end(); ++it) {
+    execCallbacks(0, true, *it);
+  }
 }
 
 
