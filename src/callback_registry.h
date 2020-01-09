@@ -6,6 +6,7 @@
 #include <boost/operators.hpp>
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/weak_ptr.hpp>
 #include "timestamp.h"
 #include "optional.h"
 #include "threadutils.h"
@@ -112,6 +113,8 @@ private:
 public:
   CallbackRegistry();
 
+  CallbackRegistry(boost::shared_ptr<CallbackRegistry> parent);
+
   // Add a function to the registry, to be executed at `secs` seconds in
   // the future (i.e. relative to the current time).
   uint64_t add(Rcpp::Function func, double secs);
@@ -139,6 +142,12 @@ public:
 
   // Return a List of items in the queue.
   Rcpp::List list() const;
+
+  // References to parent and children registries. These are used for
+  // automatically running child loops. The should only be accessed and
+  // modified from the main thread. (Is that true?)
+  boost::weak_ptr<CallbackRegistry> parent;
+  std::vector<boost::weak_ptr<CallbackRegistry>> children;
 };
 
 #endif // _CALLBACK_REGISTRY_H_

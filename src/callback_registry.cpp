@@ -256,6 +256,10 @@ void testCallbackOrdering() {
 CallbackRegistry::CallbackRegistry() : mutex(tct_mtx_recursive), condvar(mutex) {
 }
 
+CallbackRegistry::CallbackRegistry(boost::shared_ptr<CallbackRegistry> parent)
+  : mutex(tct_mtx_recursive), condvar(mutex), parent(parent) {
+}
+
 uint64_t CallbackRegistry::add(Rcpp::Function func, double secs) {
   // Copies of the Rcpp::Function should only be made on the main thread.
   ASSERT_MAIN_THREAD()

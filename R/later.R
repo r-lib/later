@@ -11,50 +11,6 @@
 
 .globals <- new.env(parent = emptyenv())
 
-# Parent-child mappings
-# .globals$parents is an environment of integer vectors
-.globals$relations <- new.env(parent = emptyenv())
-.globals$relations[["0"]] <- integer(0)
-
-find_children <- function(id) {
-  res <- .globals$relations[[as.character(id)]]
-  if (is.null(res)) {
-    res <- integer(0)
-  }
-  res
-}
-
-register_relationship <- function(parent_id, child_id) {
-  relations <- .globals$relations
-  parent_id_str <- as.character(parent_id)
-
-  if (is.null(relations[[parent_id_str]])) {
-    relations[[parent_id_str]] <- integer(0)
-  }
-
-  relations[[parent_id_str]][length(relations[[parent_id_str]]) + 1L] <- child_id
-}
-
-deregister_parent <- function(id) {
-  if (exists(as.character(id), envir = .globals$relations)) {
-    rm(list = as.character(id), envir = .globals$relations)
-  }
-}
-
-deregister_child <- function(id) {
-  # Super crude: iterate over all parents until child is found; then remove it.
-  parent_ids <- ls(.globals$relations, all.names = TRUE, sorted = FALSE)
-  for (parent_id in parent_ids) {
-    idx <- match(id, .globals$relations[[parent_id]])
-    if (!is.na(idx)) {
-      .globals$relations[[parent_id]] <- .globals$relations[[parent_id]][-idx]
-      return()
-    }
-  }
-
-  message("deregister_child: id ", id, " not found.")
-}
-
 
 #' Private event loops
 #'
@@ -101,7 +57,7 @@ deregister_child <- function(id) {
 #'   \code{autorun} is \code{TRUE}, then whenever the parent loop runs, this
 #'   loop will also automatically run, without having to manually call
 #'   \code{\link{run_now}()}. TODO: Maybe we don't need the autorun param at
-#'   all?
+#'   all? Mention NULL.
 #' @rdname create_loop
 #'
 #' @export
@@ -109,10 +65,15 @@ create_loop <- function(autorun = TRUE, parent = current_loop()) {
   # if (!identical(autorun, FALSE)) {
   #   stop("autorun must be set to FALSE (until TRUE is implemented).")
   # }
+  if (autorun && !is.null(parent)) {
+    parent_id <- parent$id
+  } else {
+    parent_id <- -1L
+  }
 
   id <- .globals$next_id
   .globals$next_id <- id + 1L
-  createCallbackRegistry(id)
+  createCallbackRegistry(id, parent_id)
 
   # Create the handle for the loop
   loop <- new.env(parent = emptyenv())
@@ -129,10 +90,6 @@ create_loop <- function(autorun = TRUE, parent = current_loop()) {
     reg.finalizer(loop, destroy_loop)
   }
 
-  if (autorun && !is.null(parent)) {
-    register_relationship(parent$id, id)
-  }
-
   loop
 }
 
@@ -144,8 +101,6 @@ destroy_loop <- function(loop) {
   }
 
   deleteCallbackRegistry(loop$id)
-  deregister_parent(loop$id)
-  deregister_child(loop$id)
 }
 
 #' @rdname create_loop

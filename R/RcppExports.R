@@ -17,8 +17,8 @@ existsCallbackRegistry <- function(loop) {
     .Call('_later_existsCallbackRegistry', PACKAGE = 'later', loop)
 }
 
-createCallbackRegistry <- function(loop) {
-    .Call('_later_createCallbackRegistry', PACKAGE = 'later', loop)
+createCallbackRegistry <- function(loop, parent_loop) {
+    .Call('_later_createCallbackRegistry', PACKAGE = 'later', loop, parent_loop)
 }
 
 deleteCallbackRegistry <- function(loop) {

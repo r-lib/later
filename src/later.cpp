@@ -87,17 +87,6 @@ bool existsCallbackRegistry(int loop) {
   return (callbackRegistries.find(loop) != callbackRegistries.end());
 }
 
-// [[Rcpp::export]]
-bool createCallbackRegistry(int loop) {
-  ASSERT_MAIN_THREAD()
-  Guard guard(callbackRegistriesMutex);
-  if (existsCallbackRegistry(loop)) {
-    Rcpp::stop("Can't create event loop %d because it already exists.", loop);
-  }
-  callbackRegistries[loop] = boost::make_shared<CallbackRegistry>();
-  return true;
-}
-
 // Gets a callback registry by ID.
 boost::shared_ptr<CallbackRegistry> getCallbackRegistry(int loop) {
   Guard guard(callbackRegistriesMutex);
@@ -107,6 +96,24 @@ boost::shared_ptr<CallbackRegistry> getCallbackRegistry(int loop) {
     throw std::runtime_error("Callback registry (loop) " + toString(loop) + " not found.");
   }
   return callbackRegistries[loop];
+}
+
+// [[Rcpp::export]]
+bool createCallbackRegistry(int loop, int parent_loop) {
+  ASSERT_MAIN_THREAD()
+  Guard guard(callbackRegistriesMutex);
+  if (existsCallbackRegistry(loop)) {
+    Rcpp::stop("Can't create event loop %d because it already exists.", loop);
+  }
+  if (parent_loop == -1) {
+    callbackRegistries[loop] = boost::make_shared<CallbackRegistry>();
+  } else {
+    // Register this loop with parent
+    boost::shared_ptr<CallbackRegistry> parent = getCallbackRegistry(parent_loop);
+    callbackRegistries[loop] = boost::make_shared<CallbackRegistry>(parent);
+    parent->children.push_back(callbackRegistries[loop]);
+  }
+  return true;
 }
 
 
@@ -135,6 +142,35 @@ bool deleteCallbackRegistry(int loop) {
     return false;
   }
 
+  // This is in a block so that the lifetime of the shared_ptrs is limited to
+  // inside. It would be nicer to do this stuff in the CallbackRegistry
+  // destructor, but we can't, because we can't reliably use shard_ptr and
+  // weak_ptr from inside the destructor; we need to some pointer comparison,
+  // but there's unspecified behavior if you try to lock() a weak_ptr to an
+  // object, from inside the object's destructor. You also can't call
+  // shared_from_this() from inside the destructor.
+  {
+    boost::shared_ptr<CallbackRegistry> registry = getCallbackRegistry(loop);
+    boost::shared_ptr<CallbackRegistry> parent = registry->parent.lock();
+    if (parent != nullptr) {
+      // Remove this registry from the parent's list of children.
+      for (std::vector<boost::weak_ptr<CallbackRegistry>>::iterator it = parent->children.begin();
+           it != parent->children.end();
+           ++it)
+      {
+        boost::shared_ptr<CallbackRegistry> it_s = it->lock();
+        if (it_s == registry) {
+          parent->children.erase(it);
+        }
+      }
+    }
+
+    // Graft this registry's children onto the parent's children.
+    parent->children.insert(
+      parent->children.end(), registry->children.begin(), registry->children.end()
+    );
+  }
+
   int n = callbackRegistries.erase(loop);
 
   if (n == 0) return false;
@@ -150,27 +186,16 @@ Rcpp::List list_queue_(int loop) {
 
 
 // Execute callbacks for a single event loop.
-bool execCallbacksOne(double timeoutSecs, bool runAll, int loop) {
+bool execCallbacksOne(
+  bool runAll,
+  boost::shared_ptr<CallbackRegistry> callback_registry,
+  Timestamp now
+) {
   ASSERT_MAIN_THREAD()
   // execCallbacks can be called directly from C code, and the callbacks may
   // include Rcpp code. (Should we also call wrap?)
   Rcpp::RNGScope rngscope;
   ProtectCallbacks pcscope;
-
-  boost::shared_ptr<CallbackRegistry> callback_registry;
-  {
-    // Only lock callbackRegistries for this scope so that when we're waiting
-    // or running callbacks later in this function, we won't block other
-    // threads from adding items to the registry.
-    Guard guard(callbackRegistriesMutex);
-    callback_registry = getCallbackRegistry(loop);
-  }
-
-  if (!callback_registry->wait(timeoutSecs)) {
-    return false;
-  }
-
-  Timestamp now;
 
   do {
     // We only take one at a time, because we don't want to lose callbacks if
@@ -182,6 +207,18 @@ bool execCallbacksOne(double timeoutSecs, bool runAll, int loop) {
     // This line may throw errors!
     callbacks[0]->invoke_wrapped();
   } while (runAll);
+
+  // TODO: Recurse, but pass along `now`.
+  // I think there's no need to lock this since it's only modified from the
+  // main thread. But need to check.
+  std::vector<boost::weak_ptr<CallbackRegistry> > children = callback_registry->children;
+  for (std::vector<boost::weak_ptr<CallbackRegistry> >::iterator it = children.begin();
+       it != children.end();
+       ++it)
+  {
+    execCallbacksOne(true, it->lock(), now);
+  }
+
   return true;
 }
 
@@ -190,21 +227,26 @@ bool execCallbacksOne(double timeoutSecs, bool runAll, int loop) {
 // [[Rcpp::export]]
 bool execCallbacks(double timeoutSecs, bool runAll, int loop) {
   ASSERT_MAIN_THREAD()
-  execCallbacksOne(timeoutSecs, runAll, loop);
 
-  // Super crude way of getting internal functions and finding children
-  Rcpp::Function getNamespace  = Rcpp::Environment::base_namespace()["getNamespace"];
-  Rcpp::Environment later_ns   = getNamespace("later");
-  Rcpp::Function find_children = later_ns["find_children"];
-  Rcpp::NumericVector children = find_children(loop);
-
-  // Rcpp::Function rprint = Rcpp::Environment::base_namespace()["print"];
-  // rprint(children);
-
-  std::vector<int> children_i = Rcpp::as<std::vector<int> >(children);
-  for (std::vector<int>::iterator it = children_i.begin() ; it != children_i.end(); ++it) {
-    execCallbacks(0, true, *it);
+  boost::shared_ptr<CallbackRegistry> callback_registry;
+  {
+    // Only lock callbackRegistries for this scope so that when we're waiting
+    // or running callbacks later in this function, we won't block other
+    // threads from adding items to the registry.
+    Guard guard(callbackRegistriesMutex);
+    callback_registry = getCallbackRegistry(loop);
   }
+
+  // TODO NEXT: figure out how to make this recursive
+  if (!callback_registry->wait(timeoutSecs)) {
+    return false;
+  }
+
+  Timestamp now;
+  execCallbacksOne(runAll, callback_registry, now);
+
+  // TODO: Fix return value
+  return true;
 }
 
 

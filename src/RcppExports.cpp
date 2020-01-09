@@ -47,13 +47,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // createCallbackRegistry
-bool createCallbackRegistry(int loop);
-RcppExport SEXP _later_createCallbackRegistry(SEXP loopSEXP) {
+bool createCallbackRegistry(int loop, int parent_loop);
+RcppExport SEXP _later_createCallbackRegistry(SEXP loopSEXP, SEXP parent_loopSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type loop(loopSEXP);
-    rcpp_result_gen = Rcpp::wrap(createCallbackRegistry(loop));
+    Rcpp::traits::input_parameter< int >::type parent_loop(parent_loopSEXP);
+    rcpp_result_gen = Rcpp::wrap(createCallbackRegistry(loop, parent_loop));
     return rcpp_result_gen;
 END_RCPP
 }
