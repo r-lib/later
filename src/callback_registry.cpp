@@ -256,8 +256,20 @@ void testCallbackOrdering() {
 CallbackRegistry::CallbackRegistry() : mutex(tct_mtx_recursive), condvar(mutex) {
 }
 
-CallbackRegistry::CallbackRegistry(boost::shared_ptr<CallbackRegistry> parent)
+CallbackRegistry::CallbackRegistry(boost::shared_ptr<CallbackRegistry>  )
   : mutex(tct_mtx_recursive), condvar(mutex), parent(parent) {
+}
+
+void CallbackRegistry::signal(bool recursive) {
+  Guard guard(mutex);
+  condvar.signal();
+
+  if (recursive) {
+    boost::shared_ptr<CallbackRegistry> par = parent.lock();
+    if (par) {
+      par->signal();
+    }
+  }
 }
 
 uint64_t CallbackRegistry::add(Rcpp::Function func, double secs) {
@@ -268,6 +280,12 @@ uint64_t CallbackRegistry::add(Rcpp::Function func, double secs) {
   Guard guard(mutex);
   queue.insert(cb);
   condvar.signal();
+
+  boost::shared_ptr<CallbackRegistry> par = parent.lock();
+  if (par) {
+    par->signal(true);
+  }
+
   return cb->getCallbackId();
 }
 
@@ -277,6 +295,12 @@ uint64_t CallbackRegistry::add(void (*func)(void*), void* data, double secs) {
   Guard guard(mutex);
   queue.insert(cb);
   condvar.signal();
+
+  boost::shared_ptr<CallbackRegistry> par = parent.lock();
+  if (par) {
+    par->signal();
+  }
+
   return cb->getCallbackId();
 }
 
@@ -296,14 +320,39 @@ bool CallbackRegistry::cancel(uint64_t id) {
 
 // The smallest timestamp present in the registry, if any.
 // Use this to determine the next time we need to pump events.
-Optional<Timestamp> CallbackRegistry::nextTimestamp() const {
+Optional<Timestamp> CallbackRegistry::nextTimestamp(bool recursive) const {
+  ASSERT_MAIN_THREAD()
   Guard guard(mutex);
-  if (this->queue.empty()) {
-    return Optional<Timestamp>();
-  } else {
+
+  Optional<Timestamp> minTimestamp;
+
+  if (! this->queue.empty()) {
     cbSet::const_iterator it = queue.begin();
-    return Optional<Timestamp>((*it)->when);
+    minTimestamp = Optional<Timestamp>((*it)->when);
   }
+
+  // Now check children
+  if (recursive) {
+    for (std::vector<boost::weak_ptr<CallbackRegistry>>::const_iterator it = children.begin();
+         it != children.end();
+         ++it)
+    {
+      boost::shared_ptr<CallbackRegistry> child = it->lock();
+      Optional<Timestamp> childNextTimestamp = child->nextTimestamp(recursive);
+
+      if (childNextTimestamp.has_value()) {
+        if (minTimestamp.has_value()) {
+          if (*childNextTimestamp < *minTimestamp) {
+            minTimestamp = childNextTimestamp;
+          }
+        } else {
+          minTimestamp = childNextTimestamp;
+        }
+      }
+    }
+  }
+
+  return minTimestamp;
 }
 
 bool CallbackRegistry::empty() const {
@@ -312,17 +361,34 @@ bool CallbackRegistry::empty() const {
 }
 
 // Returns true if the smallest timestamp exists and is not in the future.
-bool CallbackRegistry::due(const Timestamp& time) const {
+bool CallbackRegistry::due(const Timestamp& time, bool recursive) const {
+  ASSERT_MAIN_THREAD()
   Guard guard(mutex);
   cbSet::const_iterator it = queue.begin();
-  return !this->queue.empty() && !((*it)->when > time);
+  if (!this->queue.empty() && !((*it)->when > time)) {
+    return true;
+  }
+
+  // Now check children
+  if (recursive) {
+    for (std::vector<boost::weak_ptr<CallbackRegistry>>::const_iterator it = children.begin();
+         it != children.end();
+         ++it)
+    {
+      if (it->lock()->due(time, true)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 std::vector<Callback_sp> CallbackRegistry::take(size_t max, const Timestamp& time) {
   ASSERT_MAIN_THREAD()
   Guard guard(mutex);
   std::vector<Callback_sp> results;
-  while (this->due(time) && (max <= 0 || results.size() < max)) {
+  while (this->due(time, false) && (max <= 0 || results.size() < max)) {
     cbSet::iterator it = queue.begin();
     results.push_back(*it);
     this->queue.erase(it);
@@ -330,7 +396,7 @@ std::vector<Callback_sp> CallbackRegistry::take(size_t max, const Timestamp& tim
   return results;
 }
 
-bool CallbackRegistry::wait(double timeoutSecs) const {
+bool CallbackRegistry::wait(double timeoutSecs, bool recursive) const {
   ASSERT_MAIN_THREAD()
   if (timeoutSecs < 0) {
     // "1000 years ought to be enough for anybody" --Bill Gates
@@ -342,7 +408,7 @@ bool CallbackRegistry::wait(double timeoutSecs) const {
   Guard guard(mutex);
   while (true) {
     Timestamp end = expireTime;
-    Optional<Timestamp> next = nextTimestamp();
+    Optional<Timestamp> next = nextTimestamp(recursive);
     if (next.has_value() && *next < expireTime) {
       end = *next;
     }

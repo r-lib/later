@@ -75,6 +75,7 @@ public:
   ResetTimerOnExit() {
   }
   ~ResetTimerOnExit() {
+    ASSERT_MAIN_THREAD()
     // Find the next event in the registry and, if there is one, set the timer.
     Optional<Timestamp> nextEvent = getCallbackRegistry(GLOBAL_LOOP)->nextTimestamp();
     if (nextEvent.has_value()) {

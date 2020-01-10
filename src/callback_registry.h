@@ -127,18 +127,19 @@ public:
 
   // The smallest timestamp present in the registry, if any.
   // Use this to determine the next time we need to pump events.
-  Optional<Timestamp> nextTimestamp() const;
+  Optional<Timestamp> nextTimestamp(bool recursive = true) const;
 
   // Is the registry completely empty?
   bool empty() const;
 
   // Is anything ready to execute?
-  bool due(const Timestamp& time = Timestamp()) const;
+  bool due(const Timestamp& time = Timestamp(), bool recursive = true) const;
 
   // Pop and return an ordered list of functions to execute now.
   std::vector<Callback_sp> take(size_t max = -1, const Timestamp& time = Timestamp());
 
-  bool wait(double timeoutSecs) const;
+  // Wait until the next available callback is ready to execute.
+  bool wait(double timeoutSecs, bool recursive) const;
 
   // Return a List of items in the queue.
   Rcpp::List list() const;
@@ -148,6 +149,9 @@ public:
   // modified from the main thread. (Is that true?)
   boost::weak_ptr<CallbackRegistry> parent;
   std::vector<boost::weak_ptr<CallbackRegistry>> children;
+
+  // To let another object signal this one. It will also signal its parent.
+  void signal(bool recursive = true);
 };
 
 #endif // _CALLBACK_REGISTRY_H_

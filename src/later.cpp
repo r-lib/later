@@ -158,17 +158,18 @@ bool deleteCallbackRegistry(int loop) {
            it != parent->children.end();
            ++it)
       {
-        boost::shared_ptr<CallbackRegistry> it_s = it->lock();
-        if (it_s == registry) {
+        boost::shared_ptr<CallbackRegistry> child = it->lock();
+        if (child == registry) {
           parent->children.erase(it);
         }
       }
-    }
 
-    // Graft this registry's children onto the parent's children.
-    parent->children.insert(
-      parent->children.end(), registry->children.begin(), registry->children.end()
-    );
+      // Graft this registry's children onto the parent's children.
+      // TODO: If there's no parent, do the children get orphaned?
+      parent->children.insert(
+        parent->children.end(), registry->children.begin(), registry->children.end()
+      );
+    }
   }
 
   int n = callbackRegistries.erase(loop);
@@ -237,8 +238,7 @@ bool execCallbacks(double timeoutSecs, bool runAll, int loop) {
     callback_registry = getCallbackRegistry(loop);
   }
 
-  // TODO NEXT: figure out how to make this recursive
-  if (!callback_registry->wait(timeoutSecs)) {
+  if (!callback_registry->wait(timeoutSecs, true)) {
     return false;
   }
 
@@ -285,7 +285,7 @@ std::string execLater(Rcpp::Function callback, double delaySecs, int loop) {
   ASSERT_MAIN_THREAD()
   ensureInitialized();
   Guard guard(callbackRegistriesMutex);
-  uint64_t callback_id = doExecLater(getCallbackRegistry(loop), callback, delaySecs, loop == GLOBAL_LOOP);
+  uint64_t callback_id = doExecLater(getCallbackRegistry(loop), callback, delaySecs, true);
 
   // We have to convert it to a string in order to maintain 64-bit precision,
   // since R doesn't support 64 bit integers.
@@ -352,7 +352,7 @@ extern "C" uint64_t execLaterNative2(void (*func)(void*), void* data, double del
   // This try is because getCallbackRegistry can throw, and if it happens on a
   // background thread the process will stop.
   try {
-    return doExecLater(getCallbackRegistry(loop), func, data, delaySecs, loop == GLOBAL_LOOP);
+    return doExecLater(getCallbackRegistry(loop), func, data, delaySecs, true);
   } catch (...) {
     return 0;
   }
