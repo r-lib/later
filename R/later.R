@@ -118,8 +118,8 @@ with_temp_loop <- function(expr) {
 with_loop <- function(loop, expr) {
   if (!identical(loop, current_loop())) {
     old_loop <- .globals$current_loop
-    .globals$current_loop <- loop
     on.exit(.globals$current_loop <- old_loop, add = TRUE)
+    .globals$current_loop <- loop
   }
 
   force(expr)
