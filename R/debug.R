@@ -1,6 +1,6 @@
 #' Get and set logging level
 #'
-#' The logging level for httpuv can be set to report differing levels of
+#' The logging level for later can be set to report differing levels of
 #' information. Possible logging levels (from least to most information
 #' reported) are: \code{"OFF"}, \code{"ERROR"}, \code{"WARN"}, \code{"INFO"}, or
 #' \code{"DEBUG"}. The default level is \code{ERROR}.
