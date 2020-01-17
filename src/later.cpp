@@ -70,6 +70,22 @@ bool at_top_level() {
   return nframe == 0;
 }
 
+// ============================================================================
+// Current event loop
+// ============================================================================
+static int current_loop_id = 0;
+
+int setCurrentLoop(int loop_id) {
+  current_loop_id = loop_id;
+}
+
+int getCurrentLoop() {
+  return current_loop_id;
+}
+
+// ============================================================================
+// Callback registry
+// ============================================================================
 
 // Each callback registry represents one event loop. Note that traversing and
 // modifying callbackRegistries should always be guarded with
@@ -106,11 +122,11 @@ bool createCallbackRegistry(int loop, int parent_loop) {
     Rcpp::stop("Can't create event loop %d because it already exists.", loop);
   }
   if (parent_loop == -1) {
-    callbackRegistries[loop] = boost::make_shared<CallbackRegistry>();
+    callbackRegistries[loop] = boost::make_shared<CallbackRegistry>(loop);
   } else {
     // Register this loop with parent
     boost::shared_ptr<CallbackRegistry> parent = getCallbackRegistry(parent_loop);
-    callbackRegistries[loop] = boost::make_shared<CallbackRegistry>(parent);
+    callbackRegistries[loop] = boost::make_shared<CallbackRegistry>(loop, parent);
     parent->children.push_back(callbackRegistries[loop]);
   }
   return true;

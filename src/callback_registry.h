@@ -96,6 +96,8 @@ struct pointer_less_than {
 // Stores R function callbacks, ordered by timestamp.
 class CallbackRegistry {
 private:
+  // The ID number for this event loop.
+  int loop_id;
   // Most of the behavior of the registry is like a priority queue. However, a
   // std::priority_queue only allows access to the top element, and when we
   // cancel a callback or get an Rcpp::List representation, we need random
@@ -110,9 +112,9 @@ private:
   mutable ConditionVariable condvar;
 
 public:
-  CallbackRegistry();
+  CallbackRegistry(int loop_id);
 
-  CallbackRegistry(boost::shared_ptr<CallbackRegistry> parent);
+  CallbackRegistry(int loop_id, boost::shared_ptr<CallbackRegistry> parent);
 
   // Add a function to the registry, to be executed at `secs` seconds in
   // the future (i.e. relative to the current time).
@@ -142,6 +144,8 @@ public:
 
   // Return a List of items in the queue.
   Rcpp::List list() const;
+
+  int getLoopId() const;
 
   // References to parent and children registries. These are used for
   // automatically running child loops. They should only be accessed and

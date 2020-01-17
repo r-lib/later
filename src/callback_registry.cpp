@@ -253,11 +253,12 @@ void testCallbackOrdering() {
   }
 }
 
-CallbackRegistry::CallbackRegistry() : mutex(tct_mtx_recursive), condvar(mutex) {
+CallbackRegistry::CallbackRegistry(int loop_id)
+  : loop_id(loop_id), mutex(tct_mtx_recursive), condvar(mutex) {
 }
 
-CallbackRegistry::CallbackRegistry(boost::shared_ptr<CallbackRegistry>  )
-  : mutex(tct_mtx_recursive), condvar(mutex), parent(parent) {
+CallbackRegistry::CallbackRegistry(int loop_id, boost::shared_ptr<CallbackRegistry>  )
+  : loop_id(loop_id), mutex(tct_mtx_recursive), condvar(mutex), parent(parent) {
 }
 
 void CallbackRegistry::signal(bool recursive) {
@@ -435,4 +436,9 @@ Rcpp::List CallbackRegistry::list() const {
   }
 
   return results;
+}
+
+
+int CallbackRegistry::getLoopId() const {
+  return loopId;
 }
