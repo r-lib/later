@@ -6,7 +6,6 @@
 #include <boost/operators.hpp>
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
 #include "timestamp.h"
 #include "optional.h"
 #include "threadutils.h"
@@ -145,10 +144,10 @@ public:
   Rcpp::List list() const;
 
   // References to parent and children registries. These are used for
-  // automatically running child loops. The should only be accessed and
-  // modified from the main thread. (Is that true?)
-  boost::weak_ptr<CallbackRegistry> parent;
-  std::vector<boost::weak_ptr<CallbackRegistry>> children;
+  // automatically running child loops. They should only be accessed and
+  // modified from the main thread.
+  boost::shared_ptr<CallbackRegistry> parent;
+  std::vector<boost::shared_ptr<CallbackRegistry>> children;
 
   // To let another object signal this one. It will also signal its parent.
   void signal(bool recursive = true);

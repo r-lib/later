@@ -144,22 +144,19 @@ bool deleteCallbackRegistry(int loop) {
 
   // This is in a block so that the lifetime of the shared_ptrs is limited to
   // inside. It would be nicer to do this stuff in the CallbackRegistry
-  // destructor, but we can't, because we can't reliably use shard_ptr and
-  // weak_ptr from inside the destructor; we need to some pointer comparison,
-  // but there's unspecified behavior if you try to lock() a weak_ptr to an
-  // object, from inside the object's destructor. You also can't call
-  // shared_from_this() from inside the destructor.
+  // destructor, but we can't, because we can't reliably use shard_ptr from
+  // inside the destructor; we need to some pointer comparison, but you can't
+  // call shared_from_this() from inside the destructor.
   {
     boost::shared_ptr<CallbackRegistry> registry = getCallbackRegistry(loop);
-    boost::shared_ptr<CallbackRegistry> parent = registry->parent.lock();
+    boost::shared_ptr<CallbackRegistry> parent = registry->parent;
     if (parent != nullptr) {
       // Remove this registry from the parent's list of children.
-      for (std::vector<boost::weak_ptr<CallbackRegistry>>::iterator it = parent->children.begin();
+      for (std::vector<boost::shared_ptr<CallbackRegistry>>::iterator it = parent->children.begin();
            it != parent->children.end();
            ++it)
       {
-        boost::shared_ptr<CallbackRegistry> child = it->lock();
-        if (child == registry) {
+        if (*it == registry) {
           parent->children.erase(it);
         }
       }
@@ -212,12 +209,12 @@ bool execCallbacksOne(
   // TODO: Recurse, but pass along `now`.
   // I think there's no need to lock this since it's only modified from the
   // main thread. But need to check.
-  std::vector<boost::weak_ptr<CallbackRegistry> > children = callback_registry->children;
-  for (std::vector<boost::weak_ptr<CallbackRegistry> >::iterator it = children.begin();
+  std::vector<boost::shared_ptr<CallbackRegistry> > children = callback_registry->children;
+  for (std::vector<boost::shared_ptr<CallbackRegistry> >::iterator it = children.begin();
        it != children.end();
        ++it)
   {
-    execCallbacksOne(true, it->lock(), now);
+    execCallbacksOne(true, *it, now);
   }
 
   return true;

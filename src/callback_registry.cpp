@@ -264,11 +264,8 @@ void CallbackRegistry::signal(bool recursive) {
   Guard guard(mutex);
   condvar.signal();
 
-  if (recursive) {
-    boost::shared_ptr<CallbackRegistry> par = parent.lock();
-    if (par) {
-      par->signal();
-    }
+  if (recursive && parent != nullptr) {
+    parent->signal();
   }
 }
 
@@ -281,9 +278,8 @@ uint64_t CallbackRegistry::add(Rcpp::Function func, double secs) {
   queue.insert(cb);
   condvar.signal();
 
-  boost::shared_ptr<CallbackRegistry> par = parent.lock();
-  if (par) {
-    par->signal(true);
+  if (parent != nullptr) {
+    parent->signal(true);
   }
 
   return cb->getCallbackId();
@@ -296,9 +292,8 @@ uint64_t CallbackRegistry::add(void (*func)(void*), void* data, double secs) {
   queue.insert(cb);
   condvar.signal();
 
-  boost::shared_ptr<CallbackRegistry> par = parent.lock();
-  if (par) {
-    par->signal();
+  if (parent != nullptr) {
+    parent->signal(true);
   }
 
   return cb->getCallbackId();
@@ -333,12 +328,11 @@ Optional<Timestamp> CallbackRegistry::nextTimestamp(bool recursive) const {
 
   // Now check children
   if (recursive) {
-    for (std::vector<boost::weak_ptr<CallbackRegistry>>::const_iterator it = children.begin();
+    for (std::vector<boost::shared_ptr<CallbackRegistry>>::const_iterator it = children.begin();
          it != children.end();
          ++it)
     {
-      boost::shared_ptr<CallbackRegistry> child = it->lock();
-      Optional<Timestamp> childNextTimestamp = child->nextTimestamp(recursive);
+      Optional<Timestamp> childNextTimestamp = (*it)->nextTimestamp(recursive);
 
       if (childNextTimestamp.has_value()) {
         if (minTimestamp.has_value()) {
@@ -371,11 +365,11 @@ bool CallbackRegistry::due(const Timestamp& time, bool recursive) const {
 
   // Now check children
   if (recursive) {
-    for (std::vector<boost::weak_ptr<CallbackRegistry>>::const_iterator it = children.begin();
+    for (std::vector<boost::shared_ptr<CallbackRegistry>>::const_iterator it = children.begin();
          it != children.end();
          ++it)
     {
-      if (it->lock()->due(time, true)) {
+      if ((*it)->due(time, true)) {
         return true;
       }
     }
