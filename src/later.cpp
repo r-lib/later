@@ -124,6 +124,22 @@ SEXP getCurrentLoopXptr() {
   return current_loop->getXptr();
 }
 
+// Class for setting current loop and resetting when function exits, using
+// RAII.
+class CurrentLoopGuard {
+public:
+  CurrentLoopGuard(shared_ptr<CallbackRegistry> loop) {
+    ASSERT_MAIN_THREAD()
+    old_loop = getCurrentLoop();
+    setCurrentLoop(loop);
+  }
+  ~CurrentLoopGuard() {
+    setCurrentLoop(old_loop);
+  }
+private:
+  shared_ptr<CallbackRegistry> old_loop;
+};
+
 
 // ============================================================================
 // Callback registry
@@ -286,7 +302,7 @@ Rcpp::List list_queue_(SEXP registry_xptr) {
 // Execute callbacks for a single event loop.
 bool execCallbacksOne(
   bool runAll,
-  boost::shared_ptr<CallbackRegistry> callback_registry,
+  shared_ptr<CallbackRegistry> callback_registry,
   Timestamp now
 ) {
   ASSERT_MAIN_THREAD()
@@ -295,8 +311,8 @@ bool execCallbacksOne(
   Rcpp::RNGScope rngscope;
   ProtectCallbacks pcscope;
 
-  shared_ptr<CallbackRegistry> old_loop = getCurrentLoop();
-  setCurrentLoop(callback_registry);
+  // Set current loop for the duration of this function.
+  CurrentLoopGuard current_loop_guard(callback_registry);
 
   do {
     // We only take one at a time, because we don't want to lose callbacks if
@@ -319,9 +335,6 @@ bool execCallbacksOne(
   {
     execCallbacksOne(true, *it, now);
   }
-
-  // TODO: move to finally or somthing
-  setCurrentLoop(old_loop);
 
   return true;
 }
