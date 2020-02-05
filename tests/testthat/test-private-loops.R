@@ -188,6 +188,21 @@ test_that("Can't destroy current loop", {
   expect_true(errored)
 })
 
+test_that("Can't GC current loop", {
+  collected <- FALSE
+  l <- create_loop()
+  reg.finalizer(l, function(x) { collected <<- TRUE })
+  with_loop(l, {
+    rm(l, inherits = TRUE)
+    gc()
+    gc()
+  })
+  expect_false(collected)
+  gc()
+  expect_true(collected)
+})
+
+
 test_that("When running a child loop, it will be reported as current_loop()", {
   l <- create_loop(autorun = TRUE, parent = global_loop())
   x <- NULL
