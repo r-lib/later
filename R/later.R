@@ -4,9 +4,8 @@
 
 .onLoad <- function(...) {
   ensureInitialized()
-  .globals$next_id <- 0L
+  # TODO: Might be better to just store this in C++.
   .globals$global_loop <- create_loop(autorun = FALSE, parent = NULL)
-  .globals$current_loop <- .globals$global_loop
 }
 
 .globals <- new.env(parent = emptyenv())
@@ -61,58 +60,28 @@
 #' @rdname create_loop
 #'
 #' @export
-create_loop <- function(autorun = TRUE, parent = current_loop()) {
-  # if (!identical(autorun, FALSE)) {
-  #   stop("autorun must be set to FALSE (until TRUE is implemented).")
-  # }
-  if (autorun && !is.null(parent)) {
-    parent_id <- parent$id
-  } else {
-    parent_id <- -1L
-  }
-
-  id <- .globals$next_id
-  .globals$next_id <- id + 1L
-  createCallbackRegistry(id, parent_id)
-
-  # Create the handle for the loop
-  loop <- new.env(parent = emptyenv())
+create_loop <- function(parent = current_loop(), autorun) {
+  loop <- createCallbackRegistry(parent)
   class(loop) <- "event_loop"
-  loop$id <- id
-  lockBinding("id", loop)
-  if (id != 0L) {
-    # Automatically destroy the loop when the handle is GC'd (unless it's the
-    # global loop.) The global loop handle never gets GC'd under normal
-    # circumstances because .globals$global_loop refers to it. However, if the
-    # package is unloaded it can get GC'd, and we don't want the
-    # destroy_loop() finalizer to give an error message about not being able
-    # to destroy the global loop.
-    reg.finalizer(loop, destroy_loop)
-  }
-
   loop
 }
 
 #' @rdname create_loop
 #' @export
 destroy_loop <- function(loop) {
-  if (identical(loop, global_loop())) {
-    stop("Can't destroy global loop.")
-  }
-
-  deleteCallbackRegistry(loop$id)
+  deleteCallbackRegistry(loop)
 }
 
 #' @rdname create_loop
 #' @export
 exists_loop <- function(loop) {
-  existsCallbackRegistry(loop$id)
+  existsCallbackRegistry(loop)
 }
 
 #' @rdname create_loop
 #' @export
 current_loop <- function() {
-  .globals$current_loop
+  getCurrentLoopXptr()
 }
 
 #' @rdname create_loop
@@ -127,10 +96,13 @@ with_temp_loop <- function(expr) {
 #' @rdname create_loop
 #' @export
 with_loop <- function(loop, expr) {
-  if (!identical(loop, current_loop())) {
-    old_loop <- .globals$current_loop
-    on.exit(.globals$current_loop <- old_loop, add = TRUE)
-    .globals$current_loop <- loop
+  if (!exists_loop(loop)) {
+    stop("loop has been destroyed!")
+  }
+  old_loop <- current_loop()
+  if (!identical(loop, old_loop)) {
+    on.exit(setCurrentLoopXptr(old_loop), add = TRUE)
+    setCurrentLoopXptr(loop)
   }
 
   force(expr)
@@ -145,7 +117,9 @@ global_loop <- function() {
 
 #' @export
 format.event_loop <- function(x, ...) {
-  paste0("<event loop>\n  id: ", x$id)
+  # TODO: More informative print info.
+  #   global
+  paste0("<event loop>")
 }
 
 #' @export
@@ -200,7 +174,7 @@ print.event_loop <- function(x, ...) {
 #' @export
 later <- function(func, delay = 0, loop = current_loop()) {
   f <- rlang::as_function(func)
-  id <- execLater(f, delay, loop$id)
+  id <- execLater(f, delay, loop)
 
   invisible(create_canceller(id, loop))
 }
@@ -210,7 +184,7 @@ later <- function(func, delay = 0, loop = current_loop()) {
 # effect.
 create_canceller <- function(id, loop) {
   function() {
-    invisible(cancel(id, loop$id))
+    invisible(cancel(id, loop))
   }
 }
 
@@ -248,7 +222,7 @@ run_now <- function(timeoutSecs = 0L, all = TRUE, loop = current_loop()) {
     stop("timeoutSecs must be numeric")
 
   with_loop(loop,
-    invisible(execCallbacks(timeoutSecs, all, loop$id))
+    invisible(execCallbacks(timeoutSecs, all, loop))
   )
 }
 
@@ -261,7 +235,7 @@ run_now <- function(timeoutSecs = 0L, all = TRUE, loop = current_loop()) {
 #' @keywords internal
 #' @export
 loop_empty <- function(loop = current_loop()) {
-  idle(loop$id)
+  idle(loop)
 }
 
 #' Relative time to next scheduled operation
@@ -273,7 +247,7 @@ loop_empty <- function(loop = current_loop()) {
 #' @inheritParams create_loop
 #' @export
 next_op_secs <- function(loop = current_loop()) {
-  nextOpSecs(loop$id)
+  nextOpSecs(loop)
 }
 
 
@@ -283,5 +257,5 @@ next_op_secs <- function(loop = current_loop()) {
 #'
 #' @keywords internal
 list_queue <- function(loop = current_loop()) {
-  list_queue_(loop$id)
+  list_queue_(loop)
 }

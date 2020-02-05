@@ -30,6 +30,7 @@ namespace later {
 // if (LATER_H_API_VERSION != (*dll_api_version)()) { ... }
 #define LATER_H_API_VERSION 2
 
+// TODO: Remove GLOBAL_LOOP and later() with loop param.
 #define GLOBAL_LOOP 0
 
 inline void later(void (*func)(void*), void* data, double secs, int loop) {
@@ -73,37 +74,7 @@ inline void later(void (*func)(void*), void* data, double secs, int loop) {
 }
 
 inline void later(void (*func)(void*), void* data, double secs) {
-  typedef void (*elnfun)(void (*func)(void*), void*, double);
-  static elnfun eln = NULL;
-  if (!eln) {
-    // Initialize if necessary
-    if (func) {
-      // We're not initialized but someone's trying to actually schedule
-      // some code to be executed!
-      REprintf(
-        "Warning: later::execLaterNative called in uninitialized state. "
-        "If you're using <later.h>, please switch to <later_api.h>.\n"
-      );
-    }
-    eln = (elnfun)R_GetCCallable("later", "execLaterNative");
-  }
-
-  // We didn't want to execute anything, just initialize
-  if (!func) {
-    return;
-  }
-
-  eln(func, data, secs);
-
-
-  // Note 2019-09-11: The above code in this function is here just in case a
-  // package built with this version of later.h is run with an older version
-  // of the later DLL which does not have the execLaterNative2 function. In
-  // the next release of later, after we are confident that users have
-  // installed the newer later DLL which has execLaterNative2, it should be
-  // safe to replace the code in this function with just this:
-  //
-  // later(func, data, secs, GLOBAL_LOOP);
+  later(func, data, secs, GLOBAL_LOOP);
 }
 
 

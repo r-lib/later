@@ -10,7 +10,7 @@
 \alias{global_loop}
 \title{Private event loops}
 \usage{
-create_loop(autorun = NULL)
+create_loop(autorun = TRUE, parent = current_loop())
 
 destroy_loop(loop)
 
@@ -26,10 +26,16 @@ global_loop()
 }
 \arguments{
 \item{autorun}{Should this event loop automatically be run when its parent
-loop runs? Currently, only FALSE is allowed, but in the future TRUE will
-be implemented and the default. Because in the future the default will
-change, for now any code that calls \code{create_loop} must explicitly
-pass in \code{autorun=FALSE}.}
+loop runs? Currently, only FALSE is allowed, but in the future TRUE will be
+implemented and the default. Because in the future the default will change,
+for now any code that calls \code{create_loop} must explicitly pass in
+\code{autorun=FALSE}.}
+
+\item{parent}{The parent event loop for the one being created. If
+\code{autorun} is \code{TRUE}, then whenever the parent loop runs, this
+loop will also automatically run, without having to manually call
+\code{\link{run_now}()}. TODO: Maybe we don't need the autorun param at
+all? Mention NULL.}
 
 \item{loop}{A handle to an event loop.}
 

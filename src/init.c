@@ -16,9 +16,11 @@ extern SEXP _later_execLater(SEXP, SEXP, SEXP);
 extern SEXP _later_cancel(SEXP, SEXP);
 extern SEXP _later_nextOpSecs(SEXP);
 extern SEXP _later_testCallbackOrdering();
-extern SEXP _later_createCallbackRegistry(SEXP, SEXP);
+extern SEXP _later_createCallbackRegistry(SEXP);
 extern SEXP _later_deleteCallbackRegistry(SEXP);
 extern SEXP _later_existsCallbackRegistry(SEXP);
+extern SEXP _later_setCurrentLoopXptr(SEXP);
+extern SEXP _later_getCurrentLoopXptr();
 extern SEXP _later_list_queue_(SEXP);
 extern SEXP _later_log_level(SEXP);
 
@@ -30,9 +32,11 @@ static const R_CallMethodDef CallEntries[] = {
   {"_later_cancel",              (DL_FUNC) &_later_cancel,              2},
   {"_later_nextOpSecs",          (DL_FUNC) &_later_nextOpSecs,          1},
   {"_later_testCallbackOrdering", (DL_FUNC) &_later_testCallbackOrdering, 0},
-  {"_later_createCallbackRegistry", (DL_FUNC) &_later_createCallbackRegistry, 2},
+  {"_later_createCallbackRegistry", (DL_FUNC) &_later_createCallbackRegistry, 1},
   {"_later_deleteCallbackRegistry", (DL_FUNC) &_later_deleteCallbackRegistry, 1},
   {"_later_existsCallbackRegistry", (DL_FUNC) &_later_existsCallbackRegistry, 1},
+  {"_later_setCurrentLoopXptr",  (DL_FUNC) &_later_setCurrentLoopXptr,  1},
+  {"_later_getCurrentLoopXptr",  (DL_FUNC) &_later_getCurrentLoopXptr,  0},
   {"_later_list_queue_",         (DL_FUNC) &_later_list_queue_,         1},
   {"_later_log_level",           (DL_FUNC) &_later_log_level,           1},
   {NULL, NULL, 0}

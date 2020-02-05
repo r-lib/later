@@ -216,3 +216,7 @@ test_that("list_queue", {
   q <- list_queue(l)
   expect_equal(length(q), 0)
 })
+
+# TODO:
+# if interrupt occurs, make sure current_loop doesn't get stuck
+# Make sure children of a deleted loop are abandoned

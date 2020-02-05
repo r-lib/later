@@ -253,13 +253,16 @@ void testCallbackOrdering() {
   }
 }
 
-CallbackRegistry::CallbackRegistry(int loop_id)
-  : loop_id(loop_id), mutex(tct_mtx_recursive), condvar(mutex) {
+CallbackRegistry::CallbackRegistry()
+  : mutex(tct_mtx_recursive), condvar(mutex), xptr(R_NilValue)
+{
+  ASSERT_MAIN_THREAD()
 }
 
-CallbackRegistry::CallbackRegistry(int loop_id, boost::shared_ptr<CallbackRegistry>  )
-  : loop_id(loop_id), mutex(tct_mtx_recursive), condvar(mutex), parent(parent) {
+CallbackRegistry::~CallbackRegistry() {
+  ASSERT_MAIN_THREAD()
 }
+
 
 void CallbackRegistry::signal(bool recursive) {
   Guard guard(mutex);
@@ -317,7 +320,6 @@ bool CallbackRegistry::cancel(uint64_t id) {
 // The smallest timestamp present in the registry, if any.
 // Use this to determine the next time we need to pump events.
 Optional<Timestamp> CallbackRegistry::nextTimestamp(bool recursive) const {
-  ASSERT_MAIN_THREAD()
   Guard guard(mutex);
 
   Optional<Timestamp> minTimestamp;
@@ -439,6 +441,23 @@ Rcpp::List CallbackRegistry::list() const {
 }
 
 
-int CallbackRegistry::getLoopId() const {
-  return loopId;
+
+// Saves a weak ref to the R external pointer for this CallbackRegistry.
+void CallbackRegistry::setXptr(SEXP self_xptr) {
+  ASSERT_MAIN_THREAD()
+  // NOTE: The lifetime of this xptr is very, very weird. It is not on the
+  // presevelist, so our copy of the SEXP will not prevent the finalizer from
+  // being run on the actual external pointer object. I think this is correct,
+  // but need to check.
+
+  xptr = self_xptr;
+}
+
+// Return the R external pointer for this CallbackRegistry. If the external
+// pointer has been GC'd, then return NULL. (The xptr can be GC'd because this
+// object only holds a weak pointer to the xptr -- specifically so that it
+// will not keep the xptr alive even when no one else has a reference to it.)
+SEXP CallbackRegistry::getXptr() const {
+  ASSERT_MAIN_THREAD()
+  return xptr;
 }

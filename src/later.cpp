@@ -12,6 +12,8 @@
 #include "callback_registry.h"
 #include "interrupt.h"
 
+using boost::shared_ptr;
+
 // Declare platform-specific functions that are implemented in
 // later_posix.cpp and later_win32.cpp.
 // [[Rcpp::export]]
@@ -30,6 +32,8 @@ public:
     exec_callbacks_reentrancy_count--;
   }
 };
+
+shared_ptr<CallbackRegistry> xptrGetCallbackRegistry(SEXP registry_xptr);
 
 // Returns number of frames on the call stack. Basically just a wrapper for
 // base::sys.nframe(). Note that this can report that an error occurred if the
@@ -71,131 +75,211 @@ bool at_top_level() {
 }
 
 // ============================================================================
-// Current event loop
+// Global and current event loop
 // ============================================================================
-static int current_loop_id = 0;
+//
+// The terms "loop" and "registry" are used almostinterchangeably in the C++
+// code for later. In the R code, only the term "loop" is used.
+//
 
-int setCurrentLoop(int loop_id) {
-  current_loop_id = loop_id;
+shared_ptr<CallbackRegistry> global_loop;
+
+void setGlobalLoop(shared_ptr<CallbackRegistry> loop) {
+  ASSERT_MAIN_THREAD()
+  global_loop = loop;
 }
 
-int getCurrentLoop() {
-  return current_loop_id;
+shared_ptr<CallbackRegistry> getGlobalLoop() {
+  ASSERT_MAIN_THREAD()
+  return global_loop;
 }
+
+bool existsGlobalLoop() {
+  ASSERT_MAIN_THREAD()
+  return global_loop != nullptr;
+}
+
+
+shared_ptr<CallbackRegistry> current_loop;
+
+void setCurrentLoop(shared_ptr<CallbackRegistry> loop) {
+  ASSERT_MAIN_THREAD()
+  current_loop = loop;
+}
+
+shared_ptr<CallbackRegistry> getCurrentLoop() {
+  ASSERT_MAIN_THREAD()
+  return current_loop;
+}
+
+// [[Rcpp::export]]
+void setCurrentLoopXptr(SEXP registry_xptr) {
+  ASSERT_MAIN_THREAD()
+  setCurrentLoop(xptrGetCallbackRegistry(registry_xptr));
+}
+
+// [[Rcpp::export]]
+SEXP getCurrentLoopXptr() {
+  ASSERT_MAIN_THREAD()
+  return current_loop->getXptr();
+}
+
 
 // ============================================================================
 // Callback registry
 // ============================================================================
 
-// Each callback registry represents one event loop. Note that traversing and
-// modifying callbackRegistries should always be guarded with
-// callbackRegistriesMutex, to avoid races between threads.
-std::map<int, boost::shared_ptr<CallbackRegistry> > callbackRegistries;
-
-// Functions that search or manipulate callbackRegistries must use this mutex.
-// Some functions also have ASSERT_MAIN_THREAD in order to make sure that
-// R-related code always runs on the main thread.
-Mutex callbackRegistriesMutex(tct_mtx_plain | tct_mtx_recursive);
-
-// [[Rcpp::export]]
-bool existsCallbackRegistry(int loop) {
-  Guard guard(callbackRegistriesMutex);
-  return (callbackRegistries.find(loop) != callbackRegistries.end());
-}
-
-// Gets a callback registry by ID.
-boost::shared_ptr<CallbackRegistry> getCallbackRegistry(int loop) {
-  Guard guard(callbackRegistriesMutex);
-  if (!existsCallbackRegistry(loop)) {
-    // This function can be called from different threads so we can't use
-    // Rcpp::stop().
-    throw std::runtime_error("Callback registry (loop) " + toString(loop) + " not found.");
-  }
-  return callbackRegistries[loop];
-}
-
-// [[Rcpp::export]]
-bool createCallbackRegistry(int loop, int parent_loop) {
+shared_ptr<CallbackRegistry> xptrGetCallbackRegistry(SEXP registry_xptr) {
   ASSERT_MAIN_THREAD()
-  Guard guard(callbackRegistriesMutex);
-  if (existsCallbackRegistry(loop)) {
-    Rcpp::stop("Can't create event loop %d because it already exists.", loop);
+  if (TYPEOF(registry_xptr) != EXTPTRSXP) {
+    throw Rcpp::exception("Expected external pointer.");
   }
-  if (parent_loop == -1) {
-    callbackRegistries[loop] = boost::make_shared<CallbackRegistry>(loop);
-  } else {
-    // Register this loop with parent
-    boost::shared_ptr<CallbackRegistry> parent = getCallbackRegistry(parent_loop);
-    callbackRegistries[loop] = boost::make_shared<CallbackRegistry>(loop, parent);
-    parent->children.push_back(callbackRegistries[loop]);
-  }
-  return true;
-}
+  shared_ptr<CallbackRegistry>* reg_p =
+    reinterpret_cast<shared_ptr<CallbackRegistry>*>(R_ExternalPtrAddr(registry_xptr));
 
+  // If the external pointer has already been cleared, return an empty shared_ptr.
+  if (reg_p == nullptr) {
+    return shared_ptr<CallbackRegistry>();
+  }
+
+  return *reg_p;
+}
 
 bool deletingCallbackRegistry = false;
+// This deletes a CallbackRegistry and deregisters it as a child of its
+// parent. Any children of this registry are orphaned -- they no longer have a
+// parent. (Maybe this should be an option?) The deletion consists of clearing
+// the external pointer object (so the CallbackRegistry is no longer
+// accessible from R), and deleting the xptr's pointer to the shared pointer
+// to this object. When this function exits, there should be no more
+// references to the CallbackRegistry and the destructor should run.
+//
 // [[Rcpp::export]]
-bool deleteCallbackRegistry(int loop) {
+bool deleteCallbackRegistry(SEXP registry_xptr) {
   ASSERT_MAIN_THREAD()
+  // Rcpp::Rcerr << "deleteCallbackRegistry\n";
   // Detect re-entrant calls to this function and just return in that case.
   // This can hypothetically happen if as we're deleting a callback registry,
   // an R finalizer runs while we're removing references to the Rcpp::Function
   // objects, and the finalizer calls this function. Since this function is
   // always called from the same thread, we don't have to worry about races
   // with this variable.
+
+  // TODO: Make sure re-entrancy check is correct. What if a different event
+  // loop is deleted from a finalizer?
   if (deletingCallbackRegistry) {
     return false;
   }
 
-  Guard guard(callbackRegistriesMutex);
+  shared_ptr<CallbackRegistry> registry = xptrGetCallbackRegistry(registry_xptr);
+
+  if (registry == nullptr) {
+    return false;
+  }
+
+  if (registry == getGlobalLoop()) {
+    Rf_error("Can't delete global loop.");
+  }
+  if (registry == getCurrentLoop()) {
+    Rf_error("Can't delete current loop.");
+  }
 
   deletingCallbackRegistry = true;
   BOOST_SCOPE_EXIT(void) {
     deletingCallbackRegistry = false;
   } BOOST_SCOPE_EXIT_END
 
-  if (!existsCallbackRegistry(loop)) {
-    return false;
-  }
-
-  // This is in a block so that the lifetime of the shared_ptrs is limited to
-  // inside. It would be nicer to do this stuff in the CallbackRegistry
-  // destructor, but we can't, because we can't reliably use shard_ptr from
-  // inside the destructor; we need to some pointer comparison, but you can't
-  // call shared_from_this() from inside the destructor.
-  {
-    boost::shared_ptr<CallbackRegistry> registry = getCallbackRegistry(loop);
-    boost::shared_ptr<CallbackRegistry> parent = registry->parent;
-    if (parent != nullptr) {
-      // Remove this registry from the parent's list of children.
-      for (std::vector<boost::shared_ptr<CallbackRegistry>>::iterator it = parent->children.begin();
-           it != parent->children.end();
-           ++it)
-      {
-        if (*it == registry) {
-          parent->children.erase(it);
-        }
+  // Deregister this object from its parent. Do it here instead of the in the
+  // CallbackRegistry destructor, for two reasons: One is that we can be 100%
+  // sure that the deregistration happens right now (it's possible that the
+  // object's destructor won't run yet, because someone else has a shared_ptr
+  // to it). Second, we can't reliably use a shared_ptr to the object from
+  // inside its destructor; we need to some pointer comparison, but by the
+  // time the destructor runs, you can't run shared_from_this() in the object,
+  // because there are no more shared_ptrs to it.
+  boost::shared_ptr<CallbackRegistry> parent = registry->parent;
+  if (parent != nullptr) {
+    // Remove this registry from the parent's list of children.
+    for (std::vector<boost::shared_ptr<CallbackRegistry>>::iterator it = parent->children.begin();
+         it != parent->children.end();
+        )
+    {
+      if (*it == registry) {
+        parent->children.erase(it);
+        break;
+      } else {
+        ++it;
       }
-
-      // Graft this registry's children onto the parent's children.
-      // TODO: If there's no parent, do the children get orphaned?
-      parent->children.insert(
-        parent->children.end(), registry->children.begin(), registry->children.end()
-      );
     }
   }
 
-  int n = callbackRegistries.erase(loop);
+  // Tell the children that they no longer have a parent.
+  for (std::vector<boost::shared_ptr<CallbackRegistry>>::iterator it = registry->children.begin();
+       it != registry->children.end();
+       ++it)
+  {
+    (*it)->parent.reset();
+  }
 
-  if (n == 0) return false;
-  else return true;
+
+  delete reinterpret_cast<shared_ptr<CallbackRegistry>*>(R_ExternalPtrAddr(registry_xptr));
+  R_ClearExternalPtr(registry_xptr);
+
+  return true;
+}
+
+// void wrapper for deleteCallbackRegistry(). This is the finalizer for the
+// external pointer; it is called when the external pointer is GC'd. It is
+// possible that deleteCallbackRegistry() has already been called before this
+// one is called, but in that case, it simply returns and does nothing.
+void registry_xptr_deleter(SEXP registry_xptr) {
+  ASSERT_MAIN_THREAD()
+  deleteCallbackRegistry(registry_xptr);
+}
+
+
+// [[Rcpp::export]]
+SEXP createCallbackRegistry(SEXP parent_loop_xptr) {
+  ASSERT_MAIN_THREAD()
+  CallbackRegistry* reg = new CallbackRegistry();
+  shared_ptr<CallbackRegistry> *registry = new shared_ptr<CallbackRegistry>(reg);
+
+  if (parent_loop_xptr != R_NilValue) {
+    shared_ptr<CallbackRegistry> parent = xptrGetCallbackRegistry(parent_loop_xptr);
+    (*registry)->parent = parent;
+    parent->children.push_back(*registry);
+  }
+
+  // The first loop created is always the global loop.
+  if (!existsGlobalLoop()) {
+    if (parent_loop_xptr != R_NilValue) {
+      Rf_error("Global loop can't have a parent.");
+    }
+    setGlobalLoop(*registry);
+    setCurrentLoop(*registry);
+  }
+
+  SEXP registry_xptr = PROTECT(R_MakeExternalPtr(registry, R_NilValue, R_NilValue));
+  R_RegisterCFinalizerEx(registry_xptr, registry_xptr_deleter, FALSE);
+
+  (*registry)->setXptr(registry_xptr);
+
+  UNPROTECT(1);
+  return registry_xptr;
 }
 
 // [[Rcpp::export]]
-Rcpp::List list_queue_(int loop) {
+bool existsCallbackRegistry(SEXP registry_xptr) {
   ASSERT_MAIN_THREAD()
-  Guard guard(callbackRegistriesMutex);
-  return getCallbackRegistry(loop)->list();
+  bool exists = (xptrGetCallbackRegistry(registry_xptr) != nullptr);
+  return exists;
+}
+
+
+// [[Rcpp::export]]
+Rcpp::List list_queue_(SEXP registry_xptr) {
+  ASSERT_MAIN_THREAD()
+  return xptrGetCallbackRegistry(registry_xptr)->list();
 }
 
 
@@ -210,6 +294,9 @@ bool execCallbacksOne(
   // include Rcpp code. (Should we also call wrap?)
   Rcpp::RNGScope rngscope;
   ProtectCallbacks pcscope;
+
+  shared_ptr<CallbackRegistry> old_loop = getCurrentLoop();
+  setCurrentLoop(callback_registry);
 
   do {
     // We only take one at a time, because we don't want to lose callbacks if
@@ -233,23 +320,18 @@ bool execCallbacksOne(
     execCallbacksOne(true, *it, now);
   }
 
+  // TODO: move to finally or somthing
+  setCurrentLoop(old_loop);
+
   return true;
 }
 
-
-// Execute callbacks for an event loop and its children. Note that
-// [[Rcpp::export]]
-bool execCallbacks(double timeoutSecs, bool runAll, int loop) {
+bool execCallbacks(
+  double timeoutSecs,
+  bool runAll,
+  shared_ptr<CallbackRegistry> callback_registry)
+{
   ASSERT_MAIN_THREAD()
-
-  boost::shared_ptr<CallbackRegistry> callback_registry;
-  {
-    // Only lock callbackRegistries for this scope so that when we're waiting
-    // or running callbacks later in this function, we won't block other
-    // threads from adding items to the registry.
-    Guard guard(callbackRegistriesMutex);
-    callback_registry = getCallbackRegistry(loop);
-  }
 
   if (!callback_registry->wait(timeoutSecs, true)) {
     return false;
@@ -260,6 +342,14 @@ bool execCallbacks(double timeoutSecs, bool runAll, int loop) {
 
   // TODO: Fix return value
   return true;
+}
+
+
+// Execute callbacks for an event loop and its children. Note that
+// [[Rcpp::export]]
+bool execCallbacks(double timeoutSecs, bool runAll, SEXP registry_xptr) {
+  ASSERT_MAIN_THREAD()
+  return execCallbacks(timeoutSecs, runAll, xptrGetCallbackRegistry(registry_xptr));
 }
 
 
@@ -279,7 +369,7 @@ bool execCallbacks(double timeoutSecs, bool runAll, int loop) {
 bool execCallbacksForTopLevel() {
   bool any = false;
   for (size_t i = 0; i < 20; i++) {
-    if (!execCallbacks(0, true, GLOBAL_LOOP))
+    if (!execCallbacks(0, true, getGlobalLoop()))
       return any;
     any = true;
   }
@@ -287,18 +377,24 @@ bool execCallbacksForTopLevel() {
 }
 
 // [[Rcpp::export]]
-bool idle(int loop) {
+bool idle(SEXP registry_xptr) {
   ASSERT_MAIN_THREAD()
-  Guard guard(callbackRegistriesMutex);
-  return getCallbackRegistry(loop)->empty();
+  return xptrGetCallbackRegistry(registry_xptr)->empty();
 }
 
+
+// Store
+// void ensureInitialized() {
+//   // TODO: Create global event loop
+//   //
+
+// }
+
 // [[Rcpp::export]]
-std::string execLater(Rcpp::Function callback, double delaySecs, int loop) {
+std::string execLater(Rcpp::Function callback, double delaySecs, SEXP registry_xptr) {
   ASSERT_MAIN_THREAD()
   ensureInitialized();
-  Guard guard(callbackRegistriesMutex);
-  uint64_t callback_id = doExecLater(getCallbackRegistry(loop), callback, delaySecs, true);
+  uint64_t callback_id = doExecLater(xptrGetCallbackRegistry(registry_xptr), callback, delaySecs, true);
 
   // We have to convert it to a string in order to maintain 64-bit precision,
   // since R doesn't support 64 bit integers.
@@ -307,13 +403,10 @@ std::string execLater(Rcpp::Function callback, double delaySecs, int loop) {
 
 
 
-bool cancel(uint64_t callback_id, int loop) {
+bool cancel(uint64_t callback_id, SEXP registry_xptr) {
   ASSERT_MAIN_THREAD()
-  Guard guard(callbackRegistriesMutex);
-  if (!existsCallbackRegistry(loop))
-    return false;
 
-  boost::shared_ptr<CallbackRegistry> reg = getCallbackRegistry(loop);
+  boost::shared_ptr<CallbackRegistry> reg = xptrGetCallbackRegistry(registry_xptr);
   if (!reg)
     return false;
 
@@ -321,7 +414,7 @@ bool cancel(uint64_t callback_id, int loop) {
 }
 
 // [[Rcpp::export]]
-bool cancel(std::string callback_id_s, int loop) {
+bool cancel(std::string callback_id_s, SEXP registry_xptr) {
   ASSERT_MAIN_THREAD()
   uint64_t callback_id;
   std::istringstream iss(callback_id_s);
@@ -333,16 +426,15 @@ bool cancel(std::string callback_id_s, int loop) {
     return false;
   }
 
-  return cancel(callback_id, loop);
+  return cancel(callback_id, registry_xptr);
 }
 
 
 
 // [[Rcpp::export]]
-double nextOpSecs(int loop) {
+double nextOpSecs(SEXP registry_xptr) {
   ASSERT_MAIN_THREAD()
-  Guard guard(callbackRegistriesMutex);
-  Optional<Timestamp> nextTime = getCallbackRegistry(loop)->nextTimestamp();
+  Optional<Timestamp> nextTime = xptrGetCallbackRegistry(registry_xptr)->nextTimestamp();
   if (!nextTime.has_value()) {
     return R_PosInf;
   } else {
@@ -354,18 +446,21 @@ double nextOpSecs(int loop) {
 // Schedules a C function to execute on the global loop. Returns callback ID
 // on success, or 0 on error.
 extern "C" uint64_t execLaterNative(void (*func)(void*), void* data, double delaySecs) {
-  return execLaterNative2(func, data, delaySecs, GLOBAL_LOOP);
+  return execLaterNative2(func, data, delaySecs, 0);
 }
 
 // Schedules a C function to execute on a specific event loop. Returns
 // callback ID on success, or 0 on error.
-extern "C" uint64_t execLaterNative2(void (*func)(void*), void* data, double delaySecs, int loop) {
+extern "C" uint64_t execLaterNative2(void (*func)(void*), void* data, double delaySecs, int loop_id) {
   ensureInitialized();
-  Guard guard(callbackRegistriesMutex);
+  if (loop_id != 0) {
+    fprintf(stderr, "Only the global loop can be used.\n");
+    //TODO: Implement for other loops
+  }
   // This try is because getCallbackRegistry can throw, and if it happens on a
   // background thread the process will stop.
   try {
-    return doExecLater(getCallbackRegistry(loop), func, data, delaySecs, true);
+    return doExecLater(global_loop, func, data, delaySecs, true);
   } catch (...) {
     return 0;
   }

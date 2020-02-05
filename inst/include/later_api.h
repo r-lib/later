@@ -8,14 +8,12 @@ namespace {
   class LaterInitializer {
   public:
     LaterInitializer() {
-      // See comment in execLaterNative2 to learn why we need to do this in a
-      // statically initialized object.
-      later::later(NULL, NULL, 0, GLOBAL_LOOP);
-      // For execLaterNative
+      // See comment in execLaterNative to learn why we need to do this
+      // in a statically initialized object
       later::later(NULL, NULL, 0);
     }
   };
-
+  
   static LaterInitializer init;
 
 } // namespace

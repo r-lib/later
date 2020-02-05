@@ -96,8 +96,6 @@ struct pointer_less_than {
 // Stores R function callbacks, ordered by timestamp.
 class CallbackRegistry {
 private:
-  // The ID number for this event loop.
-  int loop_id;
   // Most of the behavior of the registry is like a priority queue. However, a
   // std::priority_queue only allows access to the top element, and when we
   // cancel a callback or get an Rcpp::List representation, we need random
@@ -111,10 +109,13 @@ private:
   mutable Mutex mutex;
   mutable ConditionVariable condvar;
 
-public:
-  CallbackRegistry(int loop_id);
+  // R external pointer object for this CallbackRegistry. This is used when
+  // someone wants to query the current loop.
+  SEXP xptr;
 
-  CallbackRegistry(int loop_id, boost::shared_ptr<CallbackRegistry> parent);
+public:
+  CallbackRegistry();
+  ~CallbackRegistry();
 
   // Add a function to the registry, to be executed at `secs` seconds in
   // the future (i.e. relative to the current time).
@@ -145,7 +146,10 @@ public:
   // Return a List of items in the queue.
   Rcpp::List list() const;
 
-  int getLoopId() const;
+  // Sets the R external pointer object for this CallbackRegistry.
+  void setXptr(SEXP self_xptr);
+  // Returns the R external pointer object for this CallbackRegistry.
+  SEXP getXptr() const;
 
   // References to parent and children registries. These are used for
   // automatically running child loops. They should only be accessed and
