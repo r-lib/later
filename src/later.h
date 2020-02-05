@@ -12,7 +12,7 @@
 
 #define GLOBAL_LOOP 0
 
-boost::shared_ptr<CallbackRegistry> getGlobalLoop();
+boost::shared_ptr<CallbackRegistry> getGlobalRegistry();
 
 bool execCallbacksForTopLevel();
 bool at_top_level();

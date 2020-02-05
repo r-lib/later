@@ -35,23 +35,23 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
-// setCurrentLoopXptr
-void setCurrentLoopXptr(SEXP registry_xptr);
-RcppExport SEXP _later_setCurrentLoopXptr(SEXP registry_xptrSEXP) {
+// setCurrentRegistryXptr
+void setCurrentRegistryXptr(SEXP registry_xptr);
+RcppExport SEXP _later_setCurrentRegistryXptr(SEXP registry_xptrSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type registry_xptr(registry_xptrSEXP);
-    setCurrentLoopXptr(registry_xptr);
+    setCurrentRegistryXptr(registry_xptr);
     return R_NilValue;
 END_RCPP
 }
-// getCurrentLoopXptr
-SEXP getCurrentLoopXptr();
-RcppExport SEXP _later_getCurrentLoopXptr() {
+// getCurrentRegistryXptr
+SEXP getCurrentRegistryXptr();
+RcppExport SEXP _later_getCurrentRegistryXptr() {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(getCurrentLoopXptr());
+    rcpp_result_gen = Rcpp::wrap(getCurrentRegistryXptr());
     return rcpp_result_gen;
 END_RCPP
 }

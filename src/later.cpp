@@ -78,66 +78,68 @@ bool at_top_level() {
 // Global and current event loop
 // ============================================================================
 //
-// The terms "loop" and "registry" are used almostinterchangeably in the C++
-// code for later. In the R code, only the term "loop" is used.
-//
+// In the R code, the term "loop" is used. In the C++ code, the terms "loop"
+// and "registry" are both used. "Loop" is usually used when interfacing with
+// R-facing event loop, and "registry" is usually used when interfacing with
+// the implementation, which uses a callback registry.
 
-shared_ptr<CallbackRegistry> global_loop;
+shared_ptr<CallbackRegistry> global_registry;
 
-void setGlobalLoop(shared_ptr<CallbackRegistry> loop) {
+void setGlobalRegistry(shared_ptr<CallbackRegistry> registry) {
   ASSERT_MAIN_THREAD()
-  global_loop = loop;
+  global_registry = registry;
 }
 
-shared_ptr<CallbackRegistry> getGlobalLoop() {
+shared_ptr<CallbackRegistry> getGlobalRegistry() {
   ASSERT_MAIN_THREAD()
-  return global_loop;
+  return global_registry;
 }
 
-bool existsGlobalLoop() {
+bool existsGlobalRegistry() {
   ASSERT_MAIN_THREAD()
-  return global_loop != nullptr;
+  return global_registry != nullptr;
 }
 
 
-shared_ptr<CallbackRegistry> current_loop;
 
-void setCurrentLoop(shared_ptr<CallbackRegistry> loop) {
+shared_ptr<CallbackRegistry> current_registry;
+
+void setCurrentRegistry(shared_ptr<CallbackRegistry> registry) {
   ASSERT_MAIN_THREAD()
-  current_loop = loop;
+  current_registry = registry;
 }
 
-shared_ptr<CallbackRegistry> getCurrentLoop() {
+shared_ptr<CallbackRegistry> getCurrentRegistry() {
   ASSERT_MAIN_THREAD()
-  return current_loop;
-}
-
-// [[Rcpp::export]]
-void setCurrentLoopXptr(SEXP registry_xptr) {
-  ASSERT_MAIN_THREAD()
-  setCurrentLoop(xptrGetCallbackRegistry(registry_xptr));
+  return current_registry;
 }
 
 // [[Rcpp::export]]
-SEXP getCurrentLoopXptr() {
+void setCurrentRegistryXptr(SEXP registry_xptr) {
   ASSERT_MAIN_THREAD()
-  return current_loop->getXptr();
+  setCurrentRegistry(xptrGetCallbackRegistry(registry_xptr));
 }
 
-// Class for setting current loop and resetting when function exits, using
+// [[Rcpp::export]]
+SEXP getCurrentRegistryXptr() {
+  ASSERT_MAIN_THREAD()
+  return current_registry->getXptr();
+}
+
+// Class for setting current registry and resetting when function exits, using
 // RAII.
-class CurrentLoopGuard {
+class CurrentRegistryGuard {
 public:
-  CurrentLoopGuard(shared_ptr<CallbackRegistry> loop) {
+  CurrentRegistryGuard(shared_ptr<CallbackRegistry> registry) {
     ASSERT_MAIN_THREAD()
-    old_loop = getCurrentLoop();
-    setCurrentLoop(loop);
+    old_registry = getCurrentRegistry();
+    setCurrentRegistry(registry);
   }
-  ~CurrentLoopGuard() {
-    setCurrentLoop(old_loop);
+  ~CurrentRegistryGuard() {
+    setCurrentRegistry(old_registry);
   }
 private:
-  shared_ptr<CallbackRegistry> old_loop;
+  shared_ptr<CallbackRegistry> old_registry;
 };
 
 
@@ -178,10 +180,10 @@ bool deleteCallbackRegistry(SEXP registry_xptr) {
     return false;
   }
 
-  if (registry == getGlobalLoop()) {
+  if (registry == getGlobalRegistry()) {
     Rf_error("Can't delete global loop.");
   }
-  if (registry == getCurrentLoop()) {
+  if (registry == getCurrentRegistry()) {
     Rf_error("Can't delete current loop.");
   }
 
@@ -247,12 +249,12 @@ SEXP createCallbackRegistry(SEXP parent_loop_xptr) {
   }
 
   // The first loop created is always the global loop.
-  if (!existsGlobalLoop()) {
+  if (!existsGlobalRegistry()) {
     if (parent_loop_xptr != R_NilValue) {
       Rf_error("Global loop can't have a parent.");
     }
-    setGlobalLoop(*registry);
-    setCurrentLoop(*registry);
+    setGlobalRegistry(*registry);
+    setCurrentRegistry(*registry);
   }
 
   SEXP registry_xptr = PROTECT(R_MakeExternalPtr(registry, R_NilValue, R_NilValue));
@@ -292,7 +294,7 @@ bool execCallbacksOne(
   ProtectCallbacks pcscope;
 
   // Set current loop for the duration of this function.
-  CurrentLoopGuard current_loop_guard(callback_registry);
+  CurrentRegistryGuard current_registry_guard(callback_registry);
 
   do {
     // We only take one at a time, because we don't want to lose callbacks if
@@ -362,7 +364,7 @@ bool execCallbacks(double timeoutSecs, bool runAll, SEXP registry_xptr) {
 bool execCallbacksForTopLevel() {
   bool any = false;
   for (size_t i = 0; i < 20; i++) {
-    if (!execCallbacks(0, true, getGlobalLoop()))
+    if (!execCallbacks(0, true, getGlobalRegistry()))
       return any;
     any = true;
   }
@@ -453,7 +455,7 @@ extern "C" uint64_t execLaterNative2(void (*func)(void*), void* data, double del
   // This try is because getCallbackRegistry can throw, and if it happens on a
   // background thread the process will stop.
   try {
-    return doExecLater(global_loop, func, data, delaySecs, true);
+    return doExecLater(global_registry, func, data, delaySecs, true);
   } catch (...) {
     return 0;
   }

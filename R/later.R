@@ -81,7 +81,7 @@ exists_loop <- function(loop) {
 #' @rdname create_loop
 #' @export
 current_loop <- function() {
-  getCurrentLoopXptr()
+  getCurrentRegistryXptr()
 }
 
 #' @rdname create_loop
@@ -101,8 +101,8 @@ with_loop <- function(loop, expr) {
   }
   old_loop <- current_loop()
   if (!identical(loop, old_loop)) {
-    on.exit(setCurrentLoopXptr(old_loop), add = TRUE)
-    setCurrentLoopXptr(loop)
+    on.exit(setCurrentRegistryXptr(old_loop), add = TRUE)
+    setCurrentRegistryXptr(loop)
   }
 
   force(expr)

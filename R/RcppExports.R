@@ -13,12 +13,12 @@ ensureInitialized <- function() {
     invisible(.Call('_later_ensureInitialized', PACKAGE = 'later'))
 }
 
-setCurrentLoopXptr <- function(registry_xptr) {
-    invisible(.Call('_later_setCurrentLoopXptr', PACKAGE = 'later', registry_xptr))
+setCurrentRegistryXptr <- function(registry_xptr) {
+    invisible(.Call('_later_setCurrentRegistryXptr', PACKAGE = 'later', registry_xptr))
 }
 
-getCurrentLoopXptr <- function() {
-    .Call('_later_getCurrentLoopXptr', PACKAGE = 'later')
+getCurrentRegistryXptr <- function() {
+    .Call('_later_getCurrentRegistryXptr', PACKAGE = 'later')
 }
 
 deleteCallbackRegistry <- function(registry_xptr) {
