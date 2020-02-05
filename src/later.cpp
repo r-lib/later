@@ -161,7 +161,6 @@ shared_ptr<CallbackRegistry> xptrGetCallbackRegistry(SEXP registry_xptr) {
   return *reg_p;
 }
 
-bool deletingCallbackRegistry = false;
 // This deletes a CallbackRegistry and deregisters it as a child of its
 // parent. Any children of this registry are orphaned -- they no longer have a
 // parent. (Maybe this should be an option?) The deletion consists of clearing
@@ -173,20 +172,6 @@ bool deletingCallbackRegistry = false;
 // [[Rcpp::export]]
 bool deleteCallbackRegistry(SEXP registry_xptr) {
   ASSERT_MAIN_THREAD()
-  // Rcpp::Rcerr << "deleteCallbackRegistry\n";
-  // Detect re-entrant calls to this function and just return in that case.
-  // This can hypothetically happen if as we're deleting a callback registry,
-  // an R finalizer runs while we're removing references to the Rcpp::Function
-  // objects, and the finalizer calls this function. Since this function is
-  // always called from the same thread, we don't have to worry about races
-  // with this variable.
-
-  // TODO: Make sure re-entrancy check is correct. What if a different event
-  // loop is deleted from a finalizer?
-  if (deletingCallbackRegistry) {
-    return false;
-  }
-
   shared_ptr<CallbackRegistry> registry = xptrGetCallbackRegistry(registry_xptr);
 
   if (registry == nullptr) {
@@ -199,11 +184,6 @@ bool deleteCallbackRegistry(SEXP registry_xptr) {
   if (registry == getCurrentLoop()) {
     Rf_error("Can't delete current loop.");
   }
-
-  deletingCallbackRegistry = true;
-  BOOST_SCOPE_EXIT(void) {
-    deletingCallbackRegistry = false;
-  } BOOST_SCOPE_EXIT_END
 
   // Deregister this object from its parent. Do it here instead of the in the
   // CallbackRegistry destructor, for two reasons: One is that we can be 100%
