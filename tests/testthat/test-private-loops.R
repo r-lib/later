@@ -171,6 +171,22 @@ test_that("Temporary event loops", {
   expect_identical(x, 2)
 })
 
+test_that("Can't destroy current loop", {
+  errored <- FALSE
+  with_temp_loop({
+    later(function() {
+      # We can't do expect_error in a later() callback, so use a tryCatch
+      # instead to check that an error occurs.
+      tryCatch(
+        destroy_loop(current_loop()),
+        error = function(e) { errored <<- TRUE }
+      )
+    })
+    run_now()
+  })
+
+  expect_true(errored)
+})
 
 test_that("When running a child loop, it will be reported as current_loop()", {
   l <- create_loop(autorun = TRUE, parent = global_loop())
