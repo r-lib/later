@@ -14,10 +14,6 @@
 
 using boost::shared_ptr;
 
-// Declare platform-specific functions that are implemented in
-// later_posix.cpp and later_win32.cpp.
-// [[Rcpp::export]]
-void ensureInitialized();
 uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp::Function callback, double delaySecs, bool resetTimer);
 uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, void (*callback)(void*), void* data, double delaySecs, bool resetTimer);
 
@@ -100,6 +96,11 @@ bool existsGlobalRegistry() {
   return global_registry != nullptr;
 }
 
+// [[Rcpp::export]]
+SEXP getGlobalRegistryXptr() {
+  ASSERT_MAIN_THREAD()
+  return global_registry->getXptr();
+}
 
 
 shared_ptr<CallbackRegistry> current_registry;
@@ -248,15 +249,6 @@ SEXP createCallbackRegistry(SEXP parent_loop_xptr) {
     parent->children.push_back(*registry);
   }
 
-  // The first loop created is always the global loop.
-  if (!existsGlobalRegistry()) {
-    if (parent_loop_xptr != R_NilValue) {
-      Rf_error("Global loop can't have a parent.");
-    }
-    setGlobalRegistry(*registry);
-    setCurrentRegistry(*registry);
-  }
-
   SEXP registry_xptr = PROTECT(R_MakeExternalPtr(registry, R_NilValue, R_NilValue));
   R_RegisterCFinalizerEx(registry_xptr, registry_xptr_deleter, FALSE);
 
@@ -265,6 +257,23 @@ SEXP createCallbackRegistry(SEXP parent_loop_xptr) {
   UNPROTECT(1);
   return registry_xptr;
 }
+
+void createGlobalRegistry() {
+  ASSERT_MAIN_THREAD()
+  if (existsGlobalRegistry()) {
+    Rf_error("Can't create global loop because it already exists.");
+  }
+  SEXP registry_xptr = PROTECT(createCallbackRegistry(R_NilValue));
+
+  // Make sure the external pointer never gets GC'd
+  R_PreserveObject(registry_xptr);
+
+  shared_ptr<CallbackRegistry> registry = xptrGetCallbackRegistry(registry_xptr);
+  setGlobalRegistry(registry);
+  setCurrentRegistry(registry);
+  UNPROTECT(1);
+}
+
 
 // [[Rcpp::export]]
 bool existsCallbackRegistry(SEXP registry_xptr) {
@@ -378,12 +387,23 @@ bool idle(SEXP registry_xptr) {
 }
 
 
-// Store
-// void ensureInitialized() {
-//   // TODO: Create global event loop
-//   //
+static bool initialized = false;
+// [[Rcpp::export]]
+void ensureInitialized() {
+  if (initialized) {
+    return;
+  }
+  REGISTER_MAIN_THREAD()
+  if (!existsGlobalRegistry()) {
+    createGlobalRegistry();
+  }
 
-// }
+  // Call the platform-specific initialization for the mechanism that runs the
+  // event loop when the console is idle.
+  ensureAutorunnerInitialized();
+
+  initialized = true;
+}
 
 // [[Rcpp::export]]
 std::string execLater(Rcpp::Function callback, double delaySecs, SEXP registry_xptr) {

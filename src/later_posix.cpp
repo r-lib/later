@@ -151,9 +151,8 @@ static void remove_dummy_handler(void *data) {
   close(dummy_pipe_out);
 }
 
-void ensureInitialized() {
+void ensureAutorunnerInitialized() {
   if (!initialized) {
-    REGISTER_MAIN_THREAD()
     buf = malloc(BUF_SIZE);
 
     int pipes[2];

@@ -4,12 +4,7 @@
 
 .onLoad <- function(...) {
   ensureInitialized()
-  # TODO: Might be better to just store this in C++.
-  .globals$global_loop <- create_loop(autorun = FALSE, parent = NULL)
 }
-
-.globals <- new.env(parent = emptyenv())
-
 
 #' Private event loops
 #'
@@ -111,7 +106,7 @@ with_loop <- function(loop, expr) {
 #' @rdname create_loop
 #' @export
 global_loop <- function() {
-  .globals$global_loop
+  getGlobalRegistryXptr()
 }
 
 

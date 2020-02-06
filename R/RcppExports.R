@@ -9,8 +9,8 @@ log_level <- function(level) {
     .Call('_later_log_level', PACKAGE = 'later', level)
 }
 
-ensureInitialized <- function() {
-    invisible(.Call('_later_ensureInitialized', PACKAGE = 'later'))
+getGlobalRegistryXptr <- function() {
+    .Call('_later_getGlobalRegistryXptr', PACKAGE = 'later')
 }
 
 setCurrentRegistryXptr <- function(registry_xptr) {
@@ -43,6 +43,10 @@ execCallbacks <- function(timeoutSecs, runAll, registry_xptr) {
 
 idle <- function(registry_xptr) {
     .Call('_later_idle', PACKAGE = 'later', registry_xptr)
+}
+
+ensureInitialized <- function() {
+    invisible(.Call('_later_ensureInitialized', PACKAGE = 'later'))
 }
 
 execLater <- function(callback, delaySecs, registry_xptr) {

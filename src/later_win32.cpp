@@ -80,9 +80,8 @@ LRESULT CALLBACK callbackWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
   return 0;
 }
 
-void ensureInitialized() {
+void ensureAutorunnerInitialized() {
   if (!initialized) {
-    REGISTER_MAIN_THREAD()
     static const char* class_name = "R_LATER_WINDOW_CLASS";
     WNDCLASSEX wc = {};
     wc.cbSize = sizeof(WNDCLASSEX);
@@ -97,7 +96,7 @@ void ensureInitialized() {
     if (!hwnd) {
       Rf_error("Failed to create message-only window");
     }
-    
+
     initialized = 1;
   }
 }

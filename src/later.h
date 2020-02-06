@@ -24,4 +24,9 @@ extern "C" uint64_t execLaterNative(void (*func)(void*), void* data, double secs
 extern "C" uint64_t execLaterNative2(void (*func)(void*), void* data, double secs, int loop);
 extern "C" int apiVersion();
 
+void ensureInitialized();
+// Declare platform-specific functions that are implemented in later_posix.cpp
+// and later_win32.cpp.
+void ensureAutorunnerInitialized();
+
 #endif // _LATER_H_

@@ -26,13 +26,14 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// ensureInitialized
-void ensureInitialized();
-RcppExport SEXP _later_ensureInitialized() {
+// getGlobalRegistryXptr
+SEXP getGlobalRegistryXptr();
+RcppExport SEXP _later_getGlobalRegistryXptr() {
 BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    ensureInitialized();
-    return R_NilValue;
+    rcpp_result_gen = Rcpp::wrap(getGlobalRegistryXptr());
+    return rcpp_result_gen;
 END_RCPP
 }
 // setCurrentRegistryXptr
@@ -121,6 +122,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< SEXP >::type registry_xptr(registry_xptrSEXP);
     rcpp_result_gen = Rcpp::wrap(idle(registry_xptr));
     return rcpp_result_gen;
+END_RCPP
+}
+// ensureInitialized
+void ensureInitialized();
+RcppExport SEXP _later_ensureInitialized() {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    ensureInitialized();
+    return R_NilValue;
 END_RCPP
 }
 // execLater
