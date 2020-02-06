@@ -171,6 +171,13 @@ test_that("Temporary event loops", {
   expect_identical(x, 2)
 })
 
+test_that("Destroying loop and loop ID", {
+  l <- create_loop()
+  expect_true(is.integer(loop_id(l)))
+  destroy_loop(l)
+  expect_null(loop_id(l))
+})
+
 test_that("Can't destroy current loop", {
   errored <- FALSE
   with_temp_loop({
@@ -203,7 +210,7 @@ test_that("Can't GC current loop", {
 })
 
 
-test_that("When running a child loop, it will be reported as current_loop()", {
+test_that("When auto-running a child loop, it will be reported as current_loop()", {
   l <- create_loop(autorun = TRUE, parent = global_loop())
   x <- NULL
   later(function() { x <<- current_loop() }, loop = l)
@@ -211,6 +218,89 @@ test_that("When running a child loop, it will be reported as current_loop()", {
   expect_identical(x, l)
 })
 
+
+test_that("Auto-running grandchildren loops", {
+  l1_ran  <- FALSE
+  l11_ran <- FALSE
+  l12_ran <- FALSE
+  l13_ran <- FALSE
+  l2_ran  <- FALSE
+  l21_ran <- FALSE
+  l22_ran <- FALSE
+  l23_ran <- FALSE
+
+  l1 <- create_loop()
+  l2 <- create_loop(parent = NULL)
+
+  # l1 should auto-run, along with l11 and l12. l13 should not, because it has
+  # no parent.
+  with_loop(l1, {
+    later(function() l1_ran <<- TRUE)
+    l11 <- create_loop()
+    l12 <- create_loop()
+    l13 <- create_loop(parent = NULL)
+    later(function() l11_ran <<- TRUE, loop = l11)
+    later(function() l12_ran <<- TRUE, loop = l12)
+    later(function() l13_ran <<- TRUE, loop = l13)
+  })
+
+  # None of these should auto-run, because l2 has no parent.
+  with_loop(l2, {
+    later(function() l2_ran <<- TRUE)
+    l21 <- create_loop()
+    l22 <- create_loop()
+    l23 <- create_loop(parent = NULL)
+    later(function() l21_ran <<- TRUE, loop = l21)
+    later(function() l22_ran <<- TRUE, loop = l22)
+    later(function() l23_ran <<- TRUE, loop = l23)
+  })
+
+  run_now()
+  expect_true(l1_ran)
+  expect_true(l11_ran)
+  expect_true(l12_ran)
+  expect_false(l13_ran)
+  expect_false(l2_ran)
+  expect_false(l21_ran)
+  expect_false(l22_ran)
+  expect_false(l23_ran)
+})
+
+test_that("Grandchildren loops whose parent is destroyed should not autorun", {
+  l_ran  <- FALSE
+  l1_ran <- FALSE
+  l <- create_loop()
+
+  with_loop(l, {
+    later(function() l_ran <<- TRUE)
+    l1 <- create_loop()
+    later(function() l1_ran <<- TRUE, loop = l1)
+  })
+
+  destroy_loop(l)
+  run_now()
+  expect_false(l_ran)
+  expect_false(l1_ran)
+
+
+  # Similar to previous, but instead of destroy_loop(), we rm() the loop and
+  # gc().
+  l_ran  <- FALSE
+  l1_ran <- FALSE
+  l <- create_loop()
+
+  with_loop(l, {
+    later(function() l_ran <<- TRUE)
+    l1 <- create_loop()
+    later(function() l1_ran <<- TRUE, loop = l1)
+  })
+  # The rm() and gc() causes the loop to be destroyed.
+  rm(l)
+  gc()
+  run_now()
+  expect_false(l_ran)
+  expect_false(l1_ran)
+})
 
 test_that("list_queue", {
   l <- create_loop(autorun = FALSE)
