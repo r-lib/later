@@ -449,18 +449,14 @@ Rcpp::List CallbackRegistry::list() const {
 // Saves a weak ref to the R external pointer for this CallbackRegistry.
 void CallbackRegistry::setXptr(SEXP self_xptr) {
   ASSERT_MAIN_THREAD()
-  // NOTE: The lifetime of this xptr is very, very weird. It is not on the
-  // presevelist, so our copy of the SEXP will not prevent the finalizer from
+  // NOTE: The lifetime of this xptr is a bit weird. It is not on the
+  // preservelist, so our copy of the SEXP will not prevent the finalizer from
   // being run on the actual external pointer object. I think this is correct,
   // but need to check.
 
   xptr = self_xptr;
 }
 
-// Return the R external pointer for this CallbackRegistry. If the external
-// pointer has been GC'd, then return NULL. (The xptr can be GC'd because this
-// object only holds a weak pointer to the xptr -- specifically so that it
-// will not keep the xptr alive even when no one else has a reference to it.)
 SEXP CallbackRegistry::getXptr() const {
   ASSERT_MAIN_THREAD()
   return xptr;
