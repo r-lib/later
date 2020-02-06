@@ -29,11 +29,10 @@ namespace later {
 // int (*dll_api_version)() = (int (*)()) R_GetCCallable("later", "apiVersion");
 // if (LATER_H_API_VERSION != (*dll_api_version)()) { ... }
 #define LATER_H_API_VERSION 2
+#define GLOBAL_LOOP_ID 0
 
-// TODO: Remove GLOBAL_LOOP and later() with loop param.
-#define GLOBAL_LOOP 0
 
-inline void later(void (*func)(void*), void* data, double secs, int loop) {
+inline void later(void (*func)(void*), void* data, double secs, int loop_id) {
   // This function works by retrieving the later::execLaterNative2 function
   // pointer using R_GetCCallable the first time it's called (per compilation
   // unit, since it's inline). execLaterNative2 is designed to be safe to call
@@ -70,11 +69,11 @@ inline void later(void (*func)(void*), void* data, double secs, int loop) {
     return;
   }
 
-  eln(func, data, secs, loop);
+  eln(func, data, secs, loop_id);
 }
 
 inline void later(void (*func)(void*), void* data, double secs) {
-  later(func, data, secs, GLOBAL_LOOP);
+  later(func, data, secs, GLOBAL_LOOP_ID);
 }
 
 

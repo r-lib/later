@@ -96,6 +96,8 @@ struct pointer_less_than {
 // Stores R function callbacks, ordered by timestamp.
 class CallbackRegistry {
 private:
+  int id;
+
   // Most of the behavior of the registry is like a priority queue. However, a
   // std::priority_queue only allows access to the top element, and when we
   // cancel a callback or get an Rcpp::List representation, we need random
@@ -114,8 +116,10 @@ private:
   SEXP xptr;
 
 public:
-  CallbackRegistry();
+  CallbackRegistry(int id);
   ~CallbackRegistry();
+
+  int getId() const;
 
   // Add a function to the registry, to be executed at `secs` seconds in
   // the future (i.e. relative to the current time).

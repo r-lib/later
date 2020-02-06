@@ -6,6 +6,9 @@
   ensureInitialized()
 }
 
+.globals <- new.env(parent = emptyenv())
+.globals$next_id <- 1L
+
 #' Private event loops
 #'
 #' Normally, later uses a global event loop for scheduling and running
@@ -39,14 +42,13 @@
 #'
 #' \code{global_loop} returns a handle to the global event loop.
 #'
+#' \code{loop_id} returns a numeric ID for an event loop. This is generally
+#' only needed when C/C++ code needs to schedule a function to run later.
+#'
 #'
 #' @param loop A handle to an event loop.
 #' @param expr An expression to evaluate.
-#' @param autorun Should this event loop automatically be run when its parent
-#'   loop runs? Currently, only FALSE is allowed, but in the future TRUE will be
-#'   implemented and the default. Because in the future the default will change,
-#'   for now any code that calls \code{create_loop} must explicitly pass in
-#'   \code{autorun=FALSE}.
+#' @param autorun This is ignored (only for backward compatibility).
 #' @param parent The parent event loop for the one being created. If
 #'   \code{autorun} is \code{TRUE}, then whenever the parent loop runs, this
 #'   loop will also automatically run, without having to manually call
@@ -56,7 +58,10 @@
 #'
 #' @export
 create_loop <- function(parent = current_loop(), autorun) {
-  loop <- createCallbackRegistry(parent)
+  id <- .globals$next_id
+  .globals$next_id <- id + 1L
+
+  loop <- createCallbackRegistry(id, parent)
   class(loop) <- "event_loop"
   loop
 }
@@ -109,12 +114,21 @@ global_loop <- function() {
   getGlobalRegistryXptr()
 }
 
+#' @rdname create_loop
+#' @export
+loop_id <- function(loop) {
+  getLoopId(loop)
+}
+
 
 #' @export
 format.event_loop <- function(x, ...) {
-  # TODO: More informative print info.
-  #   global
-  paste0("<event loop>")
+  id <- loop_id(x)
+  if (is.null(id)) {
+    "<event loop> (destroyed)"
+  } else {
+    paste0("<event loop> ID: ", id)
+  }
 }
 
 #' @export

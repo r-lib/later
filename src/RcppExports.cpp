@@ -68,13 +68,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // createCallbackRegistry
-SEXP createCallbackRegistry(SEXP parent_loop_xptr);
-RcppExport SEXP _later_createCallbackRegistry(SEXP parent_loop_xptrSEXP) {
+SEXP createCallbackRegistry(int id, SEXP parent_loop_xptr);
+RcppExport SEXP _later_createCallbackRegistry(SEXP idSEXP, SEXP parent_loop_xptrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type id(idSEXP);
     Rcpp::traits::input_parameter< SEXP >::type parent_loop_xptr(parent_loop_xptrSEXP);
-    rcpp_result_gen = Rcpp::wrap(createCallbackRegistry(parent_loop_xptr));
+    rcpp_result_gen = Rcpp::wrap(createCallbackRegistry(id, parent_loop_xptr));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -86,6 +87,17 @@ BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type registry_xptr(registry_xptrSEXP);
     rcpp_result_gen = Rcpp::wrap(existsCallbackRegistry(registry_xptr));
+    return rcpp_result_gen;
+END_RCPP
+}
+// getLoopId
+SEXP getLoopId(SEXP registry_xptr);
+RcppExport SEXP _later_getLoopId(SEXP registry_xptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type registry_xptr(registry_xptrSEXP);
+    rcpp_result_gen = Rcpp::wrap(getLoopId(registry_xptr));
     return rcpp_result_gen;
 END_RCPP
 }

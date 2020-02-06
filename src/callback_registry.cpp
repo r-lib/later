@@ -253,14 +253,18 @@ void testCallbackOrdering() {
   }
 }
 
-CallbackRegistry::CallbackRegistry()
-  : mutex(tct_mtx_recursive), condvar(mutex), xptr(R_NilValue)
+CallbackRegistry::CallbackRegistry(int id)
+  : id(id), mutex(tct_mtx_recursive), condvar(mutex), xptr(R_NilValue)
 {
   ASSERT_MAIN_THREAD()
 }
 
 CallbackRegistry::~CallbackRegistry() {
   ASSERT_MAIN_THREAD()
+}
+
+int CallbackRegistry::getId() const {
+  return id;
 }
 
 

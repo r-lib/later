@@ -25,12 +25,16 @@ deleteCallbackRegistry <- function(registry_xptr) {
     .Call('_later_deleteCallbackRegistry', PACKAGE = 'later', registry_xptr)
 }
 
-createCallbackRegistry <- function(parent_loop_xptr) {
-    .Call('_later_createCallbackRegistry', PACKAGE = 'later', parent_loop_xptr)
+createCallbackRegistry <- function(id, parent_loop_xptr) {
+    .Call('_later_createCallbackRegistry', PACKAGE = 'later', id, parent_loop_xptr)
 }
 
 existsCallbackRegistry <- function(registry_xptr) {
     .Call('_later_existsCallbackRegistry', PACKAGE = 'later', registry_xptr)
+}
+
+getLoopId <- function(registry_xptr) {
+    .Call('_later_getLoopId', PACKAGE = 'later', registry_xptr)
 }
 
 list_queue_ <- function(registry_xptr) {
