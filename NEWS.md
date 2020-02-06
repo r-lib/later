@@ -1,4 +1,4 @@
-## later 1.0.0.9002
+## later 1.0.0.9004
 
 * Fixed [#73](https://github.com/r-lib/later/issues/73), [#109](https://github.com/r-lib/later/issues/109): Previously, later did not build on some platforms, notably ARM, because the `-latomic` linker was needed on those platforms. A configure script now detects when `-latomic` is needed. ([#114](https://github.com/r-lib/later/pull/114))
 
