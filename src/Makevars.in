@@ -6,4 +6,4 @@ PKG_LIBS = -pthread @extra_pkg_libs@
 
 #### Debugging flags ####
 # Uncomment to enable thread assertions
-PKG_CPPFLAGS += -DDEBUG_THREAD -UNDEBUG
+# PKG_CPPFLAGS += -DDEBUG_THREAD -UNDEBUG
