@@ -9,59 +9,51 @@ log_level <- function(level) {
     .Call('_later_log_level', PACKAGE = 'later', level)
 }
 
-getGlobalRegistryXptr <- function() {
-    .Call('_later_getGlobalRegistryXptr', PACKAGE = 'later')
+setCurrentRegistryId <- function(id) {
+    invisible(.Call('_later_setCurrentRegistryId', PACKAGE = 'later', id))
 }
 
-setCurrentRegistryXptr <- function(registry_xptr) {
-    invisible(.Call('_later_setCurrentRegistryXptr', PACKAGE = 'later', registry_xptr))
+getCurrentRegistryId <- function() {
+    .Call('_later_getCurrentRegistryId', PACKAGE = 'later')
 }
 
-getCurrentRegistryXptr <- function() {
-    .Call('_later_getCurrentRegistryXptr', PACKAGE = 'later')
+deleteCallbackRegistry <- function(loop_id) {
+    .Call('_later_deleteCallbackRegistry', PACKAGE = 'later', loop_id)
 }
 
-deleteCallbackRegistry <- function(registry_xptr) {
-    .Call('_later_deleteCallbackRegistry', PACKAGE = 'later', registry_xptr)
+createCallbackRegistry <- function(id, parent_id) {
+    invisible(.Call('_later_createCallbackRegistry', PACKAGE = 'later', id, parent_id))
 }
 
-createCallbackRegistry <- function(id, parent_loop_xptr) {
-    .Call('_later_createCallbackRegistry', PACKAGE = 'later', id, parent_loop_xptr)
+existsCallbackRegistry <- function(id) {
+    .Call('_later_existsCallbackRegistry', PACKAGE = 'later', id)
 }
 
-existsCallbackRegistry <- function(registry_xptr) {
-    .Call('_later_existsCallbackRegistry', PACKAGE = 'later', registry_xptr)
+list_queue_ <- function(id) {
+    .Call('_later_list_queue_', PACKAGE = 'later', id)
 }
 
-getLoopId <- function(registry_xptr) {
-    .Call('_later_getLoopId', PACKAGE = 'later', registry_xptr)
+execCallbacks <- function(timeoutSecs, runAll, loop_id) {
+    .Call('_later_execCallbacks', PACKAGE = 'later', timeoutSecs, runAll, loop_id)
 }
 
-list_queue_ <- function(registry_xptr) {
-    .Call('_later_list_queue_', PACKAGE = 'later', registry_xptr)
-}
-
-execCallbacks <- function(timeoutSecs, runAll, registry_xptr) {
-    .Call('_later_execCallbacks', PACKAGE = 'later', timeoutSecs, runAll, registry_xptr)
-}
-
-idle <- function(registry_xptr) {
-    .Call('_later_idle', PACKAGE = 'later', registry_xptr)
+idle <- function(loop_id) {
+    .Call('_later_idle', PACKAGE = 'later', loop_id)
 }
 
 ensureInitialized <- function() {
     invisible(.Call('_later_ensureInitialized', PACKAGE = 'later'))
 }
 
-execLater <- function(callback, delaySecs, registry_xptr) {
-    .Call('_later_execLater', PACKAGE = 'later', callback, delaySecs, registry_xptr)
+execLater <- function(callback, delaySecs, loop_id) {
+    .Call('_later_execLater', PACKAGE = 'later', callback, delaySecs, loop_id)
 }
 
-cancel <- function(callback_id_s, registry_xptr) {
-    .Call('_later_cancel', PACKAGE = 'later', callback_id_s, registry_xptr)
+cancel <- function(callback_id_s, loop_id) {
+    .Call('_later_cancel', PACKAGE = 'later', callback_id_s, loop_id)
 }
 
-nextOpSecs <- function(registry_xptr) {
-    .Call('_later_nextOpSecs', PACKAGE = 'later', registry_xptr)
+nextOpSecs <- function(loop_id) {
+    .Call('_later_nextOpSecs', PACKAGE = 'later', loop_id)
 }
 

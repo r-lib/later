@@ -173,9 +173,9 @@ test_that("Temporary event loops", {
 
 test_that("Destroying loop and loop ID", {
   l <- create_loop()
-  expect_true(is.integer(loop_id(l)))
+  expect_true(is.integer(l$id))
   destroy_loop(l)
-  expect_null(loop_id(l))
+  expect_false(exists_loop(l))
 })
 
 test_that("Can't destroy current loop", {

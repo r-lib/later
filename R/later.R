@@ -4,10 +4,16 @@
 
 .onLoad <- function(...) {
   ensureInitialized()
+  .globals$next_id <- 0L
+  # Store a ref to the global loop so it doesn't get GC'd.
+  .globals$global_loop <- create_loop(parent = NULL)
 }
 
 .globals <- new.env(parent = emptyenv())
-.globals$next_id <- 1L
+# A registry of weak refs to loop handle objects. Given an ID number, we can
+# get the corresponding loop handle. We use weak refs because we don't want
+# this registry to keep the loop objects alive.
+.loops <- new.env(parent = emptyenv())
 
 #' Private event loops
 #'
@@ -61,27 +67,70 @@ create_loop <- function(parent = current_loop(), autorun) {
   id <- .globals$next_id
   .globals$next_id <- id + 1L
 
-  loop <- createCallbackRegistry(id, parent)
+  if (is.null(parent)) {
+    parent_id <- -1L
+  } else {
+    parent_id <- parent$id
+  }
+  createCallbackRegistry(id, parent_id)
+
+  # Create the handle for the loop
+  loop <- new.env(parent = emptyenv())
   class(loop) <- "event_loop"
+  loop$id <- id
+  lockBinding("id", loop)
+
+  # Add a weak reference to the loop object in our registry.
+  .loops[[sprintf("%d", id)]] <- rlang::new_weakref(loop)
+
+  if (id != 0L) {
+    # Automatically destroy the loop when the handle is GC'd (unless it's the
+    # global loop.) The global loop handle never gets GC'd under normal
+    # circumstances because .globals$global_loop refers to it. However, if the
+    # package is unloaded it can get GC'd, and we don't want the
+    # destroy_loop() finalizer to give an error message about not being able
+    # to destroy the global loop.
+    reg.finalizer(loop, destroy_loop)
+  }
+
   loop
 }
 
 #' @rdname create_loop
 #' @export
 destroy_loop <- function(loop) {
-  deleteCallbackRegistry(loop)
+  if (identical(loop, global_loop())) {
+    stop("Can't destroy global loop.")
+  }
+
+  res <- deleteCallbackRegistry(loop$id)
+  if (res) {
+    rm(list = sprintf("%d", loop$id), envir = .loops)
+  }
+  res
 }
 
 #' @rdname create_loop
 #' @export
 exists_loop <- function(loop) {
-  existsCallbackRegistry(loop)
+  existsCallbackRegistry(loop$id)
 }
 
 #' @rdname create_loop
 #' @export
 current_loop <- function() {
-  getCurrentRegistryXptr()
+  id <- getCurrentRegistryId()
+  loop_weakref <- .loops[[sprintf("%d", id)]]
+  if (is.null(loop_weakref)) {
+    stop("Current loop with id ", id, " not found.")
+  }
+
+  loop <- rlang::wref_key(loop_weakref)
+  if (is.null(loop)) {
+    stop("Current loop with id ", id, " not found.")
+  }
+
+  loop
 }
 
 #' @rdname create_loop
@@ -101,8 +150,8 @@ with_loop <- function(loop, expr) {
   }
   old_loop <- current_loop()
   if (!identical(loop, old_loop)) {
-    on.exit(setCurrentRegistryXptr(old_loop), add = TRUE)
-    setCurrentRegistryXptr(loop)
+    on.exit(setCurrentRegistryId(old_loop$id), add = TRUE)
+    setCurrentRegistryId(loop$id)
   }
 
   force(expr)
@@ -111,24 +160,17 @@ with_loop <- function(loop, expr) {
 #' @rdname create_loop
 #' @export
 global_loop <- function() {
-  getGlobalRegistryXptr()
-}
-
-#' @rdname create_loop
-#' @export
-loop_id <- function(loop) {
-  getLoopId(loop)
+  .globals$global_loop
 }
 
 
 #' @export
 format.event_loop <- function(x, ...) {
-  id <- loop_id(x)
-  if (is.null(id)) {
-    "<event loop> (destroyed)"
-  } else {
-    paste0("<event loop> ID: ", id)
+  str <- paste0("<event loop> ID: ", x$id)
+  if (!exists_loop(x)) {
+    str <- paste(str, "(destroyed)")
   }
+  str
 }
 
 #' @export
@@ -183,17 +225,19 @@ print.event_loop <- function(x, ...) {
 #' @export
 later <- function(func, delay = 0, loop = current_loop()) {
   f <- rlang::as_function(func)
-  id <- execLater(f, delay, loop)
+  id <- execLater(f, delay, loop$id)
 
-  invisible(create_canceller(id, loop))
+  invisible(create_canceller(id, loop$id))
 }
 
 # Returns a function that will cancel a callback with the given ID. If the
 # callback has already been executed or canceled, then the function has no
 # effect.
-create_canceller <- function(id, loop) {
+create_canceller <- function(id, loop_id) {
+  force(id)
+  force(loop_id)
   function() {
-    invisible(cancel(id, loop))
+    invisible(cancel(id, loop_id))
   }
 }
 
@@ -231,7 +275,7 @@ run_now <- function(timeoutSecs = 0L, all = TRUE, loop = current_loop()) {
     stop("timeoutSecs must be numeric")
 
   with_loop(loop,
-    invisible(execCallbacks(timeoutSecs, all, loop))
+    invisible(execCallbacks(timeoutSecs, all, loop$id))
   )
 }
 
@@ -244,7 +288,7 @@ run_now <- function(timeoutSecs = 0L, all = TRUE, loop = current_loop()) {
 #' @keywords internal
 #' @export
 loop_empty <- function(loop = current_loop()) {
-  idle(loop)
+  idle(loop$id)
 }
 
 #' Relative time to next scheduled operation
@@ -256,7 +300,7 @@ loop_empty <- function(loop = current_loop()) {
 #' @inheritParams create_loop
 #' @export
 next_op_secs <- function(loop = current_loop()) {
-  nextOpSecs(loop)
+  nextOpSecs(loop$id)
 }
 
 
@@ -266,5 +310,5 @@ next_op_secs <- function(loop = current_loop()) {
 #'
 #' @keywords internal
 list_queue <- function(loop = current_loop()) {
-  list_queue_(loop)
+  list_queue_(loop$id)
 }

@@ -26,113 +26,91 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// getGlobalRegistryXptr
-SEXP getGlobalRegistryXptr();
-RcppExport SEXP _later_getGlobalRegistryXptr() {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(getGlobalRegistryXptr());
-    return rcpp_result_gen;
-END_RCPP
-}
-// setCurrentRegistryXptr
-void setCurrentRegistryXptr(SEXP registry_xptr);
-RcppExport SEXP _later_setCurrentRegistryXptr(SEXP registry_xptrSEXP) {
+// setCurrentRegistryId
+void setCurrentRegistryId(int id);
+RcppExport SEXP _later_setCurrentRegistryId(SEXP idSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type registry_xptr(registry_xptrSEXP);
-    setCurrentRegistryXptr(registry_xptr);
+    Rcpp::traits::input_parameter< int >::type id(idSEXP);
+    setCurrentRegistryId(id);
     return R_NilValue;
 END_RCPP
 }
-// getCurrentRegistryXptr
-SEXP getCurrentRegistryXptr();
-RcppExport SEXP _later_getCurrentRegistryXptr() {
+// getCurrentRegistryId
+int getCurrentRegistryId();
+RcppExport SEXP _later_getCurrentRegistryId() {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(getCurrentRegistryXptr());
+    rcpp_result_gen = Rcpp::wrap(getCurrentRegistryId());
     return rcpp_result_gen;
 END_RCPP
 }
 // deleteCallbackRegistry
-bool deleteCallbackRegistry(SEXP registry_xptr);
-RcppExport SEXP _later_deleteCallbackRegistry(SEXP registry_xptrSEXP) {
+bool deleteCallbackRegistry(int loop_id);
+RcppExport SEXP _later_deleteCallbackRegistry(SEXP loop_idSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type registry_xptr(registry_xptrSEXP);
-    rcpp_result_gen = Rcpp::wrap(deleteCallbackRegistry(registry_xptr));
+    Rcpp::traits::input_parameter< int >::type loop_id(loop_idSEXP);
+    rcpp_result_gen = Rcpp::wrap(deleteCallbackRegistry(loop_id));
     return rcpp_result_gen;
 END_RCPP
 }
 // createCallbackRegistry
-SEXP createCallbackRegistry(int id, SEXP parent_loop_xptr);
-RcppExport SEXP _later_createCallbackRegistry(SEXP idSEXP, SEXP parent_loop_xptrSEXP) {
+void createCallbackRegistry(int id, int parent_id);
+RcppExport SEXP _later_createCallbackRegistry(SEXP idSEXP, SEXP parent_idSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type id(idSEXP);
+    Rcpp::traits::input_parameter< int >::type parent_id(parent_idSEXP);
+    createCallbackRegistry(id, parent_id);
+    return R_NilValue;
+END_RCPP
+}
+// existsCallbackRegistry
+bool existsCallbackRegistry(int id);
+RcppExport SEXP _later_existsCallbackRegistry(SEXP idSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type id(idSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type parent_loop_xptr(parent_loop_xptrSEXP);
-    rcpp_result_gen = Rcpp::wrap(createCallbackRegistry(id, parent_loop_xptr));
-    return rcpp_result_gen;
-END_RCPP
-}
-// existsCallbackRegistry
-bool existsCallbackRegistry(SEXP registry_xptr);
-RcppExport SEXP _later_existsCallbackRegistry(SEXP registry_xptrSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type registry_xptr(registry_xptrSEXP);
-    rcpp_result_gen = Rcpp::wrap(existsCallbackRegistry(registry_xptr));
-    return rcpp_result_gen;
-END_RCPP
-}
-// getLoopId
-SEXP getLoopId(SEXP registry_xptr);
-RcppExport SEXP _later_getLoopId(SEXP registry_xptrSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type registry_xptr(registry_xptrSEXP);
-    rcpp_result_gen = Rcpp::wrap(getLoopId(registry_xptr));
+    rcpp_result_gen = Rcpp::wrap(existsCallbackRegistry(id));
     return rcpp_result_gen;
 END_RCPP
 }
 // list_queue_
-Rcpp::List list_queue_(SEXP registry_xptr);
-RcppExport SEXP _later_list_queue_(SEXP registry_xptrSEXP) {
+Rcpp::List list_queue_(int id);
+RcppExport SEXP _later_list_queue_(SEXP idSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type registry_xptr(registry_xptrSEXP);
-    rcpp_result_gen = Rcpp::wrap(list_queue_(registry_xptr));
+    Rcpp::traits::input_parameter< int >::type id(idSEXP);
+    rcpp_result_gen = Rcpp::wrap(list_queue_(id));
     return rcpp_result_gen;
 END_RCPP
 }
 // execCallbacks
-bool execCallbacks(double timeoutSecs, bool runAll, SEXP registry_xptr);
-RcppExport SEXP _later_execCallbacks(SEXP timeoutSecsSEXP, SEXP runAllSEXP, SEXP registry_xptrSEXP) {
+bool execCallbacks(double timeoutSecs, bool runAll, int loop_id);
+RcppExport SEXP _later_execCallbacks(SEXP timeoutSecsSEXP, SEXP runAllSEXP, SEXP loop_idSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< double >::type timeoutSecs(timeoutSecsSEXP);
     Rcpp::traits::input_parameter< bool >::type runAll(runAllSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type registry_xptr(registry_xptrSEXP);
-    rcpp_result_gen = Rcpp::wrap(execCallbacks(timeoutSecs, runAll, registry_xptr));
+    Rcpp::traits::input_parameter< int >::type loop_id(loop_idSEXP);
+    rcpp_result_gen = Rcpp::wrap(execCallbacks(timeoutSecs, runAll, loop_id));
     return rcpp_result_gen;
 END_RCPP
 }
 // idle
-bool idle(SEXP registry_xptr);
-RcppExport SEXP _later_idle(SEXP registry_xptrSEXP) {
+bool idle(int loop_id);
+RcppExport SEXP _later_idle(SEXP loop_idSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type registry_xptr(registry_xptrSEXP);
-    rcpp_result_gen = Rcpp::wrap(idle(registry_xptr));
+    Rcpp::traits::input_parameter< int >::type loop_id(loop_idSEXP);
+    rcpp_result_gen = Rcpp::wrap(idle(loop_id));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -146,38 +124,38 @@ BEGIN_RCPP
 END_RCPP
 }
 // execLater
-std::string execLater(Rcpp::Function callback, double delaySecs, SEXP registry_xptr);
-RcppExport SEXP _later_execLater(SEXP callbackSEXP, SEXP delaySecsSEXP, SEXP registry_xptrSEXP) {
+std::string execLater(Rcpp::Function callback, double delaySecs, int loop_id);
+RcppExport SEXP _later_execLater(SEXP callbackSEXP, SEXP delaySecsSEXP, SEXP loop_idSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::Function >::type callback(callbackSEXP);
     Rcpp::traits::input_parameter< double >::type delaySecs(delaySecsSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type registry_xptr(registry_xptrSEXP);
-    rcpp_result_gen = Rcpp::wrap(execLater(callback, delaySecs, registry_xptr));
+    Rcpp::traits::input_parameter< int >::type loop_id(loop_idSEXP);
+    rcpp_result_gen = Rcpp::wrap(execLater(callback, delaySecs, loop_id));
     return rcpp_result_gen;
 END_RCPP
 }
 // cancel
-bool cancel(std::string callback_id_s, SEXP registry_xptr);
-RcppExport SEXP _later_cancel(SEXP callback_id_sSEXP, SEXP registry_xptrSEXP) {
+bool cancel(std::string callback_id_s, int loop_id);
+RcppExport SEXP _later_cancel(SEXP callback_id_sSEXP, SEXP loop_idSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type callback_id_s(callback_id_sSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type registry_xptr(registry_xptrSEXP);
-    rcpp_result_gen = Rcpp::wrap(cancel(callback_id_s, registry_xptr));
+    Rcpp::traits::input_parameter< int >::type loop_id(loop_idSEXP);
+    rcpp_result_gen = Rcpp::wrap(cancel(callback_id_s, loop_id));
     return rcpp_result_gen;
 END_RCPP
 }
 // nextOpSecs
-double nextOpSecs(SEXP registry_xptr);
-RcppExport SEXP _later_nextOpSecs(SEXP registry_xptrSEXP) {
+double nextOpSecs(int loop_id);
+RcppExport SEXP _later_nextOpSecs(SEXP loop_idSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< SEXP >::type registry_xptr(registry_xptrSEXP);
-    rcpp_result_gen = Rcpp::wrap(nextOpSecs(registry_xptr));
+    Rcpp::traits::input_parameter< int >::type loop_id(loop_idSEXP);
+    rcpp_result_gen = Rcpp::wrap(nextOpSecs(loop_id));
     return rcpp_result_gen;
 END_RCPP
 }

@@ -111,10 +111,6 @@ private:
   mutable Mutex mutex;
   mutable ConditionVariable condvar;
 
-  // R external pointer object for this CallbackRegistry. This is used when
-  // someone wants to query the current loop.
-  SEXP xptr;
-
 public:
   CallbackRegistry(int id);
   ~CallbackRegistry();
@@ -149,11 +145,6 @@ public:
 
   // Return a List of items in the queue.
   Rcpp::List list() const;
-
-  // Sets the R external pointer object for this CallbackRegistry.
-  void setXptr(SEXP self_xptr);
-  // Returns the R external pointer object for this CallbackRegistry.
-  SEXP getXptr() const;
 
   // References to parent and children registries. These are used for
   // automatically running child loops. They should only be accessed and

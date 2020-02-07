@@ -254,7 +254,7 @@ void testCallbackOrdering() {
 }
 
 CallbackRegistry::CallbackRegistry(int id)
-  : id(id), mutex(tct_mtx_recursive), condvar(mutex), xptr(R_NilValue)
+  : id(id), mutex(tct_mtx_recursive), condvar(mutex)
 {
   ASSERT_MAIN_THREAD()
 }
@@ -442,22 +442,4 @@ Rcpp::List CallbackRegistry::list() const {
   }
 
   return results;
-}
-
-
-
-// Saves a weak ref to the R external pointer for this CallbackRegistry.
-void CallbackRegistry::setXptr(SEXP self_xptr) {
-  ASSERT_MAIN_THREAD()
-  // NOTE: The lifetime of this xptr is a bit weird. It is not on the
-  // preservelist, so our copy of the SEXP will not prevent the finalizer from
-  // being run on the actual external pointer object. I think this is correct,
-  // but need to check.
-
-  xptr = self_xptr;
-}
-
-SEXP CallbackRegistry::getXptr() const {
-  ASSERT_MAIN_THREAD()
-  return xptr;
 }

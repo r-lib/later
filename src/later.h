@@ -10,7 +10,7 @@
 // and the code in src/ changes, these values should be incremented.
 #define LATER_DLL_API_VERSION 2
 
-#define GLOBAL_LOOP_ID 0
+#define GLOBAL_LOOP 0
 
 boost::shared_ptr<CallbackRegistry> getGlobalRegistry();
 

@@ -29,7 +29,7 @@ namespace later {
 // int (*dll_api_version)() = (int (*)()) R_GetCCallable("later", "apiVersion");
 // if (LATER_H_API_VERSION != (*dll_api_version)()) { ... }
 #define LATER_H_API_VERSION 2
-#define GLOBAL_LOOP_ID 0
+#define GLOBAL_LOOP 0
 
 
 inline void later(void (*func)(void*), void* data, double secs, int loop_id) {
@@ -73,7 +73,7 @@ inline void later(void (*func)(void*), void* data, double secs, int loop_id) {
 }
 
 inline void later(void (*func)(void*), void* data, double secs) {
-  later(func, data, secs, GLOBAL_LOOP_ID);
+  later(func, data, secs, GLOBAL_LOOP);
 }
 
 

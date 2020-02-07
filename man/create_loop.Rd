@@ -8,7 +8,6 @@
 \alias{with_temp_loop}
 \alias{with_loop}
 \alias{global_loop}
-\alias{loop_id}
 \title{Private event loops}
 \usage{
 create_loop(parent = current_loop(), autorun)
@@ -24,8 +23,6 @@ with_temp_loop(expr)
 with_loop(loop, expr)
 
 global_loop()
-
-loop_id(loop)
 }
 \arguments{
 \item{parent}{The parent event loop for the one being created. If

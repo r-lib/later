@@ -11,6 +11,8 @@
 #include "threadutils.h"
 
 #include "callback_registry.h"
+#include "callback_registry_table.h"
+
 #include "interrupt.h"
 
 using boost::shared_ptr;
@@ -21,6 +23,9 @@ uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, void 
 
 static size_t exec_callbacks_reentrancy_count = 0;
 
+static CallbackRegistryTable callbackRegistryTable;
+
+
 class ProtectCallbacks {
 public:
   ProtectCallbacks() {
@@ -30,8 +35,6 @@ public:
     exec_callbacks_reentrancy_count--;
   }
 };
-
-shared_ptr<CallbackRegistry> xptrGetCallbackRegistry(SEXP registry_xptr);
 
 // Returns number of frames on the call stack. Basically just a wrapper for
 // base::sys.nframe(). Note that this can report that an error occurred if the
@@ -73,317 +76,100 @@ bool at_top_level() {
 }
 
 // ============================================================================
-// Global and current event loop
+// Current registry/event loop
 // ============================================================================
 //
 // In the R code, the term "loop" is used. In the C++ code, the terms "loop"
 // and "registry" are both used. "Loop" is usually used when interfacing with
 // R-facing event loop, and "registry" is usually used when interfacing with
 // the implementation, which uses a callback registry.
+//
+// The current registry is kept track of entirely in C++, and not in R
+// (although it can be queried from R). This is because when running a loop
+// with children, it sets the current loop as it runs each of the children,
+// and to do so in R would require calling back into R for each child, which
+// would impose more overhead.
 
-shared_ptr<CallbackRegistry> global_registry;
+static int current_registry;
 
-void setGlobalRegistry(shared_ptr<CallbackRegistry> registry) {
+// [[Rcpp::export]]
+void setCurrentRegistryId(int id) {
   ASSERT_MAIN_THREAD()
-  global_registry = registry;
-}
-
-shared_ptr<CallbackRegistry> getGlobalRegistry() {
-  ASSERT_MAIN_THREAD()
-  return global_registry;
-}
-
-bool existsGlobalRegistry() {
-  ASSERT_MAIN_THREAD()
-  return global_registry != nullptr;
+  current_registry = id;
 }
 
 // [[Rcpp::export]]
-SEXP getGlobalRegistryXptr() {
-  ASSERT_MAIN_THREAD()
-  return global_registry->getXptr();
-}
-
-
-shared_ptr<CallbackRegistry> current_registry;
-
-void setCurrentRegistry(shared_ptr<CallbackRegistry> registry) {
-  ASSERT_MAIN_THREAD()
-  current_registry = registry;
-}
-
-shared_ptr<CallbackRegistry> getCurrentRegistry() {
+int getCurrentRegistryId() {
   ASSERT_MAIN_THREAD()
   return current_registry;
-}
-
-// [[Rcpp::export]]
-void setCurrentRegistryXptr(SEXP registry_xptr) {
-  ASSERT_MAIN_THREAD()
-  setCurrentRegistry(xptrGetCallbackRegistry(registry_xptr));
-}
-
-// [[Rcpp::export]]
-SEXP getCurrentRegistryXptr() {
-  ASSERT_MAIN_THREAD()
-  return current_registry->getXptr();
 }
 
 // Class for setting current registry and resetting when function exits, using
 // RAII.
 class CurrentRegistryGuard {
 public:
-  CurrentRegistryGuard(shared_ptr<CallbackRegistry> registry) {
+  CurrentRegistryGuard(int id) {
     ASSERT_MAIN_THREAD()
-    old_registry = getCurrentRegistry();
-    setCurrentRegistry(registry);
+    old_id = getCurrentRegistryId();
+    setCurrentRegistryId(id);
   }
   ~CurrentRegistryGuard() {
-    setCurrentRegistry(old_registry);
+    setCurrentRegistryId(old_id);
   }
 private:
-  shared_ptr<CallbackRegistry> old_registry;
+  int old_id;
 };
 
 
-
 // ============================================================================
-// Callback registry table
-// ============================================================================
-//
-// This class is used for accessing a registry by ID. In most cases, a
-// registry is accessed from R by using an external pointer object, and from
-// C++ by using a shared_ptr<CallbackRegistry>. However, there is one case
-// where it needs to be accessed by ID.
-//
-// When C++ code in another package, or from a separate thread wants to call
-// later() on a specific event loop, it must use an integer ID for the loop.
-// Typically, an event loop would be created, the ID would be extracted and
-// passed to C++ code, which would then call later() with the loop ID.
-//
-// The reason that the other package's C++ code must use an ID instead of xptr
-// is because (A) an external pointer to the CallbackRegistry cannot be used
-// from another thread (because it is an R object and it is not thread-safe to
-// do so), and (B) it is not feasible to provide tools for the other package
-// to extract the shared_ptr<CallbackRegistry> from the xptr. Doing the latter
-// would require boost in inst/include/later.h.
-//
-// This class stores weak_ptrs to the CallbackRegistry objects, so that it
-// will not prevent them from being deleted when they are no longer needed.
-//
-// The operations on this class are thread-safe, because they might be used to
-// from another thread.
-//
-class CallbackRegistryTable {
-public:
-  CallbackRegistryTable() : mutex(tct_mtx_plain | tct_mtx_recursive) {
-  }
-
-  bool exists(int id) {
-    Guard guard(mutex);
-    return (registries.find(id) != registries.end());
-  }
-
-  bool add(int id, shared_ptr<CallbackRegistry> registry) {
-    Guard guard(mutex);
-    if (exists(id)) {
-      Rcpp::stop("Can't create event loop %d because it already exists.", id);
-    }
-    registries[id] = weak_ptr<CallbackRegistry>(registry);
-    return true;
-  }
-
-  // Returns a shared_ptr to the registry. If the registry is not present in
-  // the table, or if the target CallbackRegistry has already been deleted,
-  // then the shared_ptr is empty.
-  shared_ptr<CallbackRegistry> get(int id) {
-    Guard guard(mutex);
-    if (!exists(id)) {
-      return shared_ptr<CallbackRegistry>();
-    }
-    // If the target of the shared_ptr has been deleted, then this is an empty
-    // shared_ptr.
-    return registries[id].lock();
-  }
-
-  bool remove(int id) {
-    Guard guard(mutex);
-    int n = registries.erase(id);
-    if (n == 0) return false;
-    else return true;
-  }
-
-private:
-  std::map<int, weak_ptr<CallbackRegistry> > registries;
-  Mutex mutex;
-};
-
-static CallbackRegistryTable callbackRegistryTable;
-
-
-// ============================================================================
-// Callback registry
+// Callback registry functions
 // ============================================================================
 
-shared_ptr<CallbackRegistry> xptrGetCallbackRegistry(SEXP registry_xptr) {
-  ASSERT_MAIN_THREAD()
-  if (TYPEOF(registry_xptr) != EXTPTRSXP) {
-    throw Rcpp::exception("Expected external pointer.");
+shared_ptr<CallbackRegistry> getGlobalRegistry() {
+  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.get(GLOBAL_LOOP);
+  if (registry == nullptr) {
+    Rf_error("Global registry does not exist.");
   }
-  shared_ptr<CallbackRegistry>* reg_p =
-    reinterpret_cast<shared_ptr<CallbackRegistry>*>(R_ExternalPtrAddr(registry_xptr));
-
-  // If the external pointer has already been cleared, return an empty shared_ptr.
-  if (reg_p == nullptr) {
-    return shared_ptr<CallbackRegistry>();
-  }
-
-  return *reg_p;
+  return registry;
 }
 
 // This deletes a CallbackRegistry and deregisters it as a child of its
 // parent. Any children of this registry are orphaned -- they no longer have a
-// parent. (Maybe this should be an option?) The deletion consists of clearing
-// the external pointer object (so the CallbackRegistry is no longer
-// accessible from R), and deleting the xptr's pointer to the shared pointer
-// to this object. When this function exits, there should be no more
-// references to the CallbackRegistry and the destructor should run.
+// parent. (Maybe this should be an option?)
 //
 // [[Rcpp::export]]
-bool deleteCallbackRegistry(SEXP registry_xptr) {
+bool deleteCallbackRegistry(int loop_id) {
   ASSERT_MAIN_THREAD()
-  shared_ptr<CallbackRegistry> registry = xptrGetCallbackRegistry(registry_xptr);
-
-  if (registry == nullptr) {
-    return false;
-  }
-
-  if (registry == getGlobalRegistry()) {
+  if (loop_id == GLOBAL_LOOP) {
     Rf_error("Can't delete global loop.");
   }
-  if (registry == getCurrentRegistry()) {
+  if (loop_id == getCurrentRegistryId()) {
     Rf_error("Can't delete current loop.");
   }
 
-  // Deregister this object from its parent. Do it here instead of the in the
-  // CallbackRegistry destructor, for two reasons: One is that we can be 100%
-  // sure that the deregistration happens right now (it's possible that the
-  // object's destructor won't run yet, because someone else has a shared_ptr
-  // to it). Second, we can't reliably use a shared_ptr to the object from
-  // inside its destructor; we need to some pointer comparison, but by the
-  // time the destructor runs, you can't run shared_from_this() in the object,
-  // because there are no more shared_ptrs to it.
-  boost::shared_ptr<CallbackRegistry> parent = registry->parent;
-  if (parent != nullptr) {
-    // Remove this registry from the parent's list of children.
-    for (std::vector<boost::shared_ptr<CallbackRegistry>>::iterator it = parent->children.begin();
-         it != parent->children.end();
-        )
-    {
-      if (*it == registry) {
-        parent->children.erase(it);
-        break;
-      } else {
-        ++it;
-      }
-    }
-  }
-
-  // Tell the children that they no longer have a parent.
-  for (std::vector<boost::shared_ptr<CallbackRegistry>>::iterator it = registry->children.begin();
-       it != registry->children.end();
-       ++it)
-  {
-    (*it)->parent.reset();
-  }
-
-  callbackRegistryTable.remove(registry->getId());
-
-  delete reinterpret_cast<shared_ptr<CallbackRegistry>*>(R_ExternalPtrAddr(registry_xptr));
-  R_ClearExternalPtr(registry_xptr);
-
-  return true;
+  return callbackRegistryTable.remove(loop_id);
 }
-
-// void wrapper for deleteCallbackRegistry(). This is the finalizer for the
-// external pointer; it is called when the external pointer is GC'd. It is
-// possible that deleteCallbackRegistry() has already been called before this
-// one is called, but in that case, it simply returns and does nothing.
-void registry_xptr_deleter(SEXP registry_xptr) {
-  ASSERT_MAIN_THREAD()
-  deleteCallbackRegistry(registry_xptr);
-}
-
 
 // [[Rcpp::export]]
-SEXP createCallbackRegistry(int id, SEXP parent_loop_xptr) {
+void createCallbackRegistry(int id, int parent_id) {
   ASSERT_MAIN_THREAD()
-  CallbackRegistry* reg = new CallbackRegistry(id);
-  shared_ptr<CallbackRegistry> *registry = new shared_ptr<CallbackRegistry>(reg);
-
-  if (parent_loop_xptr != R_NilValue) {
-    shared_ptr<CallbackRegistry> parent = xptrGetCallbackRegistry(parent_loop_xptr);
-    (*registry)->parent = parent;
-    parent->children.push_back(*registry);
-  }
-
-  callbackRegistryTable.add(id, *registry);
-
-  SEXP registry_xptr = PROTECT(R_MakeExternalPtr(registry, R_NilValue, R_NilValue));
-  R_RegisterCFinalizerEx(registry_xptr, registry_xptr_deleter, FALSE);
-
-  SEXP Rf_classgets(SEXP, SEXP);
-
-  (*registry)->setXptr(registry_xptr);
-
-  // Add S3 class
-  Rf_classgets(registry_xptr, Rf_mkString("event_loop"));
-
-  UNPROTECT(1);
-  return registry_xptr;
+  callbackRegistryTable.create(id, parent_id);
 }
-
-void createGlobalRegistry() {
-  ASSERT_MAIN_THREAD()
-  if (existsGlobalRegistry()) {
-    Rf_error("Can't create global loop because it already exists.");
-  }
-  SEXP registry_xptr = PROTECT(createCallbackRegistry(0, R_NilValue));
-
-  // Make sure the external pointer never gets GC'd
-  R_PreserveObject(registry_xptr);
-
-  shared_ptr<CallbackRegistry> registry = xptrGetCallbackRegistry(registry_xptr);
-  setGlobalRegistry(registry);
-  setCurrentRegistry(registry);
-  UNPROTECT(1);
-}
-
 
 // [[Rcpp::export]]
-bool existsCallbackRegistry(SEXP registry_xptr) {
+bool existsCallbackRegistry(int id) {
   ASSERT_MAIN_THREAD()
-  bool exists = (xptrGetCallbackRegistry(registry_xptr) != nullptr);
-  return exists;
+  return callbackRegistryTable.exists(id);
 }
 
-
 // [[Rcpp::export]]
-SEXP getLoopId(SEXP registry_xptr) {
+Rcpp::List list_queue_(int id) {
   ASSERT_MAIN_THREAD()
-  shared_ptr<CallbackRegistry> registry = xptrGetCallbackRegistry(registry_xptr);
+  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.get(id);
   if (registry == nullptr) {
-    return R_NilValue;
+    Rf_error("CallbackRegistry does not exist.");
   }
-
-  return Rf_ScalarInteger(registry->getId());
-}
-
-
-// [[Rcpp::export]]
-Rcpp::List list_queue_(SEXP registry_xptr) {
-  ASSERT_MAIN_THREAD()
-  return xptrGetCallbackRegistry(registry_xptr)->list();
+  return registry->list();
 }
 
 
@@ -400,7 +186,7 @@ bool execCallbacksOne(
   ProtectCallbacks pcscope;
 
   // Set current loop for the duration of this function.
-  CurrentRegistryGuard current_registry_guard(callback_registry);
+  CurrentRegistryGuard current_registry_guard(callback_registry->getId());
 
   do {
     // We only take one at a time, because we don't want to lose callbacks if
@@ -413,7 +199,6 @@ bool execCallbacksOne(
     callbacks[0]->invoke_wrapped();
   } while (runAll);
 
-  // TODO: Recurse, but pass along `now`.
   // I think there's no need to lock this since it's only modified from the
   // main thread. But need to check.
   std::vector<boost::shared_ptr<CallbackRegistry> > children = callback_registry->children;
@@ -427,30 +212,23 @@ bool execCallbacksOne(
   return true;
 }
 
-bool execCallbacks(
-  double timeoutSecs,
-  bool runAll,
-  shared_ptr<CallbackRegistry> callback_registry)
-{
+// Execute callbacks for an event loop and its children.
+// [[Rcpp::export]]
+bool execCallbacks(double timeoutSecs, bool runAll, int loop_id) {
   ASSERT_MAIN_THREAD()
+  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.get(loop_id);
+  if (registry == nullptr) {
+    Rf_error("CallbackRegistry does not exist.");
+  }
 
-  if (!callback_registry->wait(timeoutSecs, true)) {
+  if (!registry->wait(timeoutSecs, true)) {
     return false;
   }
 
   Timestamp now;
-  execCallbacksOne(runAll, callback_registry, now);
+  execCallbacksOne(runAll, registry, now);
 
-  // TODO: Fix return value
   return true;
-}
-
-
-// Execute callbacks for an event loop and its children.
-// [[Rcpp::export]]
-bool execCallbacks(double timeoutSecs, bool runAll, SEXP registry_xptr) {
-  ASSERT_MAIN_THREAD()
-  return execCallbacks(timeoutSecs, runAll, xptrGetCallbackRegistry(registry_xptr));
 }
 
 
@@ -470,7 +248,7 @@ bool execCallbacks(double timeoutSecs, bool runAll, SEXP registry_xptr) {
 bool execCallbacksForTopLevel() {
   bool any = false;
   for (size_t i = 0; i < 20; i++) {
-    if (!execCallbacks(0, true, getGlobalRegistry()))
+    if (!execCallbacks(0, true, GLOBAL_LOOP))
       return any;
     any = true;
   }
@@ -478,9 +256,13 @@ bool execCallbacksForTopLevel() {
 }
 
 // [[Rcpp::export]]
-bool idle(SEXP registry_xptr) {
+bool idle(int loop_id) {
   ASSERT_MAIN_THREAD()
-  return xptrGetCallbackRegistry(registry_xptr)->empty();
+  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.get(loop_id);
+  if (registry == nullptr) {
+    Rf_error("CallbackRegistry does not exist.");
+  }
+  return registry->empty();
 }
 
 
@@ -491,22 +273,22 @@ void ensureInitialized() {
     return;
   }
   REGISTER_MAIN_THREAD()
-  if (!existsGlobalRegistry()) {
-    createGlobalRegistry();
-  }
+
+  // Note that the global registry is not created here, but in R, from the
+  // .onLoad function.
+  setCurrentRegistryId(GLOBAL_LOOP);
 
   // Call the platform-specific initialization for the mechanism that runs the
   // event loop when the console is idle.
   ensureAutorunnerInitialized();
-
   initialized = true;
 }
 
 // [[Rcpp::export]]
-std::string execLater(Rcpp::Function callback, double delaySecs, SEXP registry_xptr) {
+std::string execLater(Rcpp::Function callback, double delaySecs, int loop_id) {
   ASSERT_MAIN_THREAD()
   ensureInitialized();
-  shared_ptr<CallbackRegistry> registry = xptrGetCallbackRegistry(registry_xptr);
+  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.get(loop_id);
   if (registry == nullptr) {
     Rf_error("CallbackRegistry does not exist.");
   }
@@ -519,18 +301,17 @@ std::string execLater(Rcpp::Function callback, double delaySecs, SEXP registry_x
 
 
 
-bool cancel(uint64_t callback_id, SEXP registry_xptr) {
+bool cancel(uint64_t callback_id, int loop_id) {
   ASSERT_MAIN_THREAD()
-
-  boost::shared_ptr<CallbackRegistry> reg = xptrGetCallbackRegistry(registry_xptr);
-  if (!reg)
+  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.get(loop_id);
+  if (registry == nullptr) {
     return false;
-
-  return reg->cancel(callback_id);
+  }
+  return registry->cancel(callback_id);
 }
 
 // [[Rcpp::export]]
-bool cancel(std::string callback_id_s, SEXP registry_xptr) {
+bool cancel(std::string callback_id_s, int loop_id) {
   ASSERT_MAIN_THREAD()
   uint64_t callback_id;
   std::istringstream iss(callback_id_s);
@@ -542,15 +323,20 @@ bool cancel(std::string callback_id_s, SEXP registry_xptr) {
     return false;
   }
 
-  return cancel(callback_id, registry_xptr);
+  return cancel(callback_id, loop_id);
 }
 
 
 
 // [[Rcpp::export]]
-double nextOpSecs(SEXP registry_xptr) {
+double nextOpSecs(int loop_id) {
   ASSERT_MAIN_THREAD()
-  Optional<Timestamp> nextTime = xptrGetCallbackRegistry(registry_xptr)->nextTimestamp();
+  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.get(loop_id);
+  if (registry == nullptr) {
+    Rf_error("CallbackRegistry does not exist.");
+  }
+
+  Optional<Timestamp> nextTime = registry->nextTimestamp();
   if (!nextTime.has_value()) {
     return R_PosInf;
   } else {
@@ -562,7 +348,7 @@ double nextOpSecs(SEXP registry_xptr) {
 // Schedules a C function to execute on the global loop. Returns callback ID
 // on success, or 0 on error.
 extern "C" uint64_t execLaterNative(void (*func)(void*), void* data, double delaySecs) {
-  return execLaterNative2(func, data, delaySecs, GLOBAL_LOOP_ID);
+  return execLaterNative2(func, data, delaySecs, GLOBAL_LOOP);
 }
 
 // Schedules a C function to execute on a specific event loop. Returns
