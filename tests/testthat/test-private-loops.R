@@ -303,6 +303,10 @@ test_that("Grandchildren loops whose parent is destroyed should not autorun", {
 })
 
 test_that("Interrupt while running in private loop won't result in stuck loop", {
+  skip_on_ci()
+  skip_on_cran()
+  skip_on_os("mac")
+
   l <- create_loop()
   later(function() { tools::pskill(Sys.getpid(), tools::SIGINT); Sys.sleep(1) }, loop = l)
   run_now(loop = l)
