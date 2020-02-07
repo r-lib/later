@@ -1,5 +1,7 @@
 ## later 1.0.0.9004
 
+* Private event loops are now automatically run by their parent. That is, whenever an event loop is run, its children event loops are automatically run. The `create_loop()` function has a new parameter `parent`, which defaults to the current loop. The auto-running behavior can be disabled by using `create_loop(parent=NULL)`. ([#119](https://github.com/r-lib/later/pull/119))
+
 * Fixed [#73](https://github.com/r-lib/later/issues/73), [#109](https://github.com/r-lib/later/issues/109): Previously, later did not build on some platforms, notably ARM, because the `-latomic` linker was needed on those platforms. A configure script now detects when `-latomic` is needed. ([#114](https://github.com/r-lib/later/pull/114))
 
 * Previously, `execLaterNative` was initialized when the package was loaded, but not `execLaterNative2`, resulting in a warning message in some cases. ([#116](https://github.com/r-lib/later/pull/116))
