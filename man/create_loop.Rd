@@ -25,6 +25,13 @@ with_loop(loop, expr)
 global_loop()
 }
 \arguments{
+\item{parent}{The parent event loop for the one being created. Whenever the
+parent loop runs, this loop will also automatically run, without having to
+manually call \code{\link{run_now}()} on this loop. If \code{NULL}, then
+this loop will not have a parent event loop that automatically runs it; the
+only way to run this loop will be by calling \code{\link{run_now}()} on this
+loop.}
+
 \item{autorun}{This exists only for backward compatibility. If set to
 \code{FALSE}, it is equivalent to using \code{parent=NULL}.}
 
