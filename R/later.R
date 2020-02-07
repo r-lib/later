@@ -48,24 +48,31 @@
 #'
 #' \code{global_loop} returns a handle to the global event loop.
 #'
-#' \code{loop_id} returns a numeric ID for an event loop. This is generally
-#' only needed when C/C++ code needs to schedule a function to run later.
+#' \code{loop_id} returns a numeric ID for an event loop. This is generally only
+#' needed when C/C++ code needs to schedule a function to run later.
 #'
 #'
 #' @param loop A handle to an event loop.
 #' @param expr An expression to evaluate.
-#' @param autorun This is ignored (only for backward compatibility).
-#' @param parent The parent event loop for the one being created. If
-#'   \code{autorun} is \code{TRUE}, then whenever the parent loop runs, this
-#'   loop will also automatically run, without having to manually call
-#'   \code{\link{run_now}()}. TODO: Maybe we don't need the autorun param at
-#'   all? Mention NULL.
+#' @param autorun This exists only for backward compatibility. If set to
+#'   \code{FALSE}, it is equivalent to using \code{parent=NULL}.
+#' @param parent The parent event loop for the one being created. Whenever the
+#'   parent loop runs, this loop will also automatically run, without having to
+#'   manually call \code{\link{run_now}()} on this loop. If \code{NULL}, then
+#'   this loop will not have a parent event loop that automatically runs it; the
+#'   only way to run this loop will be by calling \code{\link{run_now}() on this
+#'   loop.
 #' @rdname create_loop
 #'
 #' @export
-create_loop <- function(parent = current_loop(), autorun) {
+create_loop <- function(parent = current_loop(), autorun = NULL) {
   id <- .globals$next_id
   .globals$next_id <- id + 1L
+
+  if (!is.null(autorun) && autorun == FALSE) {
+    parent <- NULL
+    warning("create_loop(autorun=FALSE) is deprecated. Please use create_loop(parent=NULL) from now on.")
+  }
 
   if (is.null(parent)) {
     parent_id <- -1L

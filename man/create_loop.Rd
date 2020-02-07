@@ -10,7 +10,7 @@
 \alias{global_loop}
 \title{Private event loops}
 \usage{
-create_loop(parent = current_loop(), autorun)
+create_loop(parent = current_loop(), autorun = NULL)
 
 destroy_loop(loop)
 
@@ -25,13 +25,8 @@ with_loop(loop, expr)
 global_loop()
 }
 \arguments{
-\item{parent}{The parent event loop for the one being created. If
-\code{autorun} is \code{TRUE}, then whenever the parent loop runs, this
-loop will also automatically run, without having to manually call
-\code{\link{run_now}()}. TODO: Maybe we don't need the autorun param at
-all? Mention NULL.}
-
-\item{autorun}{This is ignored (only for backward compatibility).}
+\item{autorun}{This exists only for backward compatibility. If set to
+\code{FALSE}, it is equivalent to using \code{parent=NULL}.}
 
 \item{loop}{A handle to an event loop.}
 
@@ -70,6 +65,6 @@ evaluates the given expression. Afterwards, the new event loop is destroyed.
 
 \code{global_loop} returns a handle to the global event loop.
 
-\code{loop_id} returns a numeric ID for an event loop. This is generally
-only needed when C/C++ code needs to schedule a function to run later.
+\code{loop_id} returns a numeric ID for an event loop. This is generally only
+needed when C/C++ code needs to schedule a function to run later.
 }
