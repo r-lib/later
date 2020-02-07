@@ -302,6 +302,20 @@ test_that("Grandchildren loops whose parent is destroyed should not autorun", {
   expect_false(l1_ran)
 })
 
+test_that("Interrupt while running in private loop won't result in stuck loop", {
+  l <- create_loop()
+  later(function() { tools::pskill(Sys.getpid(), tools::SIGINT); Sys.sleep(1) }, loop = l)
+  run_now(loop = l)
+  expect_identical(current_loop(), global_loop())
+
+  with_loop(l, {
+    tools::pskill(Sys.getpid(), tools::SIGINT)
+    Sys.sleep(1)
+  })
+  expect_identical(current_loop(), global_loop())
+})
+
+
 test_that("list_queue", {
   l <- create_loop(parent = NULL)
   q <- NULL
