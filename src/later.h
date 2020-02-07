@@ -17,7 +17,7 @@ boost::shared_ptr<CallbackRegistry> getGlobalRegistry();
 bool execCallbacksForTopLevel();
 bool at_top_level();
 
-bool execCallbacks(double timeoutSecs, bool runAll, SEXP loop_xptr);
+bool execCallbacks(double timeoutSecs, bool runAll, int loop_id);
 bool idle(int loop);
 
 extern "C" uint64_t execLaterNative(void (*func)(void*), void* data, double secs);

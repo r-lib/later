@@ -3,7 +3,6 @@
 #include <map>
 #include <queue>
 #include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/scope_exit.hpp>
 #include "debug.h"
@@ -16,7 +15,6 @@
 #include "interrupt.h"
 
 using boost::shared_ptr;
-using boost::weak_ptr;
 
 uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp::Function callback, double delaySecs, bool resetTimer);
 uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, void (*callback)(void*), void* data, double delaySecs, bool resetTimer);
