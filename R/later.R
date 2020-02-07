@@ -48,9 +48,6 @@
 #'
 #' \code{global_loop} returns a handle to the global event loop.
 #'
-#' \code{loop_id} returns a numeric ID for an event loop. This is generally only
-#' needed when C/C++ code needs to schedule a function to run later.
-#'
 #'
 #' @param loop A handle to an event loop.
 #' @param expr An expression to evaluate.
