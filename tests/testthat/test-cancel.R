@@ -29,7 +29,7 @@ test_that("Cancelling callbacks", {
 
 
 test_that("Cancelled functions will be GC'd", {
-  l <- create_loop(autorun = FALSE)
+  l <- create_loop(parent = NULL)
   x <- 0
   cancel <- later(
     local({
@@ -106,8 +106,8 @@ test_that("Cancelling callbacks on temporary event loops", {
 
 
 test_that("Cancelling callbacks on persistent private loops", {
-  l1 <- create_loop(autorun = FALSE)
-  l2 <- create_loop(autorun = FALSE)
+  l1 <- create_loop(parent = NULL)
+  l2 <- create_loop(parent = NULL)
 
   # Cancel from outside with_loop
   cancel <- NULL
@@ -138,7 +138,7 @@ test_that("Cancelling callbacks on persistent private loops", {
 
 
   # Cancelling on an explicitly destroyed loop returns FALSE
-  l3 <- create_loop(autorun = FALSE)
+  l3 <- create_loop(parent = NULL)
   cancel <- NULL
   x <- 0
   with_loop(l3, {

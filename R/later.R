@@ -143,7 +143,7 @@ current_loop <- function() {
 #' @rdname create_loop
 #' @export
 with_temp_loop <- function(expr) {
-  loop <- create_loop(autorun = FALSE)
+  loop <- create_loop(parent = NULL)
   on.exit(destroy_loop(loop))
 
   with_loop(loop, expr)
