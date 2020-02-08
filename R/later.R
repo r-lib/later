@@ -278,9 +278,7 @@ run_now <- function(timeoutSecs = 0L, all = TRUE, loop = current_loop()) {
   if (!is.numeric(timeoutSecs))
     stop("timeoutSecs must be numeric")
 
-  with_loop(loop,
-    invisible(execCallbacks(timeoutSecs, all, loop$id))
-  )
+  invisible(execCallbacks(timeoutSecs, all, loop$id))
 }
 
 #' Check if later loop is empty
