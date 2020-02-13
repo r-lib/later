@@ -29,7 +29,6 @@ test_that("Cancelling callbacks", {
 
 
 test_that("Cancelled functions will be GC'd", {
-  l <- create_loop(parent = NULL)
   x <- 0
   cancel <- later(
     local({
