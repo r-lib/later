@@ -148,3 +148,26 @@ test_that("Cancelling callbacks on persistent private loops", {
   expect_false(cancel())
   expect_identical(x, 0)
 })
+
+test_that("Canceling a callback from another a callback", {
+  # Canceling a callback from another callback should work. Additionally, the
+  # altered ordering of callbacks shouldn't prevent other callbacks from
+  # running. In this test, #1 cancels 2 and 3, but we still expect 4 to run. If
+  # we used the wrong algorithm for traversing the queue and canceling
+  # callbacks, it would be possible for the cancellation of 2 and 3 to cause 4
+  # to not run. This test ensures that we do it the right way.
+  ran_2 <- FALSE
+  ran_3 <- FALSE
+  ran_4 <- FALSE
+  with_temp_loop({
+    cancel_1 <- later(function() { cancel_2(); cancel_3() })
+    cancel_2 <- later(function() { ran_2 <<- TRUE })
+    cancel_3 <- later(function() { ran_3 <<- TRUE })
+    later(function() { ran_4 <<- TRUE })
+    run_now()
+  })
+
+  expect_false(ran_2)
+  expect_false(ran_3)
+  expect_true(ran_4)
+})
