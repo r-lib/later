@@ -66,9 +66,19 @@ create_loop <- function(parent = current_loop(), autorun = NULL) {
   id <- .globals$next_id
   .globals$next_id <- id + 1L
 
-  if (!is.null(autorun) && autorun == FALSE) {
+  if (!is.null(autorun)) {
+    # This is for backward compatibility, if `create_loop(autorun=FALSE)` is called.
     parent <- NULL
     warning("create_loop(autorun=FALSE) is deprecated. Please use create_loop(parent=NULL) from now on.")
+  }
+  if (identical(parent, FALSE)) {
+    # This is for backward compatibility, if `create_loop(FALSE)` is called.
+    # (Previously the first and only parameter was `autorun`.)
+    parent <- NULL
+    warning("create_loop(FALSE) is deprecated. Please use create_loop(parent=NULL) from now on.")
+  }
+  if (!is.null(parent) && !inherits(parent, "event_loop")) {
+    stop("`parent` must be NULL or an event_loop object.")
   }
 
   if (is.null(parent)) {
