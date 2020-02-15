@@ -147,3 +147,14 @@ test_that("Cancelling callbacks on persistent private loops", {
   expect_false(cancel())
   expect_identical(x, 0)
 })
+
+test_that("A canceler will not keep loop alive", {
+  l <- create_loop(parent = NULL)
+  finalized <- FALSE
+
+  reg.finalizer(l, function(x) finalized <<- TRUE)
+  cancel <- later(function() 1, loop = l)
+  rm(l)
+  gc()
+  expect_true(finalized)
+})
