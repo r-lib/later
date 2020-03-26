@@ -3,7 +3,7 @@
 echo "Running configure script"
 
 # Find compiler
-CC=$("${R_HOME}"/bin/R CMD config CC)
+CC=`"${R_HOME}"/bin/R CMD config CC`
 
 # Detect whether -latomic is needed during linking. This is needed on some
 # platforms, notably ARM (Raspberry Pi).
@@ -21,8 +21,44 @@ else
 fi
 
 
+# By default CXX_STD is CXX11
+CXX_STD=CXX11
+
+# But if it works, use CXX17
+CXX=`"${R_HOME}"/bin/R CMD config CXX17`
+CXX17STD=`"${R_HOME}"/bin/R CMD config CXX17STD`
+CXX17FLAGS=`"${R_HOME}"/bin/R CMD config CXX17FLAGS`
+if [ "$CXX" != "" -a "$CXX17FLAGS" != "" -a "$CXX17STD" != "" ]; then
+  ptimespec='#include <cstdio>
+#include <ctime>
+// Example adapted from https://en.cppreference.com/w/cpp/chrono/c/timespec_get
+
+namespace std {
+
+        int main()
+        {
+                timespec ts;
+                timespec_get(&ts, TIME_UTC);
+                char buf[100];
+                strftime(buf, sizeof buf, "%D %T", gmtime(&ts.tv_sec));
+                printf("Current time: %s.%09ld UTC", buf, ts.tv_nsec);
+                return 0;
+        }
+
+}'
+  echo "$ptimespec" | ${CXX} -x c++ -c $CXX17FLAGS $CXX17STD - -o /dev/null > /dev/null 2>&1
+  if [ $? -eq 0 ]; then
+    # See https://github.com/r-lib/later/issues/115
+    echo "Using c++17."
+    CXX_STD=CXX17
+  else
+    echo "Cannot use c++17 using default configuration for c++11"
+  fi
+fi
+
+
 # Write to Makevars
-sed -e "s|@extra_pkg_libs@|$EXTRA_PKG_LIBS|" src/Makevars.in > src/Makevars
+sed -e "s|@extra_pkg_libs@|$EXTRA_PKG_LIBS|;s|@cxx_std@|$CXX_STD|" src/Makevars.in > src/Makevars
 
 # Success
 exit 0
