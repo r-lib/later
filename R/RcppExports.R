@@ -37,6 +37,18 @@ execCallbacks <- function(timeoutSecs, runAll, loop_id) {
     .Call('_later_execCallbacks', PACKAGE = 'later', timeoutSecs, runAll, loop_id)
 }
 
+initExecCallbacks <- function() {
+    .Call('_later_initExecCallbacks', PACKAGE = 'later')
+}
+
+finishExecCallbacks <- function() {
+    invisible(.Call('_later_finishExecCallbacks', PACKAGE = 'later'))
+}
+
+execCallbacksOne <- function(runAll, callback_registry, now) {
+    .Call('_later_execCallbacksOne', PACKAGE = 'later', runAll, callback_registry, now)
+}
+
 idle <- function(loop_id) {
     .Call('_later_idle', PACKAGE = 'later', loop_id)
 }

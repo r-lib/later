@@ -103,6 +103,38 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// initExecCallbacks
+Rcpp::RObject initExecCallbacks();
+RcppExport SEXP _later_initExecCallbacks() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(initExecCallbacks());
+    return rcpp_result_gen;
+END_RCPP
+}
+// finishExecCallbacks
+void finishExecCallbacks();
+RcppExport SEXP _later_finishExecCallbacks() {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    finishExecCallbacks();
+    return R_NilValue;
+END_RCPP
+}
+// execCallbacksOne
+// Execute callbacks for a single event loop. bool execCallbacksOne(bool runAll, shared_ptr<CallbackRegistry> callback_registry, Timestamp now);
+RcppExport SEXP _later_execCallbacksOne(SEXP runAllSEXP, SEXP callback_registrySEXP, SEXP nowSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< bool >::type runAll(runAllSEXP);
+    Rcpp::traits::input_parameter< shared_ptr<CallbackRegistry> >::type callback_registry(callback_registrySEXP);
+    Rcpp::traits::input_parameter< Timestamp >::type now(nowSEXP);
+    rcpp_result_gen = Rcpp::wrap(execCallbacksOne(runAll, callback_registry, now));
+    return rcpp_result_gen;
+END_RCPP
+}
 // idle
 bool idle(int loop_id);
 RcppExport SEXP _later_idle(SEXP loop_idSEXP) {

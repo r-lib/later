@@ -171,6 +171,10 @@ Rcpp::List list_queue_(int id) {
 }
 
 
+// ============================================================================
+// Running callbacks from C++
+// ============================================================================
+
 // Execute callbacks for a single event loop.
 bool execCallbacksOne(
   bool runAll,
@@ -252,6 +256,131 @@ bool execCallbacksForTopLevel() {
   }
   return any;
 }
+
+
+
+// ============================================================================
+// Running callbacks from R
+// ============================================================================
+
+static bool doingExecCallbacks_c = false;
+static shared_ptr<Timestamp> now_c;
+static shared_ptr<CallbackRegistry> registry_c;
+
+// [[Rcpp::export]]
+Rcpp::RObject initExecCallbacks() {
+  ASSERT_MAIN_THREAD()
+  if (doingExecCallbacks_c) {
+    Rf_error("initExecCallbacks() called when doingExecCallbacks is already true.")
+  }
+  doingExecCallbacks_c = true;
+  now_c = make_shared<Timestamp>();
+
+  registry_c = callbackRegistryTable.get(loop_id);
+  if (registry_c == nullptr) {
+    Rf_error("CallbackRegistry does not exist.");
+  }
+
+  if (!registry_c->wait(timeoutSecs, true)) {
+    return false;
+  }
+}
+
+// [[Rcpp::export]]
+void finishExecCallbacks() {
+  ASSERT_MAIN_THREAD()
+  doingExecCallbacks_c = false;
+}
+
+// If runAll is true, then this function will loop over the callbacks in the
+// queue. For each callback:
+//   * If it is a C++ callback, it will execute it, then continue the loop.
+//   * If it is an R callback, it will return the R function object. (The R
+//     function will be executed by the caller, so that we can avoid R calling
+//     into C++ calling back into R.)
+//
+// Note that when an R callback is encountered, this function will not
+// complete iterating over the loop -- it is expected that the caller of this
+// function will loop until the queue is empty.
+//
+// If runAll is false, then this function will take the first callback in the
+// queue.
+//   * If it is a C++ callback, it will execute it, then return NULL.
+//   * If it is an R callback, it will return the R function object.
+//
+// NOTE: What do we do in case of C++ exceptions?
+// [[Rcpp::export]]
+// Execute callbacks for a single event loop.
+bool execCallbacksOne(
+  bool runAll,
+  shared_ptr<CallbackRegistry> callback_registry,
+  Timestamp now
+) {
+  ASSERT_MAIN_THREAD()
+  if (!doingExecCallbacks) {
+    Rf_error("initExecCallbacks() must be called before execOrFetchCallbacks().");
+  }
+
+  // TODO: only use when exec-ing C/C++ callbacks
+  // execCallbacks can be called directly from C code, and the callbacks may
+  // include Rcpp code. (Should we also call wrap?)
+  Rcpp::RNGScope rngscope;
+  ProtectCallbacks pcscope;
+
+  // Set current loop for the duration of this function.
+  CurrentRegistryGuard current_registry_guard(callback_registry->getId());
+
+  do {
+    // We only take one at a time, because we don't want to lose callbacks if
+    // one of the callbacks throws an error
+    std::vector<Callback_sp> callbacks = callback_registry->take(1, now);
+    if (callbacks.size() == 0) {
+      break;
+    }
+    // This line may throw errors!
+    callbacks[0]->invoke_wrapped();
+  } while (runAll);
+
+  // I think there's no need to lock this since it's only modified from the
+  // main thread. But need to check.
+  std::vector<boost::shared_ptr<CallbackRegistry> > children = callback_registry->children;
+  for (std::vector<boost::shared_ptr<CallbackRegistry> >::iterator it = children.begin();
+       it != children.end();
+       ++it)
+  {
+    execCallbacksOne(true, *it, now);
+  }
+
+  return true;
+}
+
+// // Execute callbacks for an event loop and its children.
+// // [[Rcpp::export]]
+// Rcpp::RObject execOrFetchCallbacks(double timeoutSecs, bool runAll, int loop_id) {
+//   ASSERT_MAIN_THREAD()
+//   if (!doingExecCallbacks) {
+//     Rf_error("initExecCallbacks() must be called before execOrFetchCallbacks().");
+//   }
+
+//   shared_ptr<CallbackRegistry> registry = callbackRegistryTable.get(loop_id);
+//   if (registry == nullptr) {
+//     Rf_error("CallbackRegistry does not exist.");
+//   }
+
+//   if (!registry->wait(timeoutSecs, true)) {
+//     return R_NilValue;
+//   }
+
+//   Timestamp now;
+//   execCallbacksOne(runAll, registry, now);
+
+//   return true;
+// }
+
+
+// ============================================================================
+// Misc
+// ============================================================================
 
 // [[Rcpp::export]]
 bool idle(int loop_id) {
