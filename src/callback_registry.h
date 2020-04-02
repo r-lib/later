@@ -108,11 +108,15 @@ private:
   // objects to be copied on the wrong thread, and even trigger an R GC event
   // on the wrong thread. https://github.com/r-lib/later/issues/39
   cbSet queue;
-  mutable Mutex mutex;
-  mutable ConditionVariable condvar;
+  Mutex* mutex;
+  ConditionVariable* condvar;
 
 public:
-  CallbackRegistry(int id);
+  // The CallbackRegistry must be given a Mutex and ConditionVariable when
+  // initialized, because they are shared among the CallbackRegistry objects
+  // and the CallbackRegistryTable; they serve as a global lock. Note that the
+  // lifetime of these objects must be longer than the CallbackRegistry.
+  CallbackRegistry(int id, Mutex* mutex, ConditionVariable* condvar);
   ~CallbackRegistry();
 
   int getId() const;
@@ -150,10 +154,7 @@ public:
   // automatically running child loops. They should only be accessed and
   // modified from the main thread.
   boost::shared_ptr<CallbackRegistry> parent;
-  std::vector<boost::shared_ptr<CallbackRegistry>> children;
-
-  // To let another object signal this one. It will also signal its parent.
-  void signal(bool recursive = true);
+  std::vector<boost::shared_ptr<CallbackRegistry> > children;
 };
 
 #endif // _CALLBACK_REGISTRY_H_

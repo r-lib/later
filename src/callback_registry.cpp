@@ -253,8 +253,8 @@ void testCallbackOrdering() {
   }
 }
 
-CallbackRegistry::CallbackRegistry(int id)
-  : id(id), mutex(tct_mtx_recursive), condvar(mutex)
+CallbackRegistry::CallbackRegistry(int id, Mutex* mutex, ConditionVariable* condvar)
+  : id(id), mutex(mutex), condvar(condvar)
 {
   ASSERT_MAIN_THREAD()
 }
@@ -267,16 +267,6 @@ int CallbackRegistry::getId() const {
   return id;
 }
 
-
-void CallbackRegistry::signal(bool recursive) {
-  Guard guard(mutex);
-  condvar.signal();
-
-  if (recursive && parent != nullptr) {
-    parent->signal();
-  }
-}
-
 uint64_t CallbackRegistry::add(Rcpp::Function func, double secs) {
   // Copies of the Rcpp::Function should only be made on the main thread.
   ASSERT_MAIN_THREAD()
@@ -284,11 +274,7 @@ uint64_t CallbackRegistry::add(Rcpp::Function func, double secs) {
   Callback_sp cb = boost::make_shared<RcppFunctionCallback>(when, func);
   Guard guard(mutex);
   queue.insert(cb);
-  condvar.signal();
-
-  if (parent != nullptr) {
-    parent->signal(true);
-  }
+  condvar->signal();
 
   return cb->getCallbackId();
 }
@@ -298,11 +284,7 @@ uint64_t CallbackRegistry::add(void (*func)(void*), void* data, double secs) {
   Callback_sp cb = boost::make_shared<BoostFunctionCallback>(when, boost::bind(func, data));
   Guard guard(mutex);
   queue.insert(cb);
-  condvar.signal();
-
-  if (parent != nullptr) {
-    parent->signal(true);
-  }
+  condvar->signal();
 
   return cb->getCallbackId();
 }
@@ -335,7 +317,7 @@ Optional<Timestamp> CallbackRegistry::nextTimestamp(bool recursive) const {
 
   // Now check children
   if (recursive) {
-    for (std::vector<boost::shared_ptr<CallbackRegistry>>::const_iterator it = children.begin();
+    for (std::vector<boost::shared_ptr<CallbackRegistry> >::const_iterator it = children.begin();
          it != children.end();
          ++it)
     {
@@ -372,7 +354,7 @@ bool CallbackRegistry::due(const Timestamp& time, bool recursive) const {
 
   // Now check children
   if (recursive) {
-    for (std::vector<boost::shared_ptr<CallbackRegistry>>::const_iterator it = children.begin();
+    for (std::vector<boost::shared_ptr<CallbackRegistry> >::const_iterator it = children.begin();
          it != children.end();
          ++it)
     {
@@ -421,7 +403,7 @@ bool CallbackRegistry::wait(double timeoutSecs, bool recursive) const {
     if (waitFor > 2) {
       waitFor = 2;
     }
-    condvar.timedwait(waitFor);
+    condvar->timedwait(waitFor);
     Rcpp::checkUserInterrupt();
   }
 

@@ -3,9 +3,11 @@
 
 #include <Rcpp.h>
 #include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 #include "threadutils.h"
 #include "debug.h"
 #include "callback_registry.h"
+#include "later.h"
 
 using boost::shared_ptr;
 using boost::make_shared;
@@ -14,26 +16,37 @@ using boost::make_shared;
 // Callback registry table
 // ============================================================================
 //
-// This class is used for accessing a registry by ID.
+// This class is used for accessing a registry by ID. The CallbackRegistries
+// also have a tree structure. The global loop/registry is the root. However,
+// there can also be trees that are independent of the global loop, if a loop
+// is created without a parent.
 //
 // The operations on this class are thread-safe, because they might be used to
 // from another thread.
 //
 class CallbackRegistryTable {
 public:
-  CallbackRegistryTable() : mutex(tct_mtx_plain | tct_mtx_recursive) {
+  CallbackRegistryTable() : mutex(tct_mtx_plain | tct_mtx_recursive), condvar(mutex)  {
   }
 
   bool exists(int id) {
-    Guard guard(mutex);
+    Guard guard(&mutex);
     return (registries.find(id) != registries.end());
   }
 
   // Create a new CallbackRegistry. If parent_id is -1, then there is no parent.
   void create(int id, int parent_id) {
     ASSERT_MAIN_THREAD()
-    Guard guard(mutex);
-    shared_ptr<CallbackRegistry> registry = make_shared<CallbackRegistry>(id);
+    Guard guard(&mutex);
+
+    // Each new registry is passed our mutex and condvar. These serve as a
+    // shared lock across all CallbackRegistries and this
+    // CallbackRegistryTable. If each registry had a separate lock, some
+    // routines would recursively acquire a lock downward in the
+    // CallbackRegistry tree, and some recursively acquire a lock upward;
+    // without a shared lock, if these things happen at the same time from
+    // different threads, it could deadlock.
+    shared_ptr<CallbackRegistry> registry = make_shared<CallbackRegistry>(id, &mutex, &condvar);
 
     if (exists(id)) {
       Rcpp::stop("Can't create event loop %d because it already exists.", id);
@@ -55,7 +68,7 @@ public:
   // the table, or if the target CallbackRegistry has already been deleted,
   // then the shared_ptr is empty.
   shared_ptr<CallbackRegistry> get(int id) {
-    Guard guard(mutex);
+    Guard guard(&mutex);
     if (!exists(id)) {
       return shared_ptr<CallbackRegistry>();
     }
@@ -65,7 +78,7 @@ public:
   }
 
   bool remove(int id) {
-    Guard guard(mutex);
+    Guard guard(&mutex);
 
     shared_ptr<CallbackRegistry> registry = get(id);
     if (registry == nullptr) {
@@ -83,7 +96,7 @@ public:
     shared_ptr<CallbackRegistry> parent = registry->parent;
     if (parent != nullptr) {
       // Remove this registry from the parent's list of children.
-      for (std::vector<shared_ptr<CallbackRegistry>>::iterator it = parent->children.begin();
+      for (std::vector<shared_ptr<CallbackRegistry> >::iterator it = parent->children.begin();
            it != parent->children.end();
           )
       {
@@ -97,7 +110,7 @@ public:
     }
 
     // Tell the children that they no longer have a parent.
-    for (std::vector<boost::shared_ptr<CallbackRegistry>>::iterator it = registry->children.begin();
+    for (std::vector<boost::shared_ptr<CallbackRegistry> >::iterator it = registry->children.begin();
          it != registry->children.end();
          ++it)
     {
@@ -112,6 +125,7 @@ public:
 private:
   std::map<int, shared_ptr<CallbackRegistry> > registries;
   Mutex mutex;
+  ConditionVariable condvar;
 };
 
 

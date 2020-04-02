@@ -44,7 +44,7 @@ size_t BUF_SIZE = 256;
 void *buf;
 
 void set_fd(bool ready) {
-  Guard g(m);
+  Guard g(&m);
 
   if (ready != hot) {
     if (ready) {
