@@ -78,6 +78,8 @@ public:
   }
 
   bool remove(int id) {
+    // Removal is always called from the main thread.
+    ASSERT_MAIN_THREAD()
     Guard guard(&mutex);
 
     shared_ptr<CallbackRegistry> registry = get(id);
