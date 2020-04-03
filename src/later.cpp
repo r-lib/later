@@ -16,9 +16,6 @@
 
 using boost::shared_ptr;
 
-uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp::Function callback, double delaySecs, bool resetTimer);
-uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, void (*callback)(void*), void* data, double delaySecs, bool resetTimer);
-
 static size_t exec_callbacks_reentrancy_count = 0;
 
 static CallbackRegistryTable callbackRegistryTable;
@@ -353,11 +350,7 @@ extern "C" uint64_t execLaterNative(void (*func)(void*), void* data, double dela
 // callback ID on success, or 0 on error.
 extern "C" uint64_t execLaterNative2(void (*func)(void*), void* data, double delaySecs, int loop_id) {
   ensureInitialized();
-  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.get(loop_id);
-  if (registry == nullptr) {
-    return 0;
-  }
-  return doExecLater(registry, func, data, delaySecs, true);
+  return callbackRegistryTable.scheduleCallback(func, data, delaySecs, loop_id);
 }
 
 extern "C" int apiVersion() {

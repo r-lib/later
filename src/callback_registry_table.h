@@ -122,6 +122,17 @@ public:
     return true;
   }
 
+  uint64_t scheduleCallback(void (*func)(void*), void* data, double delaySecs, int loop_id) {
+    // This method can be called from any thread
+    Guard guard(&mutex);
+
+    shared_ptr<CallbackRegistry> registry = get(loop_id);
+    if (registry == nullptr) {
+      return 0;
+    }
+    return doExecLater(registry, func, data, delaySecs, true);
+  }
+
 private:
   std::map<int, shared_ptr<CallbackRegistry> > registries;
   Mutex mutex;

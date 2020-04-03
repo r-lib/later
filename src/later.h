@@ -29,4 +29,7 @@ void ensureInitialized();
 // and later_win32.cpp.
 void ensureAutorunnerInitialized();
 
+uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp::Function callback, double delaySecs, bool resetTimer);
+uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, void (*callback)(void*), void* data, double delaySecs, bool resetTimer);
+
 #endif // _LATER_H_
