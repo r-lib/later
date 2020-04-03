@@ -69,7 +69,6 @@ create_loop <- function(parent = current_loop(), autorun = NULL) {
   if (!is.null(autorun)) {
     # This is for backward compatibility, if `create_loop(autorun=FALSE)` is called.
     parent <- NULL
-    warning("create_loop(autorun=FALSE) is deprecated. Please use create_loop(parent=NULL) from now on.")
   }
   if (identical(parent, FALSE)) {
     # This is for backward compatibility, if `create_loop(FALSE)` is called.
