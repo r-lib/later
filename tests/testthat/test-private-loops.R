@@ -174,8 +174,13 @@ test_that("Temporary event loops", {
 test_that("Destroying loop and loop ID", {
   l <- create_loop()
   expect_true(is.integer(l$id))
-  destroy_loop(l)
+  expect_true(destroy_loop(l))
   expect_false(exists_loop(l))
+
+  # Should return false on subsequent calls to destroy_loop()
+  expect_false(destroy_loop(l))
+  # Destroying a second time shouldn't cause warnings.
+  expect_silent(destroy_loop(l))
 })
 
 test_that("Can't destroy current loop", {
@@ -218,6 +223,22 @@ test_that("When auto-running a child loop, it will be reported as current_loop()
   expect_identical(x, l)
 })
 
+
+test_that("CallbackRegistry exists until its callbacks are run", {
+  # If the R loop handle object is GC'd, it doesn't necessarily destroy the
+  # underlying CallbackRegistry (in C++). The CallbackRegistry is only destroyed
+  # when the R loop handle is GC'd AND the CallbackRegistry contains no more
+  # callbacks.
+  x <- 0
+  callback <- function() { x <<- x + 1 }
+  local({
+    l <- create_loop()
+    later(callback, loop = l)
+  })
+  gc()
+  run_now()
+  expect_identical(x, 1)
+})
 
 test_that("Auto-running grandchildren loops", {
   l1_ran  <- FALSE
@@ -267,39 +288,78 @@ test_that("Auto-running grandchildren loops", {
 })
 
 test_that("Grandchildren loops whose parent is destroyed should not autorun", {
-  l_ran  <- FALSE
-  l1_ran <- FALSE
+  l_ran  <- 0
+  l1_ran <- 0
   l <- create_loop()
 
   with_loop(l, {
-    later(function() l_ran <<- TRUE)
+    later(function() l_ran <<- l_ran + 1)
     l1 <- create_loop()
-    later(function() l1_ran <<- TRUE, loop = l1)
+    later(function() l1_ran <<- l1_ran + 1, loop = l1)
   })
 
   destroy_loop(l)
   run_now()
-  expect_false(l_ran)
-  expect_false(l1_ran)
+  # l will run, because the underlying registry exists until empty. It also
+  # causes l1 to run.
+  expect_identical(l_ran, 1)
+  expect_identical(l1_ran, 1)
+  expect_false(exists_loop(l))
+  expect_true(exists_loop(l1))
 
-
-  # Similar to previous, but instead of destroy_loop(), we rm() the loop and
-  # gc().
-  l_ran  <- FALSE
-  l1_ran <- FALSE
-  l <- create_loop()
-
-  with_loop(l, {
-    later(function() l_ran <<- TRUE)
-    l1 <- create_loop()
-    later(function() l1_ran <<- TRUE, loop = l1)
-  })
-  # The rm() and gc() causes the loop to be destroyed.
-  rm(l)
-  gc()
+  # Schedule another function that we don't expect to actually run.
+  # Use finalizer to keep
+  l1_finalized <- FALSE
+  later(local({
+      reg.finalizer(environment(), function(e) l1_finalized <<- TRUE)
+      function() l1_ran <<- l1_ran + 1
+    }),
+    loop = l1
+  )
   run_now()
-  expect_false(l_ran)
-  expect_false(l1_ran)
+  # l1 won't run again
+  expect_identical(l1_ran, 1)
+  expect_true(exists_loop(l1))
+  expect_false(l1_finalized)
+  # Destroying l1 will take effect immediately
+  expect_true(destroy_loop(l1))
+  expect_false(exists_loop(l1))
+  gc() # Make the finalizer run
+  expect_true(l1_finalized)
+})
+
+
+test_that("Removing parent loop allows loop to be deleted", {
+  # Create parent loop, then create a child loop, then add a finalizer to a
+  # callback (actually, the env for the callback) in the child loop.
+  l <- create_loop()
+  l1 <- create_loop(parent = l)
+
+  x <- 0
+  with_loop(l1, {
+    later(
+      local({
+        reg.finalizer(environment(), function(e) x <<-x + 1)
+        function() NULL
+      })
+    )
+  })
+
+  # Calling destroy_loop on the child should NOT cause the finalizer to run --
+  # the loop won't actaully be destroyed because it (A) has a parent AND (B) has
+  # a callback.
+  destroy_loop(l1)
+  gc()
+  expect_identical(x, 0)
+
+  # If we destroy the parent loop, then the finalizer will be called, because
+  # even though the child loop has a callback, it no longer has a parent.
+  # Because destroy_loop() has been called on its handle and its parent, there's
+  # no way to run callbacks in the child, so the internal representation of the
+  # child loop can be deleted, along with all the callbacks it contains.
+  destroy_loop(l)
+  gc()
+  expect_identical(x, 1)
 })
 
 test_that("Interrupt while running in private loop won't result in stuck loop", {

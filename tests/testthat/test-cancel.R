@@ -93,7 +93,9 @@ test_that("Cancelling callbacks on temporary event loops", {
     expect_identical(x, 1)
   })
 
-  # Canceling after an event loop has been destroyed should return FALSE
+  # Canceling after an event loop handle has been destroyed: the underlying
+  # data structure (in C++) will be deleted, along with the callbacks. This is
+  # true because the loop does not have a parent.
   cancel <- NULL
   x <- 0
   with_temp_loop({
@@ -104,7 +106,7 @@ test_that("Cancelling callbacks on temporary event loops", {
 })
 
 
-test_that("Cancelling callbacks on persistent private loops", {
+test_that("Cancelling callbacks on persistent private loops without parent", {
   l1 <- create_loop(parent = NULL)
   l2 <- create_loop(parent = NULL)
 
@@ -144,6 +146,21 @@ test_that("Cancelling callbacks on persistent private loops", {
     cancel <- later(function() { x <<- x + 1 })
   })
   destroy_loop(l3)
+  expect_false(cancel())
+  expect_identical(x, 0)
+})
+
+test_that("Cancelling callbacks on persistent private loops with parent", {
+  l1 <- create_loop(parent = current_loop())
+
+  # If destroy_loop() is called but the loop _does have_ a parent, then the
+  # underlying objects will not be destroyed right away, so the cancel() will
+  # work.
+  cancel <- NULL
+  x <- 0
+  cancel <- later(function() { x <<- x + 1 }, loop = l1)
+  destroy_loop(l1)
+  expect_true(cancel())
   expect_false(cancel())
   expect_identical(x, 0)
 })

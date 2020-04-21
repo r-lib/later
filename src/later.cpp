@@ -121,7 +121,7 @@ private:
 // ============================================================================
 
 shared_ptr<CallbackRegistry> getGlobalRegistry() {
-  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.get(GLOBAL_LOOP);
+  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(GLOBAL_LOOP);
   if (registry == nullptr) {
     Rf_error("Global registry does not exist.");
   }
@@ -142,7 +142,7 @@ bool deleteCallbackRegistry(int loop_id) {
     Rf_error("Can't delete current loop.");
   }
 
-  return callbackRegistryTable.remove(loop_id);
+  return callbackRegistryTable.notifyRRefDeleted(loop_id);
 }
 
 // [[Rcpp::export]]
@@ -160,7 +160,7 @@ bool existsCallbackRegistry(int id) {
 // [[Rcpp::export]]
 Rcpp::List list_queue_(int id) {
   ASSERT_MAIN_THREAD()
-  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.get(id);
+  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(id);
   if (registry == nullptr) {
     Rf_error("CallbackRegistry does not exist.");
   }
@@ -211,7 +211,7 @@ bool execCallbacksOne(
 // [[Rcpp::export]]
 bool execCallbacks(double timeoutSecs, bool runAll, int loop_id) {
   ASSERT_MAIN_THREAD()
-  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.get(loop_id);
+  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(loop_id);
   if (registry == nullptr) {
     Rf_error("CallbackRegistry does not exist.");
   }
@@ -223,6 +223,9 @@ bool execCallbacks(double timeoutSecs, bool runAll, int loop_id) {
   Timestamp now;
   execCallbacksOne(runAll, registry, now);
 
+  // Call this now, in case any CallbackRegistries which have no R references
+  // have emptied.
+  callbackRegistryTable.pruneRegistries();
   return true;
 }
 
@@ -253,7 +256,7 @@ bool execCallbacksForTopLevel() {
 // [[Rcpp::export]]
 bool idle(int loop_id) {
   ASSERT_MAIN_THREAD()
-  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.get(loop_id);
+  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(loop_id);
   if (registry == nullptr) {
     Rf_error("CallbackRegistry does not exist.");
   }
@@ -283,7 +286,7 @@ void ensureInitialized() {
 std::string execLater(Rcpp::Function callback, double delaySecs, int loop_id) {
   ASSERT_MAIN_THREAD()
   ensureInitialized();
-  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.get(loop_id);
+  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(loop_id);
   if (registry == nullptr) {
     Rf_error("CallbackRegistry does not exist.");
   }
@@ -298,7 +301,7 @@ std::string execLater(Rcpp::Function callback, double delaySecs, int loop_id) {
 
 bool cancel(uint64_t callback_id, int loop_id) {
   ASSERT_MAIN_THREAD()
-  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.get(loop_id);
+  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(loop_id);
   if (registry == nullptr) {
     return false;
   }
@@ -326,7 +329,7 @@ bool cancel(std::string callback_id_s, int loop_id) {
 // [[Rcpp::export]]
 double nextOpSecs(int loop_id) {
   ASSERT_MAIN_THREAD()
-  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.get(loop_id);
+  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(loop_id);
   if (registry == nullptr) {
     Rf_error("CallbackRegistry does not exist.");
   }
