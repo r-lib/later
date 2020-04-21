@@ -421,3 +421,25 @@ test_that("list_queue", {
   q <- list_queue(l)
   expect_equal(length(q), 0)
 })
+
+
+describe("Queue length with nested loops", {
+  x <- 0
+  later(~{x <<- 1}, 0)
+  expect_equal(loop_queue_length(), 1)
+  with_temp_loop({
+    expect_equal(loop_queue_length(), 0)
+
+    later(~{x <<- 2})
+    expect_equal(loop_queue_length(), 1)
+
+    run_now()
+    expect_identical(x, 2)
+    expect_equal(loop_queue_length(), 0)
+    expect_equal(loop_queue_length(loop = global_loop()), 1)
+
+    run_now(loop = global_loop())
+    expect_equal(loop_queue_length(loop = global_loop()), 0)
+    expect_identical(x, 1)
+  })
+})

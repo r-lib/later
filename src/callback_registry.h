@@ -138,6 +138,9 @@ public:
   // Is the registry completely empty?
   bool empty() const;
 
+  // How many callbacks are currently queued?
+  size_t queueLength() const;
+
   // Is anything ready to execute?
   bool due(const Timestamp& time = Timestamp(), bool recursive = true) const;
 

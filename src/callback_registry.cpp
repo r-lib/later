@@ -343,6 +343,11 @@ bool CallbackRegistry::empty() const {
   return this->queue.empty();
 }
 
+size_t CallbackRegistry::queueLength() const {
+  Guard guard(mutex);
+  return this->queue.size();
+}
+
 // Returns true if the smallest timestamp exists and is not in the future.
 bool CallbackRegistry::due(const Timestamp& time, bool recursive) const {
   ASSERT_MAIN_THREAD()

@@ -314,6 +314,17 @@ loop_empty <- function(loop = current_loop()) {
   idle(loop$id)
 }
 
+#' Check how many callbacks are queued in a later loop
+#'
+#' Returns the number of callbacks that are scheduled to execute in the present
+#' or future.
+#'
+#' @inheritParams create_loop
+#' @export
+loop_queue_length <- function(loop = current_loop()) {
+  queueLength(loop$id)
+}
+
 #' Relative time to next scheduled operation
 #'
 #' Returns the duration between now and the earliest operation that is currently

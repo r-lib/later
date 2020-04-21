@@ -299,6 +299,16 @@ void ensureInitialized() {
 }
 
 // [[Rcpp::export]]
+size_t queueLength(int loop_id) {
+  ASSERT_MAIN_THREAD()
+  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(loop_id);
+  if (registry == nullptr) {
+    Rf_error("CallbackRegistry does not exist.");
+  }
+  return registry->queueLength();
+}
+
+// [[Rcpp::export]]
 std::string execLater(Rcpp::Function callback, double delaySecs, int loop_id) {
   ASSERT_MAIN_THREAD()
   ensureInitialized();
