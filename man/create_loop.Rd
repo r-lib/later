@@ -55,7 +55,11 @@ you would run your asynchronous code using a private event loop.
 which is useful when for scheduling tasks when you do not want to interfere
 with the global event loop.
 
-\code{destroy_loop} destroys a private event loop.
+\code{destroy_loop} marks a private event loop for destruction. Note that if
+the loop has a parent, it will not actually be destroyed until the loop is
+empty. If loop does not have a parent, then it will be destroyed right away,
+since, with no reference to the loop and no parent, there is no way to run
+the callbacks.
 
 \code{exists_loop} reports whether an event loop exists -- that is, that it
 has not been destroyed.

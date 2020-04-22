@@ -20,7 +20,7 @@ Imports:
     rlang
 LinkingTo: Rcpp, BH
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.0
 Suggests:
     knitr,
     rmarkdown,
