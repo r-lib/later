@@ -298,13 +298,14 @@ test_that("Grandchildren loops whose parent is destroyed should not autorun", {
     later(function() l1_ran <<- l1_ran + 1, loop = l1)
   })
 
-  destroy_loop(l)
+  notify_r_ref_deleted(l)
   run_now()
   # l will run, because the underlying registry exists until empty. It also
   # causes l1 to run.
   expect_identical(l_ran, 1)
   expect_identical(l1_ran, 1)
   expect_false(exists_loop(l))
+  # l1 should still exist because we still have a reference to it.
   expect_true(exists_loop(l1))
 
   # Schedule another function that we don't expect to actually run.
@@ -321,8 +322,9 @@ test_that("Grandchildren loops whose parent is destroyed should not autorun", {
   expect_identical(l1_ran, 1)
   expect_true(exists_loop(l1))
   expect_false(l1_finalized)
-  # Destroying l1 will take effect immediately
-  expect_true(destroy_loop(l1))
+  # If the reference is lost (like when the loop handle is GC'd) l1 will take
+  # effect immediately.
+  expect_true(notify_r_ref_deleted(l1))
   expect_false(exists_loop(l1))
   gc() # Make the finalizer run
   expect_true(l1_finalized)
@@ -345,19 +347,23 @@ test_that("Removing parent loop allows loop to be deleted", {
     )
   })
 
-  # Calling destroy_loop on the child should NOT cause the finalizer to run --
-  # the loop won't actaully be destroyed because it (A) has a parent AND (B) has
-  # a callback.
-  destroy_loop(l1)
+  # Removing the ref to the child should NOT cause the finalizer to run -- the
+  # loop won't actually be destroyed because it (A) has a parent AND (B) has a
+  # callback. notify_r_ref_deleted(l1)
+  rm(l1)
+  gc()
   gc()
   expect_identical(x, 0)
 
   # If we destroy the parent loop, then the finalizer will be called, because
   # even though the child loop has a callback, it no longer has a parent.
-  # Because destroy_loop() has been called on its handle and its parent, there's
-  # no way to run callbacks in the child, so the internal representation of the
-  # child loop can be deleted, along with all the callbacks it contains.
-  destroy_loop(l)
+  # Because both the handle and its parent have been GC'd, there's no way to run
+  # callbacks in the child, so the internal representation of the child loop can
+  # be deleted, along with all the callbacks it contains.
+  rm(l)
+  # Use 2 GC's because the first causes the loops to be GC'd; the second causes
+  # the function that was queued in a loop to be GC'd.
+  gc()
   gc()
   expect_identical(x, 1)
 })

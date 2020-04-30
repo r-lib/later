@@ -31,11 +31,7 @@
 #' which is useful when for scheduling tasks when you do not want to interfere
 #' with the global event loop.
 #'
-#' \code{destroy_loop} marks a private event loop for destruction. Note that if
-#' the loop has a parent, it will not actually be destroyed until the loop is
-#' empty. If loop does not have a parent, then it will be destroyed right away,
-#' since, with no reference to the loop and no parent, there is no way to run
-#' the callbacks.
+#' \code{destroy_loop} destroys a private event loop.
 #'
 #' \code{exists_loop} reports whether an event loop exists -- that is, that it
 #' has not been destroyed.
@@ -101,16 +97,28 @@ create_loop <- function(parent = current_loop(), autorun = NULL) {
   .loops[[sprintf("%d", id)]] <- rlang::new_weakref(loop)
 
   if (id != 0L) {
-    # Automatically destroy the loop when the handle is GC'd (unless it's the
-    # global loop.) The global loop handle never gets GC'd under normal
-    # circumstances because .globals$global_loop refers to it. However, if the
-    # package is unloaded it can get GC'd, and we don't want the
-    # destroy_loop() finalizer to give an error message about not being able
-    # to destroy the global loop.
-    reg.finalizer(loop, destroy_loop)
+    # Inform the C++ layer that there are no more R references when the handle
+    # is GC'd (unless it's the global loop.) The global loop handle never gets
+    # GC'd under normal circumstances because .globals$global_loop refers to it.
+    # However, if the package is unloaded it can get GC'd, and we don't want the
+    # destroy_loop() finalizer to give an error message about not being able to
+    # destroy the global loop.
+    reg.finalizer(loop, notify_r_ref_deleted)
   }
 
   loop
+}
+
+notify_r_ref_deleted <- function(loop) {
+  if (identical(loop, global_loop())) {
+    stop("Can't notify that reference to global loop is deleted.")
+  }
+
+  res <- notifyRRefDeleted(loop$id)
+  if (res) {
+    rm(list = sprintf("%d", loop$id), envir = .loops)
+  }
+  invisible(res)
 }
 
 #' @rdname create_loop

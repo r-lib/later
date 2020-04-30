@@ -151,15 +151,15 @@ test_that("Cancelling callbacks on persistent private loops without parent", {
 })
 
 test_that("Cancelling callbacks on persistent private loops with parent", {
-  l1 <- create_loop(parent = current_loop())
-
-  # If destroy_loop() is called but the loop _does have_ a parent, then the
+  # If the loop handle is GC'd but the loop _does have_ a parent, then the
   # underlying objects will not be destroyed right away, so the cancel() will
   # work.
   cancel <- NULL
   x <- 0
-  cancel <- later(function() { x <<- x + 1 }, loop = l1)
-  destroy_loop(l1)
+  local({
+    l1 <- create_loop(parent = current_loop())
+    cancel <<- later(function() { x <<- x + 1 }, loop = l1)
+  })
   expect_true(cancel())
   expect_false(cancel())
   expect_identical(x, 0)

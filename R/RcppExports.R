@@ -21,6 +21,10 @@ deleteCallbackRegistry <- function(loop_id) {
     .Call('_later_deleteCallbackRegistry', PACKAGE = 'later', loop_id)
 }
 
+notifyRRefDeleted <- function(loop_id) {
+    .Call('_later_notifyRRefDeleted', PACKAGE = 'later', loop_id)
+}
+
 createCallbackRegistry <- function(id, parent_id) {
     invisible(.Call('_later_createCallbackRegistry', PACKAGE = 'later', id, parent_id))
 }

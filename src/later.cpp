@@ -142,8 +142,24 @@ bool deleteCallbackRegistry(int loop_id) {
     Rf_error("Can't delete current loop.");
   }
 
+  return callbackRegistryTable.remove(loop_id);
+}
+
+
+// This is called when the R loop handle is GC'd.
+// [[Rcpp::export]]
+bool notifyRRefDeleted(int loop_id) {
+  ASSERT_MAIN_THREAD()
+  if (loop_id == GLOBAL_LOOP) {
+    Rf_error("Can't delete global loop.");
+  }
+  if (loop_id == getCurrentRegistryId()) {
+    Rf_error("Can't delete current loop.");
+  }
+
   return callbackRegistryTable.notifyRRefDeleted(loop_id);
 }
+
 
 // [[Rcpp::export]]
 void createCallbackRegistry(int id, int parent_id) {

@@ -144,6 +144,11 @@ public:
     // * The registry is empty, OR the registry has no parent.
     // This logic is equivalent to the logic describing the function, just in
     // a different order.
+    //
+    // std::map are sorted, and children always have a larger ID than their
+    // parents. Because of this, if there is a case where initially a child does
+    // not have any R refs, but the parent does have an R ref, then the parent's
+    // R ref is deleted, both will removed in a single pass.
     while (it != registries.end()) {
       if (!it->second.r_ref_exists &&
           (it->second.registry->empty() || it->second.registry->parent == nullptr))
@@ -159,11 +164,7 @@ public:
     }
   }
 
-private:
-  std::map<int, RegistryHandle> registries;
-  Mutex mutex;
-  ConditionVariable condvar;
-
+  // Remove a callback registry from the table
   bool remove(int id) {
     // Removal is always called from the main thread.
     ASSERT_MAIN_THREAD()
@@ -211,6 +212,10 @@ private:
     return true;
   }
 
+private:
+  std::map<int, RegistryHandle> registries;
+  Mutex mutex;
+  ConditionVariable condvar;
 
 };
 

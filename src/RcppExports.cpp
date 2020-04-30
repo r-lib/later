@@ -57,6 +57,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// notifyRRefDeleted
+bool notifyRRefDeleted(int loop_id);
+RcppExport SEXP _later_notifyRRefDeleted(SEXP loop_idSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type loop_id(loop_idSEXP);
+    rcpp_result_gen = Rcpp::wrap(notifyRRefDeleted(loop_id));
+    return rcpp_result_gen;
+END_RCPP
+}
 // createCallbackRegistry
 void createCallbackRegistry(int id, int parent_id);
 RcppExport SEXP _later_createCallbackRegistry(SEXP idSEXP, SEXP parent_idSEXP) {
