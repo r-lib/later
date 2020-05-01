@@ -15,7 +15,7 @@ class ConditionVariable;
 class Mutex : boost::noncopyable {
   friend class ConditionVariable;
   tct_mtx_t _m;
-  
+
 public:
   // type must be one of:
   //
@@ -32,17 +32,17 @@ public:
       throw std::runtime_error("Mutex creation failed");
     }
   }
-  
+
   virtual ~Mutex() {
     tct_mtx_destroy(&_m);
   }
-  
+
   void lock() {
     if (tct_mtx_lock(&_m) != tct_thrd_success) {
       throw std::runtime_error("Mutex failed to lock");
     }
   }
-  
+
   bool tryLock() {
     int res = tct_mtx_trylock(&_m);
     if (res == tct_thrd_success) {
@@ -53,7 +53,7 @@ public:
       throw std::runtime_error("Mutex failed to trylock");
     }
   }
-  
+
   void unlock() {
     if (tct_mtx_unlock(&_m) != tct_thrd_success) {
       throw std::runtime_error("Mutex failed to unlock");
@@ -63,12 +63,12 @@ public:
 
 class Guard : boost::noncopyable {
   Mutex* _mutex;
-  
+
 public:
-  Guard(Mutex& mutex) : _mutex(&mutex) {
+  Guard(Mutex* mutex) : _mutex(mutex) {
     _mutex->lock();
   }
-  
+
   ~Guard() {
     _mutex->unlock();
   }
@@ -77,7 +77,7 @@ public:
 class ConditionVariable : boost::noncopyable {
   tct_mtx_t* _m;
   tct_cnd_t _c;
-  
+
 public:
   ConditionVariable(Mutex& mutex) : _m(&mutex._m) {
     // If time_t isn't integral, our addSeconds logic needs to change,
@@ -88,38 +88,38 @@ public:
     // negative values for secs.
     if (!boost::is_signed<time_t>::value)
       throw std::runtime_error("Signed time_t type expected");
-    
+
     if (tct_cnd_init(&_c) != tct_thrd_success)
       throw std::runtime_error("Condition variable failed to initialize");
   }
-  
+
   virtual ~ConditionVariable() {
     tct_cnd_destroy(&_c);
   }
-  
+
   // Unblocks one thread (if any are waiting)
   void signal() {
     if (tct_cnd_signal(&_c) != tct_thrd_success)
       throw std::runtime_error("Condition variable failed to signal");
   }
-  
+
   // Unblocks all waiting threads
   void broadcast() {
     if (tct_cnd_broadcast(&_c) != tct_thrd_success)
       throw std::runtime_error("Condition variable failed to broadcast");
   }
-  
+
   void wait() {
     if (tct_cnd_wait(&_c, _m) != tct_thrd_success)
       throw std::runtime_error("Condition variable failed to wait");
   }
-  
+
   bool timedwait(double timeoutSecs) {
     timespec ts;
     if (timespec_get(&ts, TIME_UTC) != TIME_UTC) {
       throw std::runtime_error("timespec_get failed");
     }
-    
+
     ts = addSeconds(ts, timeoutSecs);
 
     int res = tct_cnd_timedwait(&_c, _m, &ts);

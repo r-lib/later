@@ -96,6 +96,8 @@ struct pointer_less_than {
 // Stores R function callbacks, ordered by timestamp.
 class CallbackRegistry {
 private:
+  int id;
+
   // Most of the behavior of the registry is like a priority queue. However, a
   // std::priority_queue only allows access to the top element, and when we
   // cancel a callback or get an Rcpp::List representation, we need random
@@ -106,11 +108,18 @@ private:
   // objects to be copied on the wrong thread, and even trigger an R GC event
   // on the wrong thread. https://github.com/r-lib/later/issues/39
   cbSet queue;
-  mutable Mutex mutex;
-  mutable ConditionVariable condvar;
+  Mutex* mutex;
+  ConditionVariable* condvar;
 
 public:
-  CallbackRegistry();
+  // The CallbackRegistry must be given a Mutex and ConditionVariable when
+  // initialized, because they are shared among the CallbackRegistry objects
+  // and the CallbackRegistryTable; they serve as a global lock. Note that the
+  // lifetime of these objects must be longer than the CallbackRegistry.
+  CallbackRegistry(int id, Mutex* mutex, ConditionVariable* condvar);
+  ~CallbackRegistry();
+
+  int getId() const;
 
   // Add a function to the registry, to be executed at `secs` seconds in
   // the future (i.e. relative to the current time).
@@ -124,21 +133,28 @@ public:
 
   // The smallest timestamp present in the registry, if any.
   // Use this to determine the next time we need to pump events.
-  Optional<Timestamp> nextTimestamp() const;
+  Optional<Timestamp> nextTimestamp(bool recursive = true) const;
 
   // Is the registry completely empty?
   bool empty() const;
 
   // Is anything ready to execute?
-  bool due(const Timestamp& time = Timestamp()) const;
+  bool due(const Timestamp& time = Timestamp(), bool recursive = true) const;
 
   // Pop and return an ordered list of functions to execute now.
   std::vector<Callback_sp> take(size_t max = -1, const Timestamp& time = Timestamp());
 
-  bool wait(double timeoutSecs) const;
+  // Wait until the next available callback is ready to execute.
+  bool wait(double timeoutSecs, bool recursive) const;
 
   // Return a List of items in the queue.
   Rcpp::List list() const;
+
+  // References to parent and children registries. These are used for
+  // automatically running child loops. They should only be accessed and
+  // modified from the main thread.
+  boost::shared_ptr<CallbackRegistry> parent;
+  std::vector<boost::shared_ptr<CallbackRegistry> > children;
 };
 
 #endif // _CALLBACK_REGISTRY_H_

@@ -12,16 +12,24 @@
 
 #define GLOBAL_LOOP 0
 
-boost::shared_ptr<CallbackRegistry> getCallbackRegistry(int loop);
+boost::shared_ptr<CallbackRegistry> getGlobalRegistry();
 
 bool execCallbacksForTopLevel();
 bool at_top_level();
 
-bool execCallbacks(double timeoutSecs = 0, bool runAll = true, int loop = GLOBAL_LOOP);
+bool execCallbacks(double timeoutSecs, bool runAll, int loop_id);
 bool idle(int loop);
 
 extern "C" uint64_t execLaterNative(void (*func)(void*), void* data, double secs);
-extern "C" uint64_t execLaterNative2(void (*func)(void*), void* data, double secs, int loop);
+extern "C" uint64_t execLaterNative2(void (*func)(void*), void* data, double secs, int loop_id);
 extern "C" int apiVersion();
+
+void ensureInitialized();
+// Declare platform-specific functions that are implemented in later_posix.cpp
+// and later_win32.cpp.
+void ensureAutorunnerInitialized();
+
+uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp::Function callback, double delaySecs, bool resetTimer);
+uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, void (*callback)(void*), void* data, double delaySecs, bool resetTimer);
 
 #endif // _LATER_H_

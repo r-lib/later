@@ -5,11 +5,15 @@
 .onLoad <- function(...) {
   ensureInitialized()
   .globals$next_id <- 0L
-  .globals$global_loop <- create_loop(autorun = FALSE)
-  .globals$current_loop <- .globals$global_loop
+  # Store a ref to the global loop so it doesn't get GC'd.
+  .globals$global_loop <- create_loop(parent = NULL)
 }
 
 .globals <- new.env(parent = emptyenv())
+# A registry of weak refs to loop handle objects. Given an ID number, we can
+# get the corresponding loop handle. We use weak refs because we don't want
+# this registry to keep the loop objects alive.
+.loops <- new.env(parent = emptyenv())
 
 #' Private event loops
 #'
@@ -47,39 +51,74 @@
 #'
 #' @param loop A handle to an event loop.
 #' @param expr An expression to evaluate.
-#' @param autorun Should this event loop automatically be run when its parent
-#'   loop runs? Currently, only FALSE is allowed, but in the future TRUE will
-#'   be implemented and the default. Because in the future the default will
-#'   change, for now any code that calls \code{create_loop} must explicitly
-#'   pass in \code{autorun=FALSE}.
+#' @param autorun This exists only for backward compatibility. If set to
+#'   \code{FALSE}, it is equivalent to using \code{parent=NULL}.
+#' @param parent The parent event loop for the one being created. Whenever the
+#'   parent loop runs, this loop will also automatically run, without having to
+#'   manually call \code{\link{run_now}()} on this loop. If \code{NULL}, then
+#'   this loop will not have a parent event loop that automatically runs it; the
+#'   only way to run this loop will be by calling \code{\link{run_now}()} on this
+#'   loop.
 #' @rdname create_loop
 #'
 #' @export
-create_loop <- function(autorun = NULL) {
-  if (!identical(autorun, FALSE)) {
-    stop("autorun must be set to FALSE (until TRUE is implemented).")
-  }
-
+create_loop <- function(parent = current_loop(), autorun = NULL) {
   id <- .globals$next_id
   .globals$next_id <- id + 1L
-  createCallbackRegistry(id)
+
+  if (!is.null(autorun)) {
+    # This is for backward compatibility, if `create_loop(autorun=FALSE)` is called.
+    parent <- NULL
+  }
+  if (identical(parent, FALSE)) {
+    # This is for backward compatibility, if `create_loop(FALSE)` is called.
+    # (Previously the first and only parameter was `autorun`.)
+    parent <- NULL
+    warning("create_loop(FALSE) is deprecated. Please use create_loop(parent=NULL) from now on.")
+  }
+  if (!is.null(parent) && !inherits(parent, "event_loop")) {
+    stop("`parent` must be NULL or an event_loop object.")
+  }
+
+  if (is.null(parent)) {
+    parent_id <- -1L
+  } else {
+    parent_id <- parent$id
+  }
+  createCallbackRegistry(id, parent_id)
 
   # Create the handle for the loop
   loop <- new.env(parent = emptyenv())
   class(loop) <- "event_loop"
   loop$id <- id
   lockBinding("id", loop)
+
+  # Add a weak reference to the loop object in our registry.
+  .loops[[sprintf("%d", id)]] <- rlang::new_weakref(loop)
+
   if (id != 0L) {
-    # Automatically destroy the loop when the handle is GC'd (unless it's the
-    # global loop.) The global loop handle never gets GC'd under normal
-    # circumstances because .globals$global_loop refers to it. However, if the
-    # package is unloaded it can get GC'd, and we don't want the
-    # destroy_loop() finalizer to give an error message about not being able
-    # to destroy the global loop.
-    reg.finalizer(loop, destroy_loop)
+    # Inform the C++ layer that there are no more R references when the handle
+    # is GC'd (unless it's the global loop.) The global loop handle never gets
+    # GC'd under normal circumstances because .globals$global_loop refers to it.
+    # However, if the package is unloaded it can get GC'd, and we don't want the
+    # destroy_loop() finalizer to give an error message about not being able to
+    # destroy the global loop.
+    reg.finalizer(loop, notify_r_ref_deleted)
   }
 
   loop
+}
+
+notify_r_ref_deleted <- function(loop) {
+  if (identical(loop, global_loop())) {
+    stop("Can't notify that reference to global loop is deleted.")
+  }
+
+  res <- notifyRRefDeleted(loop$id)
+  if (res) {
+    rm(list = sprintf("%d", loop$id), envir = .loops)
+  }
+  invisible(res)
 }
 
 #' @rdname create_loop
@@ -89,7 +128,11 @@ destroy_loop <- function(loop) {
     stop("Can't destroy global loop.")
   }
 
-  deleteCallbackRegistry(loop$id)
+  res <- deleteCallbackRegistry(loop$id)
+  if (res) {
+    rm(list = sprintf("%d", loop$id), envir = .loops)
+  }
+  invisible(res)
 }
 
 #' @rdname create_loop
@@ -101,13 +144,24 @@ exists_loop <- function(loop) {
 #' @rdname create_loop
 #' @export
 current_loop <- function() {
-  .globals$current_loop
+  id <- getCurrentRegistryId()
+  loop_weakref <- .loops[[sprintf("%d", id)]]
+  if (is.null(loop_weakref)) {
+    stop("Current loop with id ", id, " not found.")
+  }
+
+  loop <- rlang::wref_key(loop_weakref)
+  if (is.null(loop)) {
+    stop("Current loop with id ", id, " not found.")
+  }
+
+  loop
 }
 
 #' @rdname create_loop
 #' @export
 with_temp_loop <- function(expr) {
-  loop <- create_loop(autorun = FALSE)
+  loop <- create_loop(parent = NULL)
   on.exit(destroy_loop(loop))
 
   with_loop(loop, expr)
@@ -116,10 +170,13 @@ with_temp_loop <- function(expr) {
 #' @rdname create_loop
 #' @export
 with_loop <- function(loop, expr) {
-  if (!identical(loop, current_loop())) {
-    old_loop <- .globals$current_loop
-    on.exit(.globals$current_loop <- old_loop, add = TRUE)
-    .globals$current_loop <- loop
+  if (!exists_loop(loop)) {
+    stop("loop has been destroyed!")
+  }
+  old_loop <- current_loop()
+  if (!identical(loop, old_loop)) {
+    on.exit(setCurrentRegistryId(old_loop$id), add = TRUE)
+    setCurrentRegistryId(loop$id)
   }
 
   force(expr)
@@ -134,7 +191,11 @@ global_loop <- function() {
 
 #' @export
 format.event_loop <- function(x, ...) {
-  paste0("<event loop>\n  id: ", x$id)
+  str <- paste0("<event loop> ID: ", x$id)
+  if (!exists_loop(x)) {
+    str <- paste(str, "(destroyed)")
+  }
+  str
 }
 
 #' @export
@@ -191,15 +252,17 @@ later <- function(func, delay = 0, loop = current_loop()) {
   f <- rlang::as_function(func)
   id <- execLater(f, delay, loop$id)
 
-  invisible(create_canceller(id, loop))
+  invisible(create_canceller(id, loop$id))
 }
 
 # Returns a function that will cancel a callback with the given ID. If the
 # callback has already been executed or canceled, then the function has no
 # effect.
-create_canceller <- function(id, loop) {
+create_canceller <- function(id, loop_id) {
+  force(id)
+  force(loop_id)
   function() {
-    invisible(cancel(id, loop$id))
+    invisible(cancel(id, loop_id))
   }
 }
 
@@ -236,9 +299,7 @@ run_now <- function(timeoutSecs = 0L, all = TRUE, loop = current_loop()) {
   if (!is.numeric(timeoutSecs))
     stop("timeoutSecs must be numeric")
 
-  with_loop(loop,
-    invisible(execCallbacks(timeoutSecs, all, loop$id))
-  )
+  invisible(execCallbacks(timeoutSecs, all, loop$id))
 }
 
 #' Check if later loop is empty

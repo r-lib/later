@@ -18,13 +18,13 @@ class Timer {
   boost::optional<tct_thrd_t> bgthread;
   boost::optional<Timestamp> wakeAt;
   bool stopped;
-  
+
   static int bg_main_func(void*);
   void bg_main();
 public:
   Timer(const boost::function<void ()>& callback);
   virtual ~Timer();
-  
+
   // Schedules the timer to fire next at the specified time.
   // If the timer is currently scheduled to fire, that will
   // be overwritten with this one (the timer only tracks one

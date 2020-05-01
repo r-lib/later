@@ -10,16 +10,16 @@
 #include "threadutils.h"
 
 #include "callback_registry.h"
+#include "callback_registry_table.h"
+
 #include "interrupt.h"
 
-// Declare platform-specific functions that are implemented in
-// later_posix.cpp and later_win32.cpp.
-// [[Rcpp::export]]
-void ensureInitialized();
-uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp::Function callback, double delaySecs, bool resetTimer);
-uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, void (*callback)(void*), void* data, double delaySecs, bool resetTimer);
+using boost::shared_ptr;
 
 static size_t exec_callbacks_reentrancy_count = 0;
+
+static CallbackRegistryTable callbackRegistryTable;
+
 
 class ProtectCallbacks {
 public:
@@ -70,106 +70,134 @@ bool at_top_level() {
   return nframe == 0;
 }
 
+// ============================================================================
+// Current registry/event loop
+// ============================================================================
+//
+// In the R code, the term "loop" is used. In the C++ code, the terms "loop"
+// and "registry" are both used. "Loop" is usually used when interfacing with
+// R-facing event loop, and "registry" is usually used when interfacing with
+// the implementation, which uses a callback registry.
+//
+// The current registry is kept track of entirely in C++, and not in R
+// (although it can be queried from R). This is because when running a loop
+// with children, it sets the current loop as it runs each of the children,
+// and to do so in R would require calling back into R for each child, which
+// would impose more overhead.
 
-// Each callback registry represents one event loop. Note that traversing and
-// modifying callbackRegistries should always happens on the same thread, to
-// avoid races.
-std::map<int, boost::shared_ptr<CallbackRegistry> > callbackRegistries;
-
-// Functions that search or manipulate callbackRegistries must use this mutex.
-// Some functions also have ASSERT_MAIN_THREAD in order to make sure that
-Mutex callbackRegistriesMutex(tct_mtx_plain | tct_mtx_recursive);
+static int current_registry;
 
 // [[Rcpp::export]]
-bool existsCallbackRegistry(int loop) {
-  Guard guard(callbackRegistriesMutex);
-  return (callbackRegistries.find(loop) != callbackRegistries.end());
-}
-
-// [[Rcpp::export]]
-bool createCallbackRegistry(int loop) {
+void setCurrentRegistryId(int id) {
   ASSERT_MAIN_THREAD()
-  Guard guard(callbackRegistriesMutex);
-  if (existsCallbackRegistry(loop)) {
-    Rcpp::stop("Can't create event loop %d because it already exists.", loop);
-  }
-  callbackRegistries[loop] = boost::make_shared<CallbackRegistry>();
-  return true;
+  current_registry = id;
 }
 
-// Gets a callback registry by ID.
-boost::shared_ptr<CallbackRegistry> getCallbackRegistry(int loop) {
-  Guard guard(callbackRegistriesMutex);
-  if (!existsCallbackRegistry(loop)) {
-    // This function can be called from different threads so we can't use
-    // Rcpp::stop().
-    throw std::runtime_error("Callback registry (loop) " + toString(loop) + " not found.");
-  }
-  return callbackRegistries[loop];
-}
-
-
-bool deletingCallbackRegistry = false;
 // [[Rcpp::export]]
-bool deleteCallbackRegistry(int loop) {
+int getCurrentRegistryId() {
   ASSERT_MAIN_THREAD()
-  // Detect re-entrant calls to this function and just return in that case.
-  // This can hypothetically happen if as we're deleting a callback registry,
-  // an R finalizer runs while we're removing references to the Rcpp::Function
-  // objects, and the finalizer calls this function. Since this function is
-  // always called from the same thread, we don't have to worry about races
-  // with this variable.
-  if (deletingCallbackRegistry) {
-    return false;
-  }
-
-  Guard guard(callbackRegistriesMutex);
-
-  deletingCallbackRegistry = true;
-  BOOST_SCOPE_EXIT(void) {
-    deletingCallbackRegistry = false;
-  } BOOST_SCOPE_EXIT_END
-
-  if (!existsCallbackRegistry(loop)) {
-    return false;
-  }
-
-  int n = callbackRegistries.erase(loop);
-
-  if (n == 0) return false;
-  else return true;
+  return current_registry;
 }
 
+// Class for setting current registry and resetting when function exits, using
+// RAII.
+class CurrentRegistryGuard {
+public:
+  CurrentRegistryGuard(int id) {
+    ASSERT_MAIN_THREAD()
+    old_id = getCurrentRegistryId();
+    setCurrentRegistryId(id);
+  }
+  ~CurrentRegistryGuard() {
+    setCurrentRegistryId(old_id);
+  }
+private:
+  int old_id;
+};
+
+
+// ============================================================================
+// Callback registry functions
+// ============================================================================
+
+shared_ptr<CallbackRegistry> getGlobalRegistry() {
+  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(GLOBAL_LOOP);
+  if (registry == nullptr) {
+    Rf_error("Global registry does not exist.");
+  }
+  return registry;
+}
+
+// This deletes a CallbackRegistry and deregisters it as a child of its
+// parent. Any children of this registry are orphaned -- they no longer have a
+// parent. (Maybe this should be an option?)
+//
 // [[Rcpp::export]]
-Rcpp::List list_queue_(int loop) {
+bool deleteCallbackRegistry(int loop_id) {
   ASSERT_MAIN_THREAD()
-  Guard guard(callbackRegistriesMutex);
-  return getCallbackRegistry(loop)->list();
+  if (loop_id == GLOBAL_LOOP) {
+    Rf_error("Can't delete global loop.");
+  }
+  if (loop_id == getCurrentRegistryId()) {
+    Rf_error("Can't delete current loop.");
+  }
+
+  return callbackRegistryTable.remove(loop_id);
+}
+
+
+// This is called when the R loop handle is GC'd.
+// [[Rcpp::export]]
+bool notifyRRefDeleted(int loop_id) {
+  ASSERT_MAIN_THREAD()
+  if (loop_id == GLOBAL_LOOP) {
+    Rf_error("Can't delete global loop.");
+  }
+  if (loop_id == getCurrentRegistryId()) {
+    Rf_error("Can't delete current loop.");
+  }
+
+  return callbackRegistryTable.notifyRRefDeleted(loop_id);
 }
 
 
 // [[Rcpp::export]]
-bool execCallbacks(double timeoutSecs, bool runAll, int loop) {
+void createCallbackRegistry(int id, int parent_id) {
+  ASSERT_MAIN_THREAD()
+  callbackRegistryTable.create(id, parent_id);
+}
+
+// [[Rcpp::export]]
+bool existsCallbackRegistry(int id) {
+  ASSERT_MAIN_THREAD()
+  return callbackRegistryTable.exists(id);
+}
+
+// [[Rcpp::export]]
+Rcpp::List list_queue_(int id) {
+  ASSERT_MAIN_THREAD()
+  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(id);
+  if (registry == nullptr) {
+    Rf_error("CallbackRegistry does not exist.");
+  }
+  return registry->list();
+}
+
+
+// Execute callbacks for a single event loop.
+bool execCallbacksOne(
+  bool runAll,
+  shared_ptr<CallbackRegistry> callback_registry,
+  Timestamp now
+) {
   ASSERT_MAIN_THREAD()
   // execCallbacks can be called directly from C code, and the callbacks may
   // include Rcpp code. (Should we also call wrap?)
   Rcpp::RNGScope rngscope;
   ProtectCallbacks pcscope;
 
-  boost::shared_ptr<CallbackRegistry> callback_registry;
-  {
-    // Only lock callbackRegistries for this scope so that when we're waiting
-    // or running callbacks later in this function, we won't block other
-    // threads from adding items to the registry.
-    Guard guard(callbackRegistriesMutex);
-    callback_registry = getCallbackRegistry(loop);
-  }
-
-  if (!callback_registry->wait(timeoutSecs)) {
-    return false;
-  }
-
-  Timestamp now;
+  // Set current loop for the duration of this function.
+  CurrentRegistryGuard current_registry_guard(callback_registry->getId());
 
   do {
     // We only take one at a time, because we don't want to lose callbacks if
@@ -181,6 +209,39 @@ bool execCallbacks(double timeoutSecs, bool runAll, int loop) {
     // This line may throw errors!
     callbacks[0]->invoke_wrapped();
   } while (runAll);
+
+  // I think there's no need to lock this since it's only modified from the
+  // main thread. But need to check.
+  std::vector<boost::shared_ptr<CallbackRegistry> > children = callback_registry->children;
+  for (std::vector<boost::shared_ptr<CallbackRegistry> >::iterator it = children.begin();
+       it != children.end();
+       ++it)
+  {
+    execCallbacksOne(true, *it, now);
+  }
+
+  return true;
+}
+
+// Execute callbacks for an event loop and its children.
+// [[Rcpp::export]]
+bool execCallbacks(double timeoutSecs, bool runAll, int loop_id) {
+  ASSERT_MAIN_THREAD()
+  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(loop_id);
+  if (registry == nullptr) {
+    Rf_error("CallbackRegistry does not exist.");
+  }
+
+  if (!registry->wait(timeoutSecs, true)) {
+    return false;
+  }
+
+  Timestamp now;
+  execCallbacksOne(runAll, registry, now);
+
+  // Call this now, in case any CallbackRegistries which have no R references
+  // have emptied.
+  callbackRegistryTable.pruneRegistries();
   return true;
 }
 
@@ -209,18 +270,43 @@ bool execCallbacksForTopLevel() {
 }
 
 // [[Rcpp::export]]
-bool idle(int loop) {
+bool idle(int loop_id) {
   ASSERT_MAIN_THREAD()
-  Guard guard(callbackRegistriesMutex);
-  return getCallbackRegistry(loop)->empty();
+  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(loop_id);
+  if (registry == nullptr) {
+    Rf_error("CallbackRegistry does not exist.");
+  }
+  return registry->empty();
+}
+
+
+static bool initialized = false;
+// [[Rcpp::export]]
+void ensureInitialized() {
+  if (initialized) {
+    return;
+  }
+  REGISTER_MAIN_THREAD()
+
+  // Note that the global registry is not created here, but in R, from the
+  // .onLoad function.
+  setCurrentRegistryId(GLOBAL_LOOP);
+
+  // Call the platform-specific initialization for the mechanism that runs the
+  // event loop when the console is idle.
+  ensureAutorunnerInitialized();
+  initialized = true;
 }
 
 // [[Rcpp::export]]
-std::string execLater(Rcpp::Function callback, double delaySecs, int loop) {
+std::string execLater(Rcpp::Function callback, double delaySecs, int loop_id) {
   ASSERT_MAIN_THREAD()
   ensureInitialized();
-  Guard guard(callbackRegistriesMutex);
-  uint64_t callback_id = doExecLater(getCallbackRegistry(loop), callback, delaySecs, loop == GLOBAL_LOOP);
+  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(loop_id);
+  if (registry == nullptr) {
+    Rf_error("CallbackRegistry does not exist.");
+  }
+  uint64_t callback_id = doExecLater(registry, callback, delaySecs, true);
 
   // We have to convert it to a string in order to maintain 64-bit precision,
   // since R doesn't support 64 bit integers.
@@ -229,21 +315,17 @@ std::string execLater(Rcpp::Function callback, double delaySecs, int loop) {
 
 
 
-bool cancel(uint64_t callback_id, int loop) {
+bool cancel(uint64_t callback_id, int loop_id) {
   ASSERT_MAIN_THREAD()
-  Guard guard(callbackRegistriesMutex);
-  if (!existsCallbackRegistry(loop))
+  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(loop_id);
+  if (registry == nullptr) {
     return false;
-
-  boost::shared_ptr<CallbackRegistry> reg = getCallbackRegistry(loop);
-  if (!reg)
-    return false;
-
-  return reg->cancel(callback_id);
+  }
+  return registry->cancel(callback_id);
 }
 
 // [[Rcpp::export]]
-bool cancel(std::string callback_id_s, int loop) {
+bool cancel(std::string callback_id_s, int loop_id) {
   ASSERT_MAIN_THREAD()
   uint64_t callback_id;
   std::istringstream iss(callback_id_s);
@@ -255,16 +337,20 @@ bool cancel(std::string callback_id_s, int loop) {
     return false;
   }
 
-  return cancel(callback_id, loop);
+  return cancel(callback_id, loop_id);
 }
 
 
 
 // [[Rcpp::export]]
-double nextOpSecs(int loop) {
+double nextOpSecs(int loop_id) {
   ASSERT_MAIN_THREAD()
-  Guard guard(callbackRegistriesMutex);
-  Optional<Timestamp> nextTime = getCallbackRegistry(loop)->nextTimestamp();
+  shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(loop_id);
+  if (registry == nullptr) {
+    Rf_error("CallbackRegistry does not exist.");
+  }
+
+  Optional<Timestamp> nextTime = registry->nextTimestamp();
   if (!nextTime.has_value()) {
     return R_PosInf;
   } else {
@@ -281,16 +367,9 @@ extern "C" uint64_t execLaterNative(void (*func)(void*), void* data, double dela
 
 // Schedules a C function to execute on a specific event loop. Returns
 // callback ID on success, or 0 on error.
-extern "C" uint64_t execLaterNative2(void (*func)(void*), void* data, double delaySecs, int loop) {
+extern "C" uint64_t execLaterNative2(void (*func)(void*), void* data, double delaySecs, int loop_id) {
   ensureInitialized();
-  Guard guard(callbackRegistriesMutex);
-  // This try is because getCallbackRegistry can throw, and if it happens on a
-  // background thread the process will stop.
-  try {
-    return doExecLater(getCallbackRegistry(loop), func, data, delaySecs, loop == GLOBAL_LOOP);
-  } catch (...) {
-    return 0;
-  }
+  return callbackRegistryTable.scheduleCallback(func, data, delaySecs, loop_id);
 }
 
 extern "C" int apiVersion() {

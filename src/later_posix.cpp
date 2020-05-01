@@ -44,7 +44,7 @@ size_t BUF_SIZE = 256;
 void *buf;
 
 void set_fd(bool ready) {
-  Guard g(m);
+  Guard g(&m);
 
   if (ready != hot) {
     if (ready) {
@@ -75,8 +75,9 @@ public:
   ResetTimerOnExit() {
   }
   ~ResetTimerOnExit() {
+    ASSERT_MAIN_THREAD()
     // Find the next event in the registry and, if there is one, set the timer.
-    Optional<Timestamp> nextEvent = getCallbackRegistry(GLOBAL_LOOP)->nextTimestamp();
+    Optional<Timestamp> nextEvent = getGlobalRegistry()->nextTimestamp();
     if (nextEvent.has_value()) {
       timer.set(*nextEvent);
     }
@@ -150,9 +151,8 @@ static void remove_dummy_handler(void *data) {
   close(dummy_pipe_out);
 }
 
-void ensureInitialized() {
+void ensureAutorunnerInitialized() {
   if (!initialized) {
-    REGISTER_MAIN_THREAD()
     buf = malloc(BUF_SIZE);
 
     int pipes[2];

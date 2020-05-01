@@ -16,25 +16,31 @@ extern SEXP _later_execLater(SEXP, SEXP, SEXP);
 extern SEXP _later_cancel(SEXP, SEXP);
 extern SEXP _later_nextOpSecs(SEXP);
 extern SEXP _later_testCallbackOrdering();
-extern SEXP _later_createCallbackRegistry(SEXP);
+extern SEXP _later_createCallbackRegistry(SEXP, SEXP);
 extern SEXP _later_deleteCallbackRegistry(SEXP);
 extern SEXP _later_existsCallbackRegistry(SEXP);
+extern SEXP _later_notifyRRefDeleted(SEXP);
+extern SEXP _later_setCurrentRegistryId(SEXP);
+extern SEXP _later_getCurrentRegistryId();
 extern SEXP _later_list_queue_(SEXP);
 extern SEXP _later_log_level(SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
-  {"_later_ensureInitialized",   (DL_FUNC) &_later_ensureInitialized,   0},
-  {"_later_execCallbacks",       (DL_FUNC) &_later_execCallbacks,       3},
-  {"_later_idle",                (DL_FUNC) &_later_idle,                1},
-  {"_later_execLater",           (DL_FUNC) &_later_execLater,           3},
-  {"_later_cancel",              (DL_FUNC) &_later_cancel,              2},
-  {"_later_nextOpSecs",          (DL_FUNC) &_later_nextOpSecs,          1},
-  {"_later_testCallbackOrdering", (DL_FUNC) &_later_testCallbackOrdering, 0},
-  {"_later_createCallbackRegistry", (DL_FUNC) &_later_createCallbackRegistry, 1},
+  {"_later_ensureInitialized",      (DL_FUNC) &_later_ensureInitialized,      0},
+  {"_later_execCallbacks",          (DL_FUNC) &_later_execCallbacks,          3},
+  {"_later_idle",                   (DL_FUNC) &_later_idle,                   1},
+  {"_later_execLater",              (DL_FUNC) &_later_execLater,              3},
+  {"_later_cancel",                 (DL_FUNC) &_later_cancel,                 2},
+  {"_later_nextOpSecs",             (DL_FUNC) &_later_nextOpSecs,             1},
+  {"_later_testCallbackOrdering",   (DL_FUNC) &_later_testCallbackOrdering,   0},
+  {"_later_createCallbackRegistry", (DL_FUNC) &_later_createCallbackRegistry, 2},
   {"_later_deleteCallbackRegistry", (DL_FUNC) &_later_deleteCallbackRegistry, 1},
   {"_later_existsCallbackRegistry", (DL_FUNC) &_later_existsCallbackRegistry, 1},
-  {"_later_list_queue_",         (DL_FUNC) &_later_list_queue_,         1},
-  {"_later_log_level",           (DL_FUNC) &_later_log_level,           1},
+  {"_later_notifyRRefDeleted",      (DL_FUNC) &_later_notifyRRefDeleted,      1},
+  {"_later_setCurrentRegistryId",   (DL_FUNC) &_later_setCurrentRegistryId, 1},
+  {"_later_getCurrentRegistryId",   (DL_FUNC) &_later_getCurrentRegistryId, 0},
+  {"_later_list_queue_",            (DL_FUNC) &_later_list_queue_,            1},
+  {"_later_log_level",              (DL_FUNC) &_later_log_level,              1},
   {NULL, NULL, 0}
 };
 
