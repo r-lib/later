@@ -3,6 +3,7 @@
 <!-- badges: start -->
 [![Build Status](https://travis-ci.org/r-lib/later.svg?branch=master)](https://travis-ci.org/r-lib/later)
 [![AppVeyor build status](https://ci.appveyor.com/api/projects/status/github/r-lib/later?branch=master&svg=true)](https://ci.appveyor.com/project/r-lib/later)
+[![R build status](https://github.com/r-lib/later/workflows/R-CMD-check/badge.svg)](https://github.com/r-lib/later/actions)
 <!-- badges: end -->
 
 
