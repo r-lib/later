@@ -3,7 +3,7 @@
 echo "Running configure script"
 
 # Find compiler
-CC=$("${R_HOME}"/bin/R CMD config CC)
+CC=`"${R_HOME}"/bin/R CMD config CC`
 
 # Detect whether -latomic is needed during linking. This is needed on some
 # platforms, notably ARM (Raspberry Pi).
