@@ -1,8 +1,6 @@
 # later
 
 <!-- badges: start -->
-[![Build Status](https://travis-ci.org/r-lib/later.svg?branch=master)](https://travis-ci.org/r-lib/later)
-[![AppVeyor build status](https://ci.appveyor.com/api/projects/status/github/r-lib/later?branch=master&svg=true)](https://ci.appveyor.com/project/r-lib/later)
 [![R build status](https://github.com/r-lib/later/workflows/R-CMD-check/badge.svg)](https://github.com/r-lib/later/actions)
 <!-- badges: end -->
 
@@ -60,7 +58,7 @@ public:
   BackgroundTask();
   virtual ~BackgroundTask();
 
-  // Start executing the task  
+  // Start executing the task
   void begin();
 
 protected:
@@ -70,7 +68,7 @@ protected:
   // to be passed into or out of the Execute method must be
   // included as fields on the Task subclass object.
   virtual void execute() = 0;
-  
+
   // A short task that runs on the main R thread after the
   // background task has completed. It's safe to access the
   // R runtime and R data structures from here.
@@ -98,12 +96,12 @@ protected:
     for (std::vector<double>::const_iterator it = inputVals.begin();
       it != inputVals.end();
       it++) {
-      
+
       sum += *it;
     }
     result = sum / inputVals.size();
   }
-  
+
   void complete() {
     Rprintf("Result is %f\n", result);
   }
