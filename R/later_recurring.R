@@ -3,6 +3,7 @@
 #'   then no limit.
 #' @examples
 #' later_recurring(~cat("Hello from the past\n"), 3, limit = 2)
+#' @export
 later_recurring <- function(func, delay, limit = NA, loop = current_loop()) {
   func <- rlang::as_function(func)
   cancelled <- FALSE
