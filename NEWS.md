@@ -1,5 +1,6 @@
 ## later 1.1.0.9000
 
+* Closed #138: later is now licensed as MIT. (#139)
 
 ## later 1.1.0.1
 

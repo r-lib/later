@@ -10,3 +10,4 @@
 ^src/Makevars$
 ^\.github$
 ^cran-comments\.md$
+^LICENSE\.md$
