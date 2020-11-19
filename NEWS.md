@@ -1,5 +1,6 @@
 ## later 1.1.0.9000
 
+* later is now licensed as MIT. (#138)
 
 ## later 1.1.0.1
 
