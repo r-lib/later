@@ -151,6 +151,20 @@ static void remove_dummy_handler(void *data) {
   close(dummy_pipe_out);
 }
 
+void deInitialize() {
+  ASSERT_MAIN_THREAD()
+  if (initialized) {
+    removeInputHandler(&R_InputHandlers, inputHandlerHandle);
+    close(pipe_in);
+    close(pipe_out);
+    initialized = 0;
+
+    // Trigger remove_dummy_handler()
+    // Store `ret` because otherwise it raises a significant warning.
+    ssize_t ret = write(dummy_pipe_in, "a", 1);
+  }
+}
+
 void ensureAutorunnerInitialized() {
   if (!initialized) {
     buf = malloc(BUF_SIZE);
@@ -166,6 +180,15 @@ void ensureAutorunnerInitialized() {
 
     inputHandlerHandle = addInputHandler(R_InputHandlers, pipe_out, async_input_handler, LATER_ACTIVITY);
 
+   // If the R process is forked, make sure that the child process doesn't mess
+   // with the pipes. This also means that functions scheduled in the child
+   // process with `later()` will only work if `run_now()` is called. In this
+   // situation, there's also the danger that a function will be scheduled by
+   // the parent process and then will be executed in the child process (in
+   // addition to in the parent process).
+   // https://github.com/r-lib/later/issues/140
+   pthread_atfork(NULL, NULL, deInitialize);
+
     // Need to add a dummy input handler to avoid segfault when the "real"
     // input handler removes the subsequent input handler in the linked list.
     // See https://github.com/rstudio/httpuv/issues/78
@@ -179,20 +202,6 @@ void ensureAutorunnerInitialized() {
     dummyInputHandlerHandle = addInputHandler(R_InputHandlers, dummy_pipe_out, remove_dummy_handler, LATER_DUMMY_ACTIVITY);
 
     initialized = 1;
-  }
-}
-
-void deInitialize() {
-  ASSERT_MAIN_THREAD()
-  if (initialized) {
-    removeInputHandler(&R_InputHandlers, inputHandlerHandle);
-    close(pipe_in);
-    close(pipe_out);
-    initialized = 0;
-
-    // Trigger remove_dummy_handler()
-    // Store `ret` because otherwise it raises a significant warning.
-    ssize_t ret = write(dummy_pipe_in, "a", 1);
   }
 }
 
