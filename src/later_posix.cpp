@@ -26,9 +26,11 @@ int initialized = 0;
 // The handles to the read and write ends of a pipe. We use this pipe
 // to signal R's input handler callback mechanism that we want to be
 // called back.
-int pipe_in, pipe_out;
+int pipe_in  = -1;
+int pipe_out = -1;
 
-int dummy_pipe_in, dummy_pipe_out;
+int dummy_pipe_in  = -1;
+int dummy_pipe_out = -1;
 
 // Whether the file descriptor is ready for reading, i.e., whether
 // the input handler callback is scheduled to be called. We use this
@@ -147,21 +149,40 @@ InputHandler* dummyInputHandlerHandle;
 static void remove_dummy_handler(void *data) {
   ASSERT_MAIN_THREAD()
   removeInputHandler(&R_InputHandlers, dummyInputHandlerHandle);
-  close(dummy_pipe_in);
-  close(dummy_pipe_out);
+  if (dummy_pipe_in  > 0) {
+    close(dummy_pipe_in);
+    dummy_pipe_in  = -1;
+  }
+  if (dummy_pipe_out > 0) {
+    close(dummy_pipe_out);
+    dummy_pipe_out = -1;
+  }
 }
 
-void deInitialize() {
+// Callback to run in child process after forking.
+void child_proc_after_fork() {
   ASSERT_MAIN_THREAD()
   if (initialized) {
     removeInputHandler(&R_InputHandlers, inputHandlerHandle);
-    close(pipe_in);
-    close(pipe_out);
-    initialized = 0;
 
-    // Trigger remove_dummy_handler()
-    // Store `ret` because otherwise it raises a significant warning.
-    ssize_t ret = write(dummy_pipe_in, "a", 1);
+    if (pipe_in  > 0) {
+      close(pipe_in);
+      pipe_in = -1;
+    }
+    if (pipe_out > 0) {
+      close(pipe_out);
+      pipe_out = -1;
+    }
+    if (dummy_pipe_in  > 0) {
+      close(dummy_pipe_in);
+      dummy_pipe_in  = -1;
+    }
+    if (dummy_pipe_out > 0) {
+      close(dummy_pipe_out);
+      dummy_pipe_out = -1;
+    }
+
+    initialized = 0;
   }
 }
 
@@ -187,7 +208,7 @@ void ensureAutorunnerInitialized() {
    // the parent process and then will be executed in the child process (in
    // addition to in the parent process).
    // https://github.com/r-lib/later/issues/140
-   pthread_atfork(NULL, NULL, deInitialize);
+   pthread_atfork(NULL, NULL, child_proc_after_fork);
 
     // Need to add a dummy input handler to avoid segfault when the "real"
     // input handler removes the subsequent input handler in the linked list.
@@ -202,6 +223,26 @@ void ensureAutorunnerInitialized() {
     dummyInputHandlerHandle = addInputHandler(R_InputHandlers, dummy_pipe_out, remove_dummy_handler, LATER_DUMMY_ACTIVITY);
 
     initialized = 1;
+  }
+}
+
+void deInitialize() {
+  ASSERT_MAIN_THREAD()
+  if (initialized) {
+    removeInputHandler(&R_InputHandlers, inputHandlerHandle);
+    if (pipe_in  > 0) {
+      close(pipe_in);
+      pipe_in = -1;
+    }
+    if (pipe_out > 0) {
+      close(pipe_out);
+      pipe_out = -1;
+    }
+    initialized = 0;
+
+    // Trigger remove_dummy_handler()
+    // Store `ret` because otherwise it raises a significant warning.
+    ssize_t ret = write(dummy_pipe_in, "a", 1);
   }
 }
 
