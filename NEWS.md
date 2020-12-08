@@ -2,6 +2,8 @@
 
 * Closed #138: later is now licensed as MIT. (#139)
 
+* Closed #140: Previously, the event loop stopped running if the R process was forked. (#141)
+
 ## later 1.1.0.1
 
 * Private event loops are now automatically run by their parent. That is, whenever an event loop is run, its children event loops are automatically run. The `create_loop()` function has a new parameter `parent`, which defaults to the current loop. The auto-running behavior can be disabled by using `create_loop(parent=NULL)`. (#119)
