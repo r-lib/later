@@ -5,7 +5,9 @@
 #include <iostream>
 
 #define R_NO_REMAP
+#ifndef STRICT_R_HEADERS
 #define STRICT_R_HEADERS
+#endif
 #include <Rinternals.h>
 
 // Needed for R_GetCCallable on R 3.3 and older; in more recent versions, this

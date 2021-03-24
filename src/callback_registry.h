@@ -3,15 +3,14 @@
 
 #include <Rcpp.h>
 #include <queue>
-#include <boost/operators.hpp>
-#include <boost/function.hpp>
-#include <boost/shared_ptr.hpp>
+#include <functional>
+#include <memory>
 #include "timestamp.h"
 #include "optional.h"
 #include "threadutils.h"
 
 // Callback is an abstract class with two subclasses. The reason that there
-// are two subclasses is because one of them is for C++ (boost::function)
+// are two subclasses is because one of them is for C++ (std::function)
 // callbacks, and the other is for R (Rcpp::Function) callbacks. Because
 // Callbacks can be created from either the main thread or a background
 // thread, the top-level Callback class cannot contain any Rcpp objects --
@@ -52,9 +51,9 @@ protected:
 };
 
 
-class BoostFunctionCallback : public Callback {
+class StdFunctionCallback : public Callback {
 public:
-  BoostFunctionCallback(Timestamp when, boost::function<void (void)> func);
+  StdFunctionCallback(Timestamp when, std::function<void (void)> func);
 
   void invoke() const {
     func();
@@ -63,7 +62,7 @@ public:
   Rcpp::RObject rRepresentation() const;
 
 private:
-  boost::function<void (void)> func;
+  std::function<void (void)> func;
 };
 
 
@@ -83,7 +82,7 @@ private:
 
 
 
-typedef boost::shared_ptr<Callback> Callback_sp;
+typedef std::shared_ptr<Callback> Callback_sp;
 
 template <typename T>
 struct pointer_less_than {
@@ -153,8 +152,8 @@ public:
   // References to parent and children registries. These are used for
   // automatically running child loops. They should only be accessed and
   // modified from the main thread.
-  boost::shared_ptr<CallbackRegistry> parent;
-  std::vector<boost::shared_ptr<CallbackRegistry> > children;
+  std::shared_ptr<CallbackRegistry> parent;
+  std::vector<std::shared_ptr<CallbackRegistry> > children;
 };
 
 #endif // _CALLBACK_REGISTRY_H_

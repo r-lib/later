@@ -1,21 +1,12 @@
-#include <boost/bind.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
+#include <atomic>
+#include <functional>
+#include <memory>
 #include <vector>
+
 #include "callback_registry.h"
 #include "debug.h"
 
-#if __cplusplus >= 201103L
-  #include <atomic>
-  std::atomic<uint64_t> nextCallbackId(1);
-#else
-  // Fall back to boost::atomic if std::atomic isn't available. We want to
-  // avoid boost::atomic when possible because on ARM, it requires the
-  // -lboost_atomic linker flag. (https://github.com/r-lib/later/issues/73)
-  #include <boost/atomic.hpp>
-  boost::atomic<uint64_t> nextCallbackId(1);
-#endif
-
+std::atomic<uint64_t> nextCallbackId(1);
 
 // ============================================================================
 // Invoke functions
@@ -50,7 +41,7 @@ void checkInterruptFn(void*) {
 //   interrupt or an R error, it will throw a C++ exception. These exceptions
 //   are the ones defined by Rcpp, and they will be caught by the try-catch in
 //   this function.
-// * It could be a BoostFunctionCallback with C or C++ code.
+// * It could be a StdFunctionCallback with C or C++ code.
 //   * If the function invokes an Rcpp::Function and an interrupt or R error
 //     happens within the Rcpp::Function, it will throw exceptions just like
 //     the RcppFunctionCallback case, and they will be caught.
@@ -174,17 +165,17 @@ void Callback::invoke_wrapped() const {
 
 
 // ============================================================================
-// BoostFunctionCallback
+// StdFunctionCallback
 // ============================================================================
 
-BoostFunctionCallback::BoostFunctionCallback(Timestamp when, boost::function<void(void)> func) :
+StdFunctionCallback::StdFunctionCallback(Timestamp when, std::function<void(void)> func) :
   Callback(when),
   func(func)
 {
   this->callbackId = nextCallbackId++;
 }
 
-Rcpp::RObject BoostFunctionCallback::rRepresentation() const {
+Rcpp::RObject StdFunctionCallback::rRepresentation() const {
   using namespace Rcpp;
   ASSERT_MAIN_THREAD()
 
@@ -226,11 +217,11 @@ Rcpp::RObject RcppFunctionCallback::rRepresentation() const {
 
 // [[Rcpp::export]]
 void testCallbackOrdering() {
-  std::vector<BoostFunctionCallback> callbacks;
+  std::vector<StdFunctionCallback> callbacks;
   Timestamp ts;
-  boost::function<void(void)> func;
+  std::function<void(void)> func;
   for (size_t i = 0; i < 100; i++) {
-    callbacks.push_back(BoostFunctionCallback(ts, func));
+    callbacks.push_back(StdFunctionCallback(ts, func));
   }
   for (size_t i = 1; i < 100; i++) {
     if (callbacks[i] < callbacks[i-1]) {
@@ -271,7 +262,7 @@ uint64_t CallbackRegistry::add(Rcpp::Function func, double secs) {
   // Copies of the Rcpp::Function should only be made on the main thread.
   ASSERT_MAIN_THREAD()
   Timestamp when(secs);
-  Callback_sp cb = boost::make_shared<RcppFunctionCallback>(when, func);
+  Callback_sp cb = std::make_shared<RcppFunctionCallback>(when, func);
   Guard guard(mutex);
   queue.insert(cb);
   condvar->signal();
@@ -281,7 +272,7 @@ uint64_t CallbackRegistry::add(Rcpp::Function func, double secs) {
 
 uint64_t CallbackRegistry::add(void (*func)(void*), void* data, double secs) {
   Timestamp when(secs);
-  Callback_sp cb = boost::make_shared<BoostFunctionCallback>(when, boost::bind(func, data));
+  Callback_sp cb = std::make_shared<StdFunctionCallback>(when, std::bind(func, data));
   Guard guard(mutex);
   queue.insert(cb);
   condvar->signal();
@@ -317,7 +308,7 @@ Optional<Timestamp> CallbackRegistry::nextTimestamp(bool recursive) const {
 
   // Now check children
   if (recursive) {
-    for (std::vector<boost::shared_ptr<CallbackRegistry> >::const_iterator it = children.begin();
+    for (std::vector<std::shared_ptr<CallbackRegistry> >::const_iterator it = children.begin();
          it != children.end();
          ++it)
     {
@@ -354,7 +345,7 @@ bool CallbackRegistry::due(const Timestamp& time, bool recursive) const {
 
   // Now check children
   if (recursive) {
-    for (std::vector<boost::shared_ptr<CallbackRegistry> >::const_iterator it = children.begin();
+    for (std::vector<std::shared_ptr<CallbackRegistry> >::const_iterator it = children.begin();
          it != children.end();
          ++it)
     {

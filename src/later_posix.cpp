@@ -246,7 +246,7 @@ void deInitialize() {
   }
 }
 
-uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp::Function callback, double delaySecs, bool resetTimer) {
+uint64_t doExecLater(std::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp::Function callback, double delaySecs, bool resetTimer) {
   ASSERT_MAIN_THREAD()
   uint64_t callback_id = callbackRegistry->add(callback, delaySecs);
 
@@ -260,7 +260,7 @@ uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp:
   return callback_id;
 }
 
-uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, void (*callback)(void*), void* data, double delaySecs, bool resetTimer) {
+uint64_t doExecLater(std::shared_ptr<CallbackRegistry> callbackRegistry, void (*callback)(void*), void* data, double delaySecs, bool resetTimer) {
   uint64_t callback_id = callbackRegistry->add(callback, data, delaySecs);
 
   if (resetTimer)
