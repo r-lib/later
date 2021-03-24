@@ -1,7 +1,7 @@
 #ifndef _TIMESTAMP_H_
 #define _TIMESTAMP_H_
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 // Impl abstract class; implemented by platform-specific classes
 class TimestampImpl {
@@ -15,8 +15,8 @@ public:
 
 class Timestamp {
 private:
-  boost::shared_ptr<const TimestampImpl> p_impl;
-  
+  std::shared_ptr<const TimestampImpl> p_impl;
+
 public:
   Timestamp();
   Timestamp(double secs);
@@ -25,7 +25,7 @@ public:
   bool future() const {
     return p_impl->future();
   }
-  
+
   // Comparison operators
   bool operator<(const Timestamp& other) const {
     return p_impl->less(other.p_impl.get());
@@ -33,7 +33,7 @@ public:
   bool operator>(const Timestamp& other) const {
     return p_impl->greater(other.p_impl.get());
   }
-  
+
   // Diff
   double diff_secs(const Timestamp& other) const {
     return p_impl->diff_secs(other.p_impl.get());

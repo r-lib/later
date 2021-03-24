@@ -101,7 +101,7 @@ void ensureAutorunnerInitialized() {
   }
 }
 
-uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp::Function callback, double delaySecs, bool resetTimer) {
+uint64_t doExecLater(std::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp::Function callback, double delaySecs, bool resetTimer) {
   uint64_t callback_id = callbackRegistry->add(callback, delaySecs);
 
   if (resetTimer)
@@ -110,7 +110,7 @@ uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp:
   return callback_id;
 }
 
-uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, void (*func)(void*), void* data, double delaySecs, bool resetTimer) {
+uint64_t doExecLater(std::shared_ptr<CallbackRegistry> callbackRegistry, void (*func)(void*), void* data, double delaySecs, bool resetTimer) {
   uint64_t callback_id = callbackRegistry->add(func, data, delaySecs);
 
   if (resetTimer) {

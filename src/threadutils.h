@@ -3,16 +3,14 @@
 
 #include <stdexcept>
 #include <sys/time.h>
-#include <boost/noncopyable.hpp>
-#include <boost/type_traits/is_integral.hpp>
-#include <boost/type_traits/is_signed.hpp>
+#include <type_traits>
 
 #include "tinycthread.h"
 #include "timeconv.h"
 
 class ConditionVariable;
 
-class Mutex : boost::noncopyable {
+class Mutex {
   friend class ConditionVariable;
   tct_mtx_t _m;
 
@@ -32,6 +30,10 @@ public:
       throw std::runtime_error("Mutex creation failed");
     }
   }
+
+  // Make non-copyable
+  Mutex(const Mutex&) = delete;
+  Mutex& operator=(const Mutex&) = delete;
 
   virtual ~Mutex() {
     tct_mtx_destroy(&_m);
@@ -61,7 +63,7 @@ public:
   }
 };
 
-class Guard : boost::noncopyable {
+class Guard {
   Mutex* _mutex;
 
 public:
@@ -69,12 +71,16 @@ public:
     _mutex->lock();
   }
 
+  // Make non-copyable
+  Guard(const Guard&) = delete;
+  Guard& operator=(const Guard&) = delete;
+
   ~Guard() {
     _mutex->unlock();
   }
 };
 
-class ConditionVariable : boost::noncopyable {
+class ConditionVariable {
   tct_mtx_t* _m;
   tct_cnd_t _c;
 
@@ -82,16 +88,20 @@ public:
   ConditionVariable(Mutex& mutex) : _m(&mutex._m) {
     // If time_t isn't integral, our addSeconds logic needs to change,
     // as it relies on casting to time_t being a truncation.
-    if (!boost::is_integral<time_t>::value)
+    if (!std::is_integral<time_t>::value)
       throw std::runtime_error("Integral time_t type expected");
     // If time_t isn't signed, our addSeconds logic can't handle
     // negative values for secs.
-    if (!boost::is_signed<time_t>::value)
+    if (!std::is_signed<time_t>::value)
       throw std::runtime_error("Signed time_t type expected");
 
     if (tct_cnd_init(&_c) != tct_thrd_success)
       throw std::runtime_error("Condition variable failed to initialize");
   }
+
+  // Make non-copyable
+  ConditionVariable(const ConditionVariable&) = delete;
+  ConditionVariable& operator=(const ConditionVariable&) = delete;
 
   virtual ~ConditionVariable() {
     tct_cnd_destroy(&_c);

@@ -2,15 +2,14 @@
 #define _CALLBACK_REGISTRY_TABLE_H_
 
 #include <Rcpp.h>
-#include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include "threadutils.h"
 #include "debug.h"
 #include "callback_registry.h"
 #include "later.h"
 
-using boost::shared_ptr;
-using boost::make_shared;
+using std::shared_ptr;
+using std::make_shared;
 
 // ============================================================================
 // Callback registry table
@@ -30,14 +29,14 @@ class CallbackRegistryTable {
   // object references it.
   class RegistryHandle {
   public:
-    RegistryHandle(boost::shared_ptr<CallbackRegistry> registry, bool r_ref_exists)
+    RegistryHandle(std::shared_ptr<CallbackRegistry> registry, bool r_ref_exists)
       : registry(registry), r_ref_exists(r_ref_exists) {
     };
     // Need to declare a copy constructor. Needed because pre-C++11 std::map
     // doesn't have an .emplace() method.
     RegistryHandle() = default;
 
-    boost::shared_ptr<CallbackRegistry> registry;
+    std::shared_ptr<CallbackRegistry> registry;
     bool r_ref_exists;
   };
 
@@ -200,7 +199,7 @@ public:
     }
 
     // Tell the children that they no longer have a parent.
-    for (std::vector<boost::shared_ptr<CallbackRegistry> >::iterator it = registry->children.begin();
+    for (std::vector<std::shared_ptr<CallbackRegistry> >::iterator it = registry->children.begin();
          it != registry->children.end();
          ++it)
     {
