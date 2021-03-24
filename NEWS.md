@@ -4,6 +4,8 @@
 
 * Closed #140: Previously, the event loop stopped running if the R process was forked. (#141)
 
+* Closed #143: Packages which link to later no longer need to take a direct dependency on Rcpp, because `later.h` no longer includes `Rcpp.h`. (#144)
+
 * Removed dependency on the BH package. C++11 is now required. (#147)
 
 ## later 1.1.0.1
