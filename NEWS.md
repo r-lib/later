@@ -4,7 +4,7 @@
 
 * Closed #140: Previously, the event loop stopped running if the R process was forked. (#141)
 
-* Removed dependency on the BH package. C++11 is now required.
+* Removed dependency on the BH package. C++11 is now required. (#147)
 
 ## later 1.1.0.1
 
