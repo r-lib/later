@@ -67,7 +67,8 @@ test_that("run_now wakes up when a background thread calls later()", {
   x <- system.time({
     result <- later::run_now(3)
   })
-  expect_lt(as.numeric(x[["elapsed"]]), 1.25)
+  # Wait for up to 1.5 seconds (for slow systems)
+  expect_lt(as.numeric(x[["elapsed"]]), 1.5)
   expect_true(result)
 })
 
