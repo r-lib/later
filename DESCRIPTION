@@ -3,9 +3,9 @@ Type: Package
 Title: Utilities for Scheduling Functions to Execute Later with Event Loops
 Version: 1.2.0
 Authors@R: c(
-    person("Joe", "Cheng", role = c("aut", "cre"), email = "joe@rstudio.com"),
+    person("Winston", "Chang", role = c("aut", "cre"), email = "winston@rstudio.com"),
+    person("Joe", "Cheng", role = c("aut"), email = "joe@rstudio.com"),
     person(family = "RStudio", role = "cph"),
-    person("Winston", "Chang", role = c("aut"), email = "winston@rstudio.com"),
     person("Marcus", "Geelnard", role = c("ctb", "cph"), comment = "TinyCThread library, https://tinycthread.github.io/"),
     person("Evan", "Nemerson", role = c("ctb", "cph"), comment = "TinyCThread library, https://tinycthread.github.io/")
     )
