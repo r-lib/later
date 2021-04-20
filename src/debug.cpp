@@ -68,3 +68,13 @@ std::string log_level(std::string level) {
     default:        return "";
   }
 }
+
+// Reports whether package was compiled with UBSAN
+// [[Rcpp::export]]
+bool using_ubsan() {
+#ifdef USING_UBSAN
+  return true;
+#else
+  return false;
+#endif
+}

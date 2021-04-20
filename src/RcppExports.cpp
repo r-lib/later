@@ -26,6 +26,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// using_ubsan
+bool using_ubsan();
+RcppExport SEXP _later_using_ubsan() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(using_ubsan());
+    return rcpp_result_gen;
+END_RCPP
+}
 // setCurrentRegistryId
 void setCurrentRegistryId(int id);
 RcppExport SEXP _later_setCurrentRegistryId(SEXP idSEXP) {

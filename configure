@@ -20,9 +20,16 @@ else
   EXTRA_PKG_LIBS=-latomic
 fi
 
+case "$CC" in
+  *undefined*)
+    echo "Found UBSAN. Will skip tests that raise false positives."
+    PKG_CPPFLAGS="$PKG_CPPFLAGS -DUSING_UBSAN"
+    ;;
+esac
 
 # Write to Makevars
-sed -e "s|@extra_pkg_libs@|$EXTRA_PKG_LIBS|" src/Makevars.in > src/Makevars
+sed -e "s|@extra_pkg_libs@|$EXTRA_PKG_LIBS|" -e "s|@pkg_cppflags@|$PKG_CPPFLAGS|" \
+    src/Makevars.in > src/Makevars
 
 # Success
 exit 0
