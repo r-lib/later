@@ -1,7 +1,7 @@
 Package: later
 Type: Package
 Title: Utilities for Scheduling Functions to Execute Later with Event Loops
-Version: 1.2.0
+Version: 1.2.0.9000
 Authors@R: c(
     person("Winston", "Chang", role = c("aut", "cre"), email = "winston@rstudio.com"),
     person("Joe", "Cheng", role = c("aut"), email = "joe@rstudio.com"),
