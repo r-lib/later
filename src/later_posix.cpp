@@ -173,6 +173,8 @@ void child_proc_after_fork() {
       close(pipe_out);
       pipe_out = -1;
     }
+
+    removeInputHandler(&R_InputHandlers, dummyInputHandlerHandle);
     if (dummy_pipe_in  > 0) {
       close(dummy_pipe_in);
       dummy_pipe_in  = -1;

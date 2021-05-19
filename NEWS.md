@@ -1,3 +1,7 @@
+## later 1.2.0.9000
+
+* Closed #148: When later was attached, `parallel::makeForkCluster()` would fail. (#149)
+
 ## later 1.2.0
 
 * Closed #138: later is now licensed as MIT. (#139)
