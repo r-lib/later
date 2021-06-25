@@ -50,6 +50,10 @@ public:
     sec_diff += (this->time.tv_nsec - other_impl->time.tv_nsec) / 1.0e9;
     return sec_diff;
   }
+
+  virtual double as_double() const {
+    return time.tv_sec + time.tv_nsec / 1.0e9;
+  }
 };
 
 Timestamp::Timestamp() : p_impl(new TimestampImplPosix()) {}

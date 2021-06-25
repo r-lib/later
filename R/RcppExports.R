@@ -5,6 +5,10 @@ get_all_callback_ids <- function() {
     .Call('_later_get_all_callback_ids', PACKAGE = 'later')
 }
 
+get_all_timestamps <- function() {
+    .Call('_later_get_all_timestamps', PACKAGE = 'later')
+}
+
 reset_metadata <- function() {
     invisible(.Call('_later_reset_metadata', PACKAGE = 'later'))
 }

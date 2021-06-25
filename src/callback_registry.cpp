@@ -175,6 +175,17 @@ std::vector<int> get_all_callback_ids() {
 }
 
 // [[Rcpp::export]]
+std::vector<double> get_all_timestamps() {
+  std::vector<double> res;
+
+  for (int i=0; i<all_timestamps.size(); i++) {
+    res.push_back(all_timestamps[i].as_double());
+  }
+
+  return res;
+}
+
+// [[Rcpp::export]]
 void reset_metadata() {
   all_timestamps.clear();
   all_callbackids.clear();

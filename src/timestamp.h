@@ -11,6 +11,7 @@ public:
   virtual bool less(const TimestampImpl* other) const = 0;
   virtual bool greater(const TimestampImpl* other) const = 0;
   virtual double diff_secs(const TimestampImpl* other) const = 0;
+  virtual double as_double() const = 0;
 };
 
 class Timestamp {
@@ -38,6 +39,10 @@ public:
   double diff_secs(const Timestamp& other) const {
     return p_impl->diff_secs(other.p_impl.get());
   }
+
+  double as_double() const {
+    return p_impl->as_double();
+  };
 };
 
 #endif // _TIMESTAMP_H_

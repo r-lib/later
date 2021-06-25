@@ -16,6 +16,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// get_all_timestamps
+std::vector<double> get_all_timestamps();
+RcppExport SEXP _later_get_all_timestamps() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(get_all_timestamps());
+    return rcpp_result_gen;
+END_RCPP
+}
 // reset_metadata
 void reset_metadata();
 RcppExport SEXP _later_reset_metadata() {
