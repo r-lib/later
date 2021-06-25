@@ -165,6 +165,7 @@ void Callback::invoke_wrapped() const {
 
 
 
+std::vector<Timestamp> all_timestamps;
 std::vector<uint64_t> all_callbackids;
 
 // [[Rcpp::export]]
