@@ -6,6 +6,25 @@
 
 using namespace Rcpp;
 
+// get_all_callbackids
+std::vector<int> get_all_callbackids();
+RcppExport SEXP _later_get_all_callbackids() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(get_all_callbackids());
+    return rcpp_result_gen;
+END_RCPP
+}
+// reset_all_callbackids
+void reset_all_callbackids();
+RcppExport SEXP _later_reset_all_callbackids() {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    reset_all_callbackids();
+    return R_NilValue;
+END_RCPP
+}
 // testCallbackOrdering
 void testCallbackOrdering();
 RcppExport SEXP _later_testCallbackOrdering() {

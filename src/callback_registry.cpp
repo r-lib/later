@@ -164,6 +164,20 @@ void Callback::invoke_wrapped() const {
 }
 
 
+
+std::vector<uint64_t> all_callbackids;
+
+// [[Rcpp::export]]
+std::vector<int> get_all_callbackids() {
+  std::vector<int> res(all_callbackids.begin(), all_callbackids.end());
+  return res;
+}
+
+// [[Rcpp::export]]
+void reset_all_callbackids() {
+  all_callbackids.clear();
+}
+
 // ============================================================================
 // StdFunctionCallback
 // ============================================================================
@@ -173,6 +187,9 @@ StdFunctionCallback::StdFunctionCallback(Timestamp when, std::function<void(void
   func(func)
 {
   this->callbackId = nextCallbackId++;
+
+  all_timestamps.push_back(when);
+  all_callbackids.push_back(this->callbackId);
 }
 
 Rcpp::RObject StdFunctionCallback::rRepresentation() const {
@@ -197,6 +214,9 @@ RcppFunctionCallback::RcppFunctionCallback(Timestamp when, Rcpp::Function func) 
 {
   ASSERT_MAIN_THREAD()
   this->callbackId = nextCallbackId++;
+
+  all_timestamps.push_back(when);
+  all_callbackids.push_back(this->callbackId);
 }
 
 Rcpp::RObject RcppFunctionCallback::rRepresentation() const {
