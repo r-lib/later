@@ -6,22 +6,22 @@
 
 using namespace Rcpp;
 
-// get_all_callbackids
-std::vector<int> get_all_callbackids();
-RcppExport SEXP _later_get_all_callbackids() {
+// get_all_callback_ids
+std::vector<int> get_all_callback_ids();
+RcppExport SEXP _later_get_all_callback_ids() {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(get_all_callbackids());
+    rcpp_result_gen = Rcpp::wrap(get_all_callback_ids());
     return rcpp_result_gen;
 END_RCPP
 }
-// reset_all_callbackids
-void reset_all_callbackids();
-RcppExport SEXP _later_reset_all_callbackids() {
+// reset_metadata
+void reset_metadata();
+RcppExport SEXP _later_reset_metadata() {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
-    reset_all_callbackids();
+    reset_metadata();
     return R_NilValue;
 END_RCPP
 }

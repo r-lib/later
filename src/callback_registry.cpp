@@ -169,13 +169,14 @@ std::vector<Timestamp> all_timestamps;
 std::vector<uint64_t> all_callbackids;
 
 // [[Rcpp::export]]
-std::vector<int> get_all_callbackids() {
+std::vector<int> get_all_callback_ids() {
   std::vector<int> res(all_callbackids.begin(), all_callbackids.end());
   return res;
 }
 
 // [[Rcpp::export]]
-void reset_all_callbackids() {
+void reset_metadata() {
+  all_timestamps.clear();
   all_callbackids.clear();
 }
 
