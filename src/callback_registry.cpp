@@ -178,6 +178,7 @@ std::vector<int> get_all_callback_ids() {
 void reset_metadata() {
   all_timestamps.clear();
   all_callbackids.clear();
+  nextCallbackId = 1;
 }
 
 // ============================================================================
