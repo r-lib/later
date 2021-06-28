@@ -5,9 +5,10 @@
 #include "timeconv.h"
 
 void get_current_time(timespec *ts) {
-  timeval tv;
-  gettimeofday(&tv, NULL);
-  *ts = timevalToTimespec(tv);
+  // timeval tv;
+  // gettimeofday(&tv, NULL);
+  // *ts = timevalToTimespec(tv);
+  clock_gettime(CLOCK_MONOTONIC, ts);
 }
 
 class TimestampImplPosix : public TimestampImpl {

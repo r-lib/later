@@ -165,6 +165,10 @@ void Callback::invoke_wrapped() const {
 
 
 
+// ============================================================================
+// Callback timing/ID metadata
+// ============================================================================
+
 std::vector<Timestamp> all_timestamps;
 std::vector<uint64_t> all_callbackids;
 
