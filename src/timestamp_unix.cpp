@@ -5,9 +5,9 @@
 #include "timeconv.h"
 
 void get_current_time(timespec *ts) {
-  timeval tv;
-  gettimeofday(&tv, NULL);
-  *ts = timevalToTimespec(tv);
+  // CLOCK_MONOTONIC ensures that we never get timestamps that go backward in
+  // time due to clock adjustment. https://github.com/r-lib/later/issues/150
+  clock_gettime(CLOCK_MONOTONIC, ts);
 }
 
 class TimestampImplPosix : public TimestampImpl {
