@@ -19,44 +19,6 @@ Run `revdep_details(, "httpuv")` for more info
     GNU make is a SystemRequirements.
     ```
 
-# plumber
-
-<details>
-
-* Version: 1.1.0
-* GitHub: https://github.com/rstudio/plumber
-* Source code: https://github.com/cran/plumber
-* Date/Publication: 2021-03-24 05:10:02 UTC
-* Number of recursive dependencies: 76
-
-Run `revdep_details(, "plumber")` for more info
-
-</details>
-
-## In both
-
-*   checking tests ...
-    ```
-     ERROR
-    Running the tests in ‘tests/testthat.R’ failed.
-    Last 13 lines of output:
-      <simpleError in loadNamespace(i, c(lib.loc, .libPaths()), versionCheck = vI[[i]]): namespace 'htmltools' 0.5.1.1 is already loaded, but >= 0.5.1.9004 is required>
-      ══ Skipped tests ═══════════════════════════════════════════════════════════════
-      • On CRAN (13)
-      
-      ══ Failed tests ════════════════════════════════════════════════════════════════
-      ── Error (test-zzzz-include.R:25:5): Includes work ─────────────────────────────
-      Error: is.character(act$val) is not TRUE
-      Backtrace:
-          █
-       1. └─testthat::expect_match(val$body, "<html.*<h2>R Output</h2>.*</html>\\s*$") test-zzzz-include.R:25:4
-       2.   └─base::stopifnot(is.character(act$val))
-      
-      [ FAIL 1 | WARN 0 | SKIP 13 | PASS 1918 ]
-      Error: Test failures
-      Execution halted
-    ```
-
 # plumbertableau
 
 <details>

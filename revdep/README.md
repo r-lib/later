@@ -32,7 +32,7 @@
 |IsoplotRgui                                  |4.1     |      |        |     |
 |mapview                                      |2.10.0  |      |        |     |
 |pagedown                                     |0.15    |      |        |     |
-|[plumber](problems.md#plumber)               |1.1.0   |1     |        |     |
+|plumber                                      |1.1.0   |      |        |     |
 |[plumbertableau](problems.md#plumbertableau) |0.1.0   |      |        |1    |
 |pool                                         |0.1.6   |      |        |     |
 |promises                                     |1.2.0.1 |      |        |     |
