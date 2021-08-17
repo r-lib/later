@@ -1,4 +1,4 @@
-## later 1.2.0.9000
+# later 1.3.0
 
 * Closed #148: When later was attached, `parallel::makeForkCluster()` would fail. (#149)
 
