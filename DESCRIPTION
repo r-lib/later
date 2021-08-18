@@ -1,7 +1,7 @@
 Package: later
 Type: Package
 Title: Utilities for Scheduling Functions to Execute Later with Event Loops
-Version: 1.2.0.9000
+Version: 1.3.0
 Authors@R: c(
     person("Winston", "Chang", role = c("aut", "cre"), email = "winston@rstudio.com"),
     person("Joe", "Cheng", role = c("aut"), email = "joe@rstudio.com"),
@@ -27,3 +27,4 @@ Suggests:
     rmarkdown,
     testthat (>= 2.1.0)
 VignetteBuilder: knitr
+Encoding: UTF-8

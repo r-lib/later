@@ -11,3 +11,4 @@
 ^\.github$
 ^cran-comments\.md$
 ^LICENSE\.md$
+^revdep$
