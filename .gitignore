@@ -7,3 +7,4 @@
 *.dll
 inst/doc
 src/Makevars
+CRAN-RELEASE
