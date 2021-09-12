@@ -9,6 +9,10 @@ log_level <- function(level) {
     .Call('_later_log_level', PACKAGE = 'later', level)
 }
 
+using_ubsan <- function() {
+    .Call('_later_using_ubsan', PACKAGE = 'later')
+}
+
 setCurrentRegistryId <- function(id) {
     invisible(.Call('_later_setCurrentRegistryId', PACKAGE = 'later', id))
 }

@@ -24,6 +24,7 @@ extern SEXP _later_setCurrentRegistryId(SEXP);
 extern SEXP _later_getCurrentRegistryId();
 extern SEXP _later_list_queue_(SEXP);
 extern SEXP _later_log_level(SEXP);
+extern SEXP _later_using_ubsan();
 
 static const R_CallMethodDef CallEntries[] = {
   {"_later_ensureInitialized",      (DL_FUNC) &_later_ensureInitialized,      0},
@@ -37,10 +38,11 @@ static const R_CallMethodDef CallEntries[] = {
   {"_later_deleteCallbackRegistry", (DL_FUNC) &_later_deleteCallbackRegistry, 1},
   {"_later_existsCallbackRegistry", (DL_FUNC) &_later_existsCallbackRegistry, 1},
   {"_later_notifyRRefDeleted",      (DL_FUNC) &_later_notifyRRefDeleted,      1},
-  {"_later_setCurrentRegistryId",   (DL_FUNC) &_later_setCurrentRegistryId, 1},
-  {"_later_getCurrentRegistryId",   (DL_FUNC) &_later_getCurrentRegistryId, 0},
+  {"_later_setCurrentRegistryId",   (DL_FUNC) &_later_setCurrentRegistryId,   1},
+  {"_later_getCurrentRegistryId",   (DL_FUNC) &_later_getCurrentRegistryId,   0},
   {"_later_list_queue_",            (DL_FUNC) &_later_list_queue_,            1},
   {"_later_log_level",              (DL_FUNC) &_later_log_level,              1},
+  {"_later_using_ubsan",            (DL_FUNC) &_later_using_ubsan,            0},
   {NULL, NULL, 0}
 };
 

@@ -3,7 +3,20 @@
 #define _later_later_h
 
 #include <iostream>
-#include <Rcpp.h>
+
+#ifndef R_NO_REMAP
+#define R_NO_REMAP
+#endif
+
+#ifndef STRICT_R_HEADERS
+#define STRICT_R_HEADERS
+#endif
+
+#include <Rinternals.h>
+
+// Needed for R_GetCCallable on R 3.3 and older; in more recent versions, this
+// is included via Rinternals.h.
+#include <R_ext/Rdynload.h>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN

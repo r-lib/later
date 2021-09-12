@@ -26,9 +26,11 @@ int initialized = 0;
 // The handles to the read and write ends of a pipe. We use this pipe
 // to signal R's input handler callback mechanism that we want to be
 // called back.
-int pipe_in, pipe_out;
+int pipe_in  = -1;
+int pipe_out = -1;
 
-int dummy_pipe_in, dummy_pipe_out;
+int dummy_pipe_in  = -1;
+int dummy_pipe_out = -1;
 
 // Whether the file descriptor is ready for reading, i.e., whether
 // the input handler callback is scheduled to be called. We use this
@@ -147,8 +149,43 @@ InputHandler* dummyInputHandlerHandle;
 static void remove_dummy_handler(void *data) {
   ASSERT_MAIN_THREAD()
   removeInputHandler(&R_InputHandlers, dummyInputHandlerHandle);
-  close(dummy_pipe_in);
-  close(dummy_pipe_out);
+  if (dummy_pipe_in  > 0) {
+    close(dummy_pipe_in);
+    dummy_pipe_in  = -1;
+  }
+  if (dummy_pipe_out > 0) {
+    close(dummy_pipe_out);
+    dummy_pipe_out = -1;
+  }
+}
+
+// Callback to run in child process after forking.
+void child_proc_after_fork() {
+  ASSERT_MAIN_THREAD()
+  if (initialized) {
+    removeInputHandler(&R_InputHandlers, inputHandlerHandle);
+
+    if (pipe_in  > 0) {
+      close(pipe_in);
+      pipe_in = -1;
+    }
+    if (pipe_out > 0) {
+      close(pipe_out);
+      pipe_out = -1;
+    }
+
+    removeInputHandler(&R_InputHandlers, dummyInputHandlerHandle);
+    if (dummy_pipe_in  > 0) {
+      close(dummy_pipe_in);
+      dummy_pipe_in  = -1;
+    }
+    if (dummy_pipe_out > 0) {
+      close(dummy_pipe_out);
+      dummy_pipe_out = -1;
+    }
+
+    initialized = 0;
+  }
 }
 
 void ensureAutorunnerInitialized() {
@@ -165,6 +202,15 @@ void ensureAutorunnerInitialized() {
     pipe_in = pipes[1];
 
     inputHandlerHandle = addInputHandler(R_InputHandlers, pipe_out, async_input_handler, LATER_ACTIVITY);
+
+   // If the R process is forked, make sure that the child process doesn't mess
+   // with the pipes. This also means that functions scheduled in the child
+   // process with `later()` will only work if `run_now()` is called. In this
+   // situation, there's also the danger that a function will be scheduled by
+   // the parent process and then will be executed in the child process (in
+   // addition to in the parent process).
+   // https://github.com/r-lib/later/issues/140
+   pthread_atfork(NULL, NULL, child_proc_after_fork);
 
     // Need to add a dummy input handler to avoid segfault when the "real"
     // input handler removes the subsequent input handler in the linked list.
@@ -186,8 +232,14 @@ void deInitialize() {
   ASSERT_MAIN_THREAD()
   if (initialized) {
     removeInputHandler(&R_InputHandlers, inputHandlerHandle);
-    close(pipe_in);
-    close(pipe_out);
+    if (pipe_in  > 0) {
+      close(pipe_in);
+      pipe_in = -1;
+    }
+    if (pipe_out > 0) {
+      close(pipe_out);
+      pipe_out = -1;
+    }
     initialized = 0;
 
     // Trigger remove_dummy_handler()
@@ -196,7 +248,7 @@ void deInitialize() {
   }
 }
 
-uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp::Function callback, double delaySecs, bool resetTimer) {
+uint64_t doExecLater(std::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp::Function callback, double delaySecs, bool resetTimer) {
   ASSERT_MAIN_THREAD()
   uint64_t callback_id = callbackRegistry->add(callback, delaySecs);
 
@@ -210,7 +262,7 @@ uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp:
   return callback_id;
 }
 
-uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, void (*callback)(void*), void* data, double delaySecs, bool resetTimer) {
+uint64_t doExecLater(std::shared_ptr<CallbackRegistry> callbackRegistry, void (*callback)(void*), void* data, double delaySecs, bool resetTimer) {
   uint64_t callback_id = callbackRegistry->add(callback, data, delaySecs);
 
   if (resetTimer)

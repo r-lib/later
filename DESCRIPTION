@@ -1,11 +1,11 @@
 Package: later
 Type: Package
 Title: Utilities for Scheduling Functions to Execute Later with Event Loops
-Version: 1.0.0.9004
+Version: 1.3.0.9000
 Authors@R: c(
-    person("Joe", "Cheng", role = c("aut", "cre"), email = "joe@rstudio.com"),
+    person("Winston", "Chang", role = c("aut", "cre"), email = "winston@rstudio.com"),
+    person("Joe", "Cheng", role = c("aut"), email = "joe@rstudio.com"),
     person(family = "RStudio", role = "cph"),
-    person("Winston", "Chang", role = c("aut"), email = "winston@rstudio.com"),
     person("Marcus", "Geelnard", role = c("ctb", "cph"), comment = "TinyCThread library, https://tinycthread.github.io/"),
     person("Evan", "Nemerson", role = c("ctb", "cph"), comment = "TinyCThread library, https://tinycthread.github.io/")
     )
@@ -14,15 +14,17 @@ Description: Executes arbitrary R or C functions some time after the current
     in an event loop.
 URL: https://github.com/r-lib/later
 BugReports: https://github.com/r-lib/later/issues
-License: GPL (>= 2)
+License: MIT + file LICENSE
 Imports:
     Rcpp (>= 0.12.9),
     rlang
-LinkingTo: Rcpp, BH
+LinkingTo: Rcpp
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1
+SystemRequirements: C++11
 Suggests:
     knitr,
     rmarkdown,
-    testthat
+    testthat (>= 2.1.0)
 VignetteBuilder: knitr
+Encoding: UTF-8

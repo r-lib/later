@@ -59,6 +59,9 @@ test_that("run_now doesn't go past a failed task", {
 })
 
 test_that("run_now wakes up when a background thread calls later()", {
+  # Skip due to false positives on UBSAN
+  skip_if(using_ubsan())
+
   env <- new.env()
   Rcpp::sourceCpp(system.file("bgtest.cpp", package = "later"), env = env)
   # The background task sleeps
@@ -67,11 +70,15 @@ test_that("run_now wakes up when a background thread calls later()", {
   x <- system.time({
     result <- later::run_now(3)
   })
-  expect_lt(as.numeric(x[["elapsed"]]), 1.25)
+  # Wait for up to 1.5 seconds (for slow systems)
+  expect_lt(as.numeric(x[["elapsed"]]), 1.5)
   expect_true(result)
 })
 
 test_that("When callbacks have tied timestamps, they respect order of creation", {
+  # Skip due to false positives on UBSAN
+  skip_if(using_ubsan())
+
   expect_error(testCallbackOrdering(), NA)
 
   Rcpp::sourceCpp(code = '

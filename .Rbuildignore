@@ -9,3 +9,7 @@
 ^appveyor\.yml$
 ^src/Makevars$
 ^\.github$
+^cran-comments\.md$
+^LICENSE\.md$
+^revdep$
+^CRAN-RELEASE$

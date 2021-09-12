@@ -2,9 +2,7 @@
 #include <Rcpp.h>
 #include <map>
 #include <queue>
-#include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/scope_exit.hpp>
+#include <memory>
 #include "debug.h"
 #include "utils.h"
 #include "threadutils.h"
@@ -14,7 +12,7 @@
 
 #include "interrupt.h"
 
-using boost::shared_ptr;
+using std::shared_ptr;
 
 static size_t exec_callbacks_reentrancy_count = 0;
 
@@ -212,8 +210,8 @@ bool execCallbacksOne(
 
   // I think there's no need to lock this since it's only modified from the
   // main thread. But need to check.
-  std::vector<boost::shared_ptr<CallbackRegistry> > children = callback_registry->children;
-  for (std::vector<boost::shared_ptr<CallbackRegistry> >::iterator it = children.begin();
+  std::vector<std::shared_ptr<CallbackRegistry> > children = callback_registry->children;
+  for (std::vector<std::shared_ptr<CallbackRegistry> >::iterator it = children.begin();
        it != children.end();
        ++it)
   {

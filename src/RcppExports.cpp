@@ -6,6 +6,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // testCallbackOrdering
 void testCallbackOrdering();
 RcppExport SEXP _later_testCallbackOrdering() {
@@ -23,6 +28,16 @@ BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type level(levelSEXP);
     rcpp_result_gen = Rcpp::wrap(log_level(level));
+    return rcpp_result_gen;
+END_RCPP
+}
+// using_ubsan
+bool using_ubsan();
+RcppExport SEXP _later_using_ubsan() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(using_ubsan());
     return rcpp_result_gen;
 END_RCPP
 }

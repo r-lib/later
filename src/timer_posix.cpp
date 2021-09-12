@@ -16,7 +16,7 @@ void Timer::bg_main() {
 
     // Guarded wait; we can't pass here until either the timer is stopped or we
     // have a wait time.
-    while (!(this->stopped || this->wakeAt != boost::none)) {
+    while (!(this->stopped || this->wakeAt.has_value())) {
       this->cond.wait();
     }
 
@@ -42,12 +42,12 @@ void Timer::bg_main() {
       }
     }
 
-    this->wakeAt = boost::none;
+    this->wakeAt.reset();
     callback();
   }
 }
 
-Timer::Timer(const boost::function<void ()>& callback) :
+Timer::Timer(const std::function<void ()>& callback) :
   callback(callback), mutex(tct_mtx_recursive), cond(mutex), stopped(false) {
 }
 
@@ -56,7 +56,7 @@ Timer::~Timer() {
   // Must stop background thread before cleaning up condition variable and
   // mutex. Calling pthread_cond_destroy on a condvar that's being waited
   // on results in undefined behavior--on Fedora 25+ it hangs.
-  if (this->bgthread != boost::none) {
+  if (this->bgthread.has_value()) {
     {
       Guard guard(&this->mutex);
       this->stopped = true;
@@ -71,7 +71,7 @@ void Timer::set(const Timestamp& timestamp) {
   Guard guard(&this->mutex);
 
   // If the thread has not yet been created, created it.
-  if (this->bgthread == boost::none) {
+  if (!this->bgthread.has_value()) {
     tct_thrd_t thread;
     tct_thrd_create(&thread, &bg_main_func, this);
     this->bgthread = thread;

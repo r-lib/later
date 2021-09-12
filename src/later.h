@@ -2,7 +2,7 @@
 #define _LATER_H_
 
 #include <string>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include "callback_registry.h"
 
 // This should be kept in sync with LATER_H_API_VERSION in
@@ -12,7 +12,7 @@
 
 #define GLOBAL_LOOP 0
 
-boost::shared_ptr<CallbackRegistry> getGlobalRegistry();
+std::shared_ptr<CallbackRegistry> getGlobalRegistry();
 
 bool execCallbacksForTopLevel();
 bool at_top_level();
@@ -29,7 +29,7 @@ void ensureInitialized();
 // and later_win32.cpp.
 void ensureAutorunnerInitialized();
 
-uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp::Function callback, double delaySecs, bool resetTimer);
-uint64_t doExecLater(boost::shared_ptr<CallbackRegistry> callbackRegistry, void (*callback)(void*), void* data, double delaySecs, bool resetTimer);
+uint64_t doExecLater(std::shared_ptr<CallbackRegistry> callbackRegistry, Rcpp::Function callback, double delaySecs, bool resetTimer);
+uint64_t doExecLater(std::shared_ptr<CallbackRegistry> callbackRegistry, void (*callback)(void*), void* data, double delaySecs, bool resetTimer);
 
 #endif // _LATER_H_
