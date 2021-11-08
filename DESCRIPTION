@@ -12,7 +12,7 @@ Authors@R: c(
 Description: Executes arbitrary R or C functions some time after the current
     time, after the R execution stack has emptied. The functions are scheduled
     in an event loop.
-URL: https://github.com/r-lib/later
+URL: https://r-lib.github.io/later/, https://github.com/r-lib/later
 BugReports: https://github.com/r-lib/later/issues
 License: MIT + file LICENSE
 Imports:

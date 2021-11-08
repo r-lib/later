@@ -13,3 +13,6 @@
 ^LICENSE\.md$
 ^revdep$
 ^CRAN-RELEASE$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
