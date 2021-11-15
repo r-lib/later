@@ -1,7 +1,7 @@
 # later
 
 <!-- badges: start -->
-[![R build status](https://github.com/r-lib/later/workflows/R-CMD-check/badge.svg)](https://github.com/r-lib/later/actions)
+[![R build status](https://github.com/r-lib/later/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/r-lib/later/actions)
 <!-- badges: end -->
 
 
