@@ -11,7 +11,8 @@ later_recurring <- function(func, delay, limit = NA, loop = current_loop()) {
     stop("'limit' must be 'NA' or a positive number")
   func2 <- function() {
     limit <<- limit - 1L
-    func()
+    ret <- func()
+    if (is.logical(ret) && !anyNA(ret)) cancelled <<- !ret[1]
     if (!cancelled && (is.na(limit) || limit > 0))
       handle <<- later(func2, delay, loop)
   }
