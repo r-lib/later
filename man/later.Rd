@@ -7,7 +7,7 @@
 \usage{
 later(func, delay = 0, loop = current_loop())
 
-later_recurring(func, delay, limit = NA, loop = current_loop())
+later_recurring(func, delay, limit = Inf, loop = current_loop())
 }
 \arguments{
 \item{func}{A function or formula (see \code{\link[rlang:as_function]{rlang::as_function()}}).}
@@ -18,8 +18,8 @@ should not execute earlier.}
 
 \item{loop}{A handle to an event loop. Defaults to the currently-active loop.}
 
-\item{limit}{Number of times to repeat the function. If \code{NA} (the default)
-then no limit.}
+\item{limit}{Number of times to repeat the function. If \code{Inf} (the
+default) then no limit.}
 }
 \value{
 A function, which, if invoked, will cancel the callback. The
@@ -37,6 +37,10 @@ at the requested time, only that at least that much time will elapse.
 The mechanism used by this package is inspired by Simon Urbanek's
 \href{https://github.com/s-u/background}{background} package and similar code in
 Rhttpd.
+
+In \code{later_recurring}, if \code{func} returns an explicit \code{FALSE} then
+this is interpreted as self-cancelling the loop. Anything else
+returned (including multiple \code{FALSE}) is ignored.
 }
 \section{Functions}{
 \itemize{
@@ -64,5 +68,12 @@ later(function() {
   print(summary(cars))
 }, 2)
 
-later_recurring(~cat("Hello from the past\n"), 3, limit = 2)
+# Limit number of executions to 3 times
+later_recurring(~ message("Hello from the past"), 1, limit = 3)
+
+# Stop recurring when the return value is `FALSE`
+later_recurring(function() {
+  message("Flipping a coin to see if we run again...")
+  sample(c(TRUE, FALSE), size = 1L)
+}, 0.25, limit = Inf)
 }

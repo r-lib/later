@@ -70,7 +70,7 @@ create_loop <- function(parent = current_loop(), autorun = NULL) {
     # This is for backward compatibility, if `create_loop(autorun=FALSE)` is called.
     parent <- NULL
   }
-  if (identical(parent, FALSE)) {
+  if (is_false(parent)) {
     # This is for backward compatibility, if `create_loop(FALSE)` is called.
     # (Previously the first and only parameter was `autorun`.)
     parent <- NULL

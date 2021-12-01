@@ -1,19 +1,32 @@
 #' @describeIn later Schedules a recurring task
-#' @param limit Number of times to repeat the function. If `NA` (the default)
-#'   then no limit.
+#' @details
+#'
+#' In `later_recurring`, if `func` returns an explicit `FALSE` then
+#' this is interpreted as self-cancelling the loop. Anything else
+#' returned (including multiple `FALSE`) is ignored.
+#' 
+#' @param limit Number of times to repeat the function. If `Inf` (the
+#'   default) then no limit.
 #' @examples
-#' later_recurring(~cat("Hello from the past\n"), 3, limit = 2)
+#' # Limit number of executions to 3 times
+#' later_recurring(~ message("Hello from the past"), 1, limit = 3)
+#' 
+#' # Stop recurring when the return value is `FALSE`
+#' later_recurring(function() {
+#'   message("Flipping a coin to see if we run again...")
+#'   sample(c(TRUE, FALSE), size = 1L)
+#' }, 0.25, limit = Inf)
 #' @export
-later_recurring <- function(func, delay, limit = NA, loop = current_loop()) {
+later_recurring <- function(func, delay, limit = Inf, loop = current_loop()) {
   func <- rlang::as_function(func)
   cancelled <- FALSE
-  if (!is.na(limit) && limit < 1)
-    stop("'limit' must be 'NA' or a positive number")
+  if (is.na(limit) || limit < 1)
+    stop("'limit' must be a positive number")
   func2 <- function() {
     limit <<- limit - 1L
     ret <- func()
-    if (is.logical(ret) && !anyNA(ret)) cancelled <<- !ret[1]
-    if (!cancelled && (is.na(limit) || limit > 0))
+    if (is_false(ret)) cancelled <<- !ret[1]
+    if (!cancelled && limit > 0)
       handle <<- later(func2, delay, loop)
   }
   handle <- later(func2, delay, loop)
