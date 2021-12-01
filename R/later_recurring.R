@@ -25,7 +25,7 @@ later_recurring <- function(func, delay, limit = Inf, loop = current_loop()) {
   func2 <- function() {
     limit <<- limit - 1L
     ret <- func()
-    if (is_false(ret)) cancelled <<- !ret[1]
+    if (is_false(ret)) cancelled <<- TRUE
     if (!cancelled && limit > 0)
       handle <<- later(func2, delay, loop)
   }
