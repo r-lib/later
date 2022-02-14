@@ -26,11 +26,11 @@ int initialized = 0;
 // The handles to the read and write ends of a pipe. We use this pipe
 // to signal R's input handler callback mechanism that we want to be
 // called back.
-int pipe_in  = -1;
-int pipe_out = -1;
+static int pipe_in  = -1;
+static int pipe_out = -1;
 
-int dummy_pipe_in  = -1;
-int dummy_pipe_out = -1;
+static int dummy_pipe_in  = -1;
+static int dummy_pipe_out = -1;
 
 // Whether the file descriptor is ready for reading, i.e., whether
 // the input handler callback is scheduled to be called. We use this
