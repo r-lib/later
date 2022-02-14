@@ -6,7 +6,7 @@
 #include "callback_registry.h"
 #include "debug.h"
 
-std::atomic<uint64_t> nextCallbackId(1);
+static std::atomic<uint64_t> nextCallbackId(1);
 
 // ============================================================================
 // Invoke functions
