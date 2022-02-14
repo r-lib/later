@@ -338,8 +338,8 @@ bool CallbackRegistry::empty() const {
 bool CallbackRegistry::due(const Timestamp& time, bool recursive) const {
   ASSERT_MAIN_THREAD()
   Guard guard(mutex);
-  cbSet::const_iterator it = queue.begin();
-  if (!this->queue.empty() && !((*it)->when > time)) {
+  cbSet::const_iterator cbSet_it = queue.begin();
+  if (!this->queue.empty() && !((*cbSet_it)->when > time)) {
     return true;
   }
 
