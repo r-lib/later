@@ -21,6 +21,8 @@
 <![endif]-->
 </head>
 <body data-spy="scroll" data-target="#toc">
+    
+
     <div class="container template-home">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -33,18 +35,12 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">later</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.3.0.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.3.0.9000</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
-<li>
-  <a href="index.html">
-    <span class="fas fa-home fa-lg"></span>
-     
-  </a>
-</li>
 <li>
   <a href="reference/index.html">Reference</a>
 </li>
@@ -66,7 +62,7 @@
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/r-lib/later/">
+  <a href="https://github.com/r-lib/later/" class="external-link">
     <span class="fab fa-github fa-lg"></span>
      
   </a>
@@ -83,43 +79,43 @@
 
       </header><div class="row">
   <div class="contents col-md-9">
-<div id="later" class="section level1">
-<div class="page-header"><h1 class="hasAnchor">
-<a href="#later" class="anchor"></a>later</h1></div>
+<div class="section level1">
+<div class="page-header"><h1 id="later">later<a class="anchor" aria-label="anchor" href="#later"></a>
+</h1></div>
 <!-- badges: start -->
 
 <p>Schedule an R function or formula to run after a specified period of time. Similar to JavaScript’s <code>setTimeout</code> function. Like JavaScript, R is single-threaded so there’s no guarantee that the operation will run exactly at the requested time, only that at least that much time will elapse.</p>
 <p>To avoid bugs due to reentrancy, by default, scheduled operations only run when there is no other R code present on the execution stack; i.e., when R is sitting at the top-level prompt. You can force past-due operations to run at a time of your choosing by calling <code><a href="reference/run_now.html">later::run_now()</a></code>.</p>
-<p>The mechanism used by this package is inspired by Simon Urbanek’s <a href="https://github.com/s-u/background">background</a> package and similar code in Rhttpd.</p>
-<div id="installation" class="section level2">
-<h2 class="hasAnchor">
-<a href="#installation" class="anchor"></a>Installation</h2>
+<p>The mechanism used by this package is inspired by Simon Urbanek’s <a href="https://github.com/s-u/background" class="external-link">background</a> package and similar code in Rhttpd.</p>
+<div class="section level2">
+<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+</h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"r-lib/later"</span><span class="op">)</span></code></pre></div>
 </div>
-<div id="usage-from-r" class="section level2">
-<h2 class="hasAnchor">
-<a href="#usage-from-r" class="anchor"></a>Usage from R</h2>
+<div class="section level2">
+<h2 id="usage-from-r">Usage from R<a class="anchor" aria-label="anchor" href="#usage-from-r"></a>
+</h2>
 <p>Pass a function (in this case, delayed by 5 seconds):</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu">later</span><span class="fu">::</span><span class="fu"><a href="reference/later.html">later</a></span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span>
-  <span class="fu"><a href="https://rdrr.io/r/base/print.html">print</a></span><span class="op">(</span><span class="st">"Got here!"</span><span class="op">)</span>
+  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="st">"Got here!"</span><span class="op">)</span>
 <span class="op">}</span>, <span class="fl">5</span><span class="op">)</span></code></pre></div>
 <p>Or a formula (in this case, run as soon as control returns to the top-level):</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu">later</span><span class="fu">::</span><span class="fu"><a href="reference/later.html">later</a></span><span class="op">(</span><span class="op">~</span><span class="fu"><a href="https://rdrr.io/r/base/print.html">print</a></span><span class="op">(</span><span class="st">"Got here!"</span><span class="op">)</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span class="fu">later</span><span class="fu">::</span><span class="fu"><a href="reference/later.html">later</a></span><span class="op">(</span><span class="op">~</span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="st">"Got here!"</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 </div>
-<div id="usage-from-c" class="section level2">
-<h2 class="hasAnchor">
-<a href="#usage-from-c" class="anchor"></a>Usage from C++</h2>
+<div class="section level2">
+<h2 id="usage-from-c">Usage from C++<a class="anchor" aria-label="anchor" href="#usage-from-c"></a>
+</h2>
 <p>You can also call <code><a href="reference/later.html">later::later</a></code> from C++ code in your own packages, to cause your own C-style functions to be called back. This is safe to call from either the main R thread or a different thread; in both cases, your callback will be invoked from the main R thread.</p>
 <p><code><a href="reference/later.html">later::later</a></code> is accessible from <code>later_api.h</code> and its prototype looks like this:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1"></a><span class="dt">void</span> later(<span class="dt">void</span> (*func)(<span class="dt">void</span>*), <span class="dt">void</span>* data, <span class="dt">double</span> secs)</span></code></pre></div>
 <p>The first argument is a pointer to a function that takes one <code>void*</code> argument and returns void. The second argument is a <code>void*</code> that will be passed to the function when it’s called back. And the third argument is the number of seconds to wait (at a minimum) before invoking.</p>
 <p>To use the C++ interface, you’ll need to add <code>later</code> to your <code>DESCRIPTION</code> file under both <code>LinkingTo</code> and <code>Imports</code>, and also make sure that your <code>NAMESPACE</code> file has an <code>import(later)</code> entry.</p>
-<div id="background-tasks" class="section level3">
-<h3 class="hasAnchor">
-<a href="#background-tasks" class="anchor"></a>Background tasks</h3>
+<div class="section level3">
+<h3 id="background-tasks">Background tasks<a class="anchor" aria-label="anchor" href="#background-tasks"></a>
+</h3>
 <p>Finally, this package also offers a higher-level C++ helper class to make it easier to execute tasks on a background thread. It is also available from <code>later_api.h</code> and its public/protected interface looks like this:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">class</span> BackgroundTask {</span>
 <span id="cb5-2"><a href="#cb5-2"></a></span>
@@ -187,48 +183,58 @@ private:
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <div class="links">
-<h2>Links</h2>
+<h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
-<li>Download from CRAN at <br><a href="https://cloud.r-project.org/package=later">https://​cloud.r-project.org/​package=later</a>
-</li>
-<li>Browse source code at <br><a href="https://github.com/r-lib/later/">https://​github.com/​r-lib/​later/​</a>
-</li>
-<li>Report a bug at <br><a href="https://github.com/r-lib/later/issues">https://​github.com/​r-lib/​later/​issues</a>
-</li>
-</ul>
-</div>
-<div class="license">
-<h2>License</h2>
-<ul class="list-unstyled">
-<li><a href="LICENSE.html">Full license</a></li>
-<li><small><a href="https://opensource.org/licenses/mit-license.php">MIT</a> + file <a href="LICENSE-text.html">LICENSE</a></small></li>
-</ul>
-</div>
-<div class="developers">
-<h2>Developers</h2>
-<ul class="list-unstyled">
-<li>Winston Chang <br><small class="roles"> Author, maintainer </small>  </li>
-<li>Joe Cheng <br><small class="roles"> Author </small>  </li>
-<li><a href="authors.html">All authors...</a></li>
+<li><a href="https://cloud.r-project.org/package=later" class="external-link">View on CRAN</a></li>
+<li><a href="https://github.com/r-lib/later/" class="external-link">Browse source code</a></li>
+<li><a href="https://github.com/r-lib/later/issues" class="external-link">Report a bug</a></li>
 </ul>
 </div>
 
-  <div class="dev-status">
-<h2>Dev status</h2>
+<div class="license">
+<h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
-<li><a href="https://github.com/r-lib/later/actions"><img src="https://github.com/r-lib/later/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R build status"></a></li>
+<li><a href="LICENSE.html">Full license</a></li>
+<li><small><a href="https://opensource.org/licenses/mit-license.php" class="external-link">MIT</a> + file <a href="LICENSE-text.html">LICENSE</a></small></li>
 </ul>
 </div>
+
+
+<div class="citation">
+<h2 data-toc-skip>Citation</h2>
+<ul class="list-unstyled">
+<li><a href="authors.html#citation">Citing later</a></li>
+</ul>
 </div>
+
+<div class="developers">
+<h2 data-toc-skip>Developers</h2>
+<ul class="list-unstyled">
+<li>Winston Chang <br><small class="roles"> Author, maintainer </small>  </li>
+<li>Joe Cheng <br><small class="roles"> Author </small>  </li>
+<li><a href="authors.html">More about authors...</a></li>
+</ul>
+</div>
+
+<div class="dev-status">
+<h2 data-toc-skip>Dev status</h2>
+<ul class="list-unstyled">
+<li><a href="https://github.com/r-lib/later/actions" class="external-link"><img src="https://github.com/r-lib/later/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R build status"></a></li>
+</ul>
+</div>
+
+  </div>
 </div>
 
 
       <footer><div class="copyright">
-  <p>Developed by Winston Chang, Joe Cheng.</p>
+  <p></p>
+<p>Developed by Winston Chang, Joe Cheng.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p></p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
 </div>
 
       </footer>
@@ -236,6 +242,8 @@ private:
 
   
 
+
+  
 
   </body>
 </html>

@@ -19,6 +19,8 @@
 <![endif]-->
 </head>
 <body data-spy="scroll" data-target="#toc">
+    
+
     <div class="container template-article">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -31,18 +33,12 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">later</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.3.0.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.3.0.9000</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
-<li>
-  <a href="../index.html">
-    <span class="fas fa-home fa-lg"></span>
-     
-  </a>
-</li>
 <li>
   <a href="../reference/index.html">Reference</a>
 </li>
@@ -64,7 +60,7 @@
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/r-lib/later/">
+  <a href="https://github.com/r-lib/later/" class="external-link">
     <span class="fab fa-github fa-lg"></span>
      
   </a>
@@ -83,20 +79,20 @@
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>Using later from C++</h1>
-                        <h4 class="author">Joe Cheng</h4>
+                        <h4 data-toc-skip class="author">Joe Cheng</h4>
             
-            <h4 class="date">2021-11-15</h4>
+            <h4 data-toc-skip class="date">2022-02-14</h4>
       
-      <small class="dont-index">Source: <a href="https://github.com/r-lib/later/blob/master/vignettes/later-cpp.Rmd"><code>vignettes/later-cpp.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/r-lib/later/blob/HEAD/vignettes/later-cpp.Rmd" class="external-link"><code>vignettes/later-cpp.Rmd</code></a></small>
       <div class="hidden name"><code>later-cpp.Rmd</code></div>
 
     </div>
 
     
     
-<div id="using-later-from-c" class="section level1">
-<h1 class="hasAnchor">
-<a href="#using-later-from-c" class="anchor"></a>Using later from C++</h1>
+<div class="section level2">
+<h2 id="using-later-from-c">Using later from C++<a class="anchor" aria-label="anchor" href="#using-later-from-c"></a>
+</h2>
 <p>You can call <code><a href="../reference/later.html">later::later</a></code> from C++ code in your own packages, to cause your own C-style functions to be called back. This is safe to call from either the main R thread or a different thread; in both cases, your callback will be invoked from the main R thread.</p>
 <p>To use the C++ interface, you’ll need to:</p>
 <ul>
@@ -104,21 +100,21 @@
 </li>
 <li>Make sure that your <code>NAMESPACE</code> file has an <code>import(later)</code> entry. If your package uses roxygen2, you can do this by adding the following lines to any file under <code>R/</code>:</li>
 </ul>
-<pre><code>#' @import later
-NULL</code></pre>
+<pre><code><span class="co">#' @import later</span>
+<span class="cn">NULL</span></code></pre>
 <ul>
 <li>Add <code>#include &lt;later_api.h&gt;</code> to the top of each C++ file that uses the below APIs.</li>
 </ul>
-<div id="executing-a-c-function-later" class="section level2">
-<h2 class="hasAnchor">
-<a href="#executing-a-c-function-later" class="anchor"></a>Executing a C function later</h2>
+<div class="section level3">
+<h3 id="executing-a-c-function-later">Executing a C function later<a class="anchor" aria-label="anchor" href="#executing-a-c-function-later"></a>
+</h3>
 <p>The <code><a href="../reference/later.html">later::later</a></code> function is accessible from <code>later_api.h</code> and its prototype looks like this:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="dt">void</span> later(<span class="dt">void</span> (*func)(<span class="dt">void</span>*), <span class="dt">void</span>* data, <span class="dt">double</span> secs)</span></code></pre></div>
 <p>The first argument is a pointer to a function that takes one <code>void*</code> argument and returns void. The second argument is a <code>void*</code> that will be passed to the function when it’s called back. And the third argument is the number of seconds to wait (at a minimum) before invoking. In all cases, the function will be invoked on the R thread, when no user R code is executing.</p>
 </div>
-<div id="background-tasks" class="section level2">
-<h2 class="hasAnchor">
-<a href="#background-tasks" class="anchor"></a>Background tasks</h2>
+<div class="section level3">
+<h3 id="background-tasks">Background tasks<a class="anchor" aria-label="anchor" href="#background-tasks"></a>
+</h3>
 <p>This package also offers a higher-level C++ helper class called <code>later::BackgroundTask</code>, to make it easier to execute tasks on a background thread. It takes care of launching the background thread for you, and returning control back to the R thread at a later point; you’re responsible for providing the actual code that executes on the background thread, as well as code that executes on the R thread before and after the background task completes.</p>
 <p>Its public/protected interface looks like this:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">class</span> BackgroundTask {</span>
@@ -195,11 +191,13 @@ private:
 
 
       <footer><div class="copyright">
-  <p>Developed by Winston Chang, Joe Cheng.</p>
+  <p></p>
+<p>Developed by Winston Chang, Joe Cheng.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p></p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
 </div>
 
       </footer>
@@ -207,6 +205,8 @@ private:
 
   
 
+
+  
 
   </body>
 </html>
