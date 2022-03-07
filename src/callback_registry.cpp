@@ -21,8 +21,8 @@ enum InvokeResult {
 };
 
 // This is set by invoke_c(). I
-InvokeResult last_invoke_result;
-std::string last_invoke_message;
+static InvokeResult last_invoke_result;
+static std::string last_invoke_message;
 
 // A wrapper for calling R_CheckUserInterrupt via R_ToplevelExec.
 void checkInterruptFn(void*) {

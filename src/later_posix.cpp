@@ -21,7 +21,7 @@ extern void* R_GlobalContext;
 extern void* R_TopLevelContext;
 
 // Whether we have initialized the input handler.
-int initialized = 0;
+static int initialized = 0;
 
 // The handles to the read and write ends of a pipe. We use this pipe
 // to signal R's input handler callback mechanism that we want to be
@@ -35,7 +35,7 @@ static int dummy_pipe_out = -1;
 // Whether the file descriptor is ready for reading, i.e., whether
 // the input handler callback is scheduled to be called. We use this
 // to avoid unnecessarily writing to the pipe.
-bool hot = false;
+static bool hot = false;
 // This mutex protects reading/writing of `hot` and of reading from/writing to
 // the pipe.
 Mutex m(tct_mtx_plain);
