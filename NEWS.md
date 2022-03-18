@@ -1,5 +1,6 @@
 # later (development version)
 
+* Added `later_recurring`, allowing a function to recur in its 'later' loop until an iteration limit (if set) or explicit cancellation. PR #133
 
 
 # later 1.3.0
