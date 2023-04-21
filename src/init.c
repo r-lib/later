@@ -9,22 +9,22 @@ Check these declarations against the C/Fortran source code.
 */
 
 /* .Call calls */
-extern SEXP _later_ensureInitialized();
+extern SEXP _later_ensureInitialized(void);
 extern SEXP _later_execCallbacks(SEXP, SEXP, SEXP);
 extern SEXP _later_idle(SEXP);
 extern SEXP _later_execLater(SEXP, SEXP, SEXP);
 extern SEXP _later_cancel(SEXP, SEXP);
 extern SEXP _later_nextOpSecs(SEXP);
-extern SEXP _later_testCallbackOrdering();
+extern SEXP _later_testCallbackOrdering(void);
 extern SEXP _later_createCallbackRegistry(SEXP, SEXP);
 extern SEXP _later_deleteCallbackRegistry(SEXP);
 extern SEXP _later_existsCallbackRegistry(SEXP);
 extern SEXP _later_notifyRRefDeleted(SEXP);
 extern SEXP _later_setCurrentRegistryId(SEXP);
-extern SEXP _later_getCurrentRegistryId();
+extern SEXP _later_getCurrentRegistryId(void);
 extern SEXP _later_list_queue_(SEXP);
 extern SEXP _later_log_level(SEXP);
-extern SEXP _later_using_ubsan();
+extern SEXP _later_using_ubsan(void);
 
 static const R_CallMethodDef CallEntries[] = {
   {"_later_ensureInitialized",      (DL_FUNC) &_later_ensureInitialized,      0},
@@ -48,7 +48,7 @@ static const R_CallMethodDef CallEntries[] = {
 
 uint64_t execLaterNative(void (*func)(void*), void* data, double secs);
 uint64_t execLaterNative2(void (*func)(void*), void* data, double secs, int loop);
-int apiVersion();
+int apiVersion(void);
 
 void R_init_later(DllInfo *dll)
 {
