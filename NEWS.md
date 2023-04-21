@@ -1,6 +1,6 @@
 # later (development version)
 
-
+* For C function declarations that take no parameters, added `void` parameter. (#172)
 
 # later 1.3.0
 
