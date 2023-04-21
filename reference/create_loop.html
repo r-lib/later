@@ -34,7 +34,7 @@ you would run your asynchronous code using a private event loop."><!-- mathjax -
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
      
     <span class="caret"></span>
@@ -79,19 +79,19 @@ you would run your asynchronous code using a private event loop.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">create_loop</span><span class="op">(</span>parent <span class="op">=</span> <span class="fu">current_loop</span><span class="op">(</span><span class="op">)</span>, autorun <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span>
-
-<span class="fu">destroy_loop</span><span class="op">(</span><span class="va">loop</span><span class="op">)</span>
-
-<span class="fu">exists_loop</span><span class="op">(</span><span class="va">loop</span><span class="op">)</span>
-
-<span class="fu">current_loop</span><span class="op">(</span><span class="op">)</span>
-
-<span class="fu">with_temp_loop</span><span class="op">(</span><span class="va">expr</span><span class="op">)</span>
-
-<span class="fu">with_loop</span><span class="op">(</span><span class="va">loop</span>, <span class="va">expr</span><span class="op">)</span>
-
-<span class="fu">global_loop</span><span class="op">(</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">create_loop</span><span class="op">(</span>parent <span class="op">=</span> <span class="fu">current_loop</span><span class="op">(</span><span class="op">)</span>, autorun <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">destroy_loop</span><span class="op">(</span><span class="va">loop</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">exists_loop</span><span class="op">(</span><span class="va">loop</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">current_loop</span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">with_temp_loop</span><span class="op">(</span><span class="va">expr</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">with_loop</span><span class="op">(</span><span class="va">loop</span>, <span class="va">expr</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">global_loop</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -103,13 +103,20 @@ manually call <code><a href="run_now.html">run_now</a>()</code> on this loop. If
 this loop will not have a parent event loop that automatically runs it; the
 only way to run this loop will be by calling <code><a href="run_now.html">run_now</a>()</code> on this
 loop.</p></dd>
+
+
 <dt>autorun</dt>
 <dd><p>This exists only for backward compatibility. If set to
 <code>FALSE</code>, it is equivalent to using <code>parent=NULL</code>.</p></dd>
+
+
 <dt>loop</dt>
 <dd><p>A handle to an event loop.</p></dd>
+
+
 <dt>expr</dt>
 <dd><p>An expression to evaluate.</p></dd>
+
 </dl></div>
     <div id="details">
     <h2>Details</h2>
@@ -141,7 +148,7 @@ evaluates the given expression. Afterwards, the new event loop is destroyed.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

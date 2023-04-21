@@ -45,7 +45,7 @@
   <a href="reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
      
     <span class="caret"></span>
@@ -83,7 +83,6 @@
 <div class="page-header"><h1 id="later">later<a class="anchor" aria-label="anchor" href="#later"></a>
 </h1></div>
 <!-- badges: start -->
-
 <p>Schedule an R function or formula to run after a specified period of time. Similar to JavaScript’s <code>setTimeout</code> function. Like JavaScript, R is single-threaded so there’s no guarantee that the operation will run exactly at the requested time, only that at least that much time will elapse.</p>
 <p>To avoid bugs due to reentrancy, by default, scheduled operations only run when there is no other R code present on the execution stack; i.e., when R is sitting at the top-level prompt. You can force past-due operations to run at a time of your choosing by calling <code><a href="reference/run_now.html">later::run_now()</a></code>.</p>
 <p>The mechanism used by this package is inspired by Simon Urbanek’s <a href="https://github.com/s-u/background" class="external-link">background</a> package and similar code in Rhttpd.</p>
@@ -91,19 +90,19 @@
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"r-lib/later"</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"r-lib/later"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="usage-from-r">Usage from R<a class="anchor" aria-label="anchor" href="#usage-from-r"></a>
 </h2>
 <p>Pass a function (in this case, delayed by 5 seconds):</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu">later</span><span class="fu">::</span><span class="fu"><a href="reference/later.html">later</a></span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span>
-  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="st">"Got here!"</span><span class="op">)</span>
-<span class="op">}</span>, <span class="fl">5</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu">later</span><span class="fu">::</span><span class="fu"><a href="reference/later.html">later</a></span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="st">"Got here!"</span><span class="op">)</span></span>
+<span><span class="op">}</span>, <span class="fl">5</span><span class="op">)</span></span></code></pre></div>
 <p>Or a formula (in this case, run as soon as control returns to the top-level):</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu">later</span><span class="fu">::</span><span class="fu"><a href="reference/later.html">later</a></span><span class="op">(</span><span class="op">~</span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="st">"Got here!"</span><span class="op">)</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu">later</span><span class="fu">::</span><span class="fu"><a href="reference/later.html">later</a></span><span class="op">(</span><span class="op">~</span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="st">"Got here!"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="usage-from-c">Usage from C++<a class="anchor" aria-label="anchor" href="#usage-from-c"></a>
@@ -234,7 +233,7 @@ private:
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer>

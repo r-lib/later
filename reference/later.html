@@ -29,7 +29,7 @@ at the requested time, only that at least that much time will elapse."><!-- math
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
      
     <span class="caret"></span>
@@ -69,23 +69,30 @@ at the requested time, only that at least that much time will elapse.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">later</span><span class="op">(</span><span class="va">func</span>, delay <span class="op">=</span> <span class="fl">0</span>, loop <span class="op">=</span> <span class="fu"><a href="create_loop.html">current_loop</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">later</span><span class="op">(</span><span class="va">func</span>, delay <span class="op">=</span> <span class="fl">0</span>, loop <span class="op">=</span> <span class="fu"><a href="create_loop.html">current_loop</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>func</dt>
 <dd><p>A function or formula (see <code><a href="https://rlang.r-lib.org/reference/as_function.html" class="external-link">rlang::as_function()</a></code>).</p></dd>
+
+
 <dt>delay</dt>
 <dd><p>Number of seconds in the future to delay execution. There is no
 guarantee that the function will be executed at the desired time, but it
 should not execute earlier.</p></dd>
+
+
 <dt>loop</dt>
 <dd><p>A handle to an event loop. Defaults to the currently-active loop.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A function, which, if invoked, will cancel the callback. The
+    
+
+<p>A function, which, if invoked, will cancel the callback. The
 function will return <code>TRUE</code> if the callback was successfully
 cancelled and <code>FALSE</code> if not (this occurs if the callback has
 executed or has been cancelled already).</p>
@@ -111,14 +118,14 @@ handling logic inside of <code>func</code>.</p>
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="co"># Example of formula style</span></span>
-<span class="r-in"><span class="fu">later</span><span class="op">(</span><span class="op">~</span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Hello from the past\n"</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># Example of function style</span></span>
-<span class="r-in"><span class="fu">later</span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in">  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">cars</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span>, <span class="fl">2</span><span class="op">)</span></span>
-<span class="r-in"></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Example of formula style</span></span></span>
+<span class="r-in"><span><span class="fu">later</span><span class="op">(</span><span class="op">~</span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Hello from the past\n"</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Example of function style</span></span></span>
+<span class="r-in"><span><span class="fu">later</span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">cars</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span>, <span class="fl">2</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -133,7 +140,7 @@ handling logic inside of <code>func</code>.</p>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>

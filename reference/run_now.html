@@ -30,7 +30,7 @@ those points and any operations that are due to run will do so."><!-- mathjax --
   <a href="../reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
      
     <span class="caret"></span>
@@ -71,7 +71,7 @@ those points and any operations that are due to run will do so.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">run_now</span><span class="op">(</span>timeoutSecs <span class="op">=</span> <span class="fl">0L</span>, all <span class="op">=</span> <span class="cn">TRUE</span>, loop <span class="op">=</span> <span class="fu"><a href="create_loop.html">current_loop</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">run_now</span><span class="op">(</span>timeoutSecs <span class="op">=</span> <span class="fl">0L</span>, all <span class="op">=</span> <span class="cn">TRUE</span>, loop <span class="op">=</span> <span class="fu"><a href="create_loop.html">current_loop</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -81,16 +81,23 @@ those points and any operations that are due to run will do so.</p>
 an operation to be ready to run. If <code>0</code>, then return immediately if there
 are no operations that are ready to run. If <code>Inf</code> or negative, then wait as
 long as it takes (if none are scheduled, then this will block forever).</p></dd>
+
+
 <dt>all</dt>
 <dd><p>If <code>FALSE</code>, <code>run_now()</code> will execute at most one scheduled
 operation (instead of all eligible operations). This can be useful in cases
 where you want to interleave scheduled operations with your own logic.</p></dd>
+
+
 <dt>loop</dt>
 <dd><p>A handle to an event loop. Defaults to the currently-active loop.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A logical indicating whether any callbacks were actually run.</p>
+    
+
+<p>A logical indicating whether any callbacks were actually run.</p>
     </div>
     <div id="details">
     <h2>Details</h2>
@@ -112,7 +119,7 @@ or control returns to the R prompt). You must use your own
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
 </div>
 
       </footer></div>
