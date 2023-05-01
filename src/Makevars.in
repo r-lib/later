@@ -1,6 +1,3 @@
-# Use C++11 if available
-CXX_STD=CXX11
-
 PKG_CPPFLAGS = -pthread -DSTRICT_R_HEADERS @pkg_cppflags@
 PKG_LIBS = -pthread @extra_pkg_libs@
 
