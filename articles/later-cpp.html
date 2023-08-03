@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">later</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.3.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.3.1.9000</span>
       </span>
     </div>
 
@@ -75,13 +75,13 @@
 
       
 
-      </header><script src="later-cpp_files/accessible-code-block-0.0.1/empty-anchor.js"></script><div class="row">
+      </header><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>Using later from C++</h1>
                         <h4 data-toc-skip class="author">Joe Cheng</h4>
             
-            <h4 data-toc-skip class="date">2023-05-02</h4>
+            <h4 data-toc-skip class="date">2023-08-03</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/r-lib/later/blob/HEAD/vignettes/later-cpp.Rmd" class="external-link"><code>vignettes/later-cpp.Rmd</code></a></small>
       <div class="hidden name"><code>later-cpp.Rmd</code></div>
@@ -93,54 +93,81 @@
 <div class="section level2">
 <h2 id="using-later-from-c">Using later from C++<a class="anchor" aria-label="anchor" href="#using-later-from-c"></a>
 </h2>
-<p>You can call <code><a href="../reference/later.html">later::later</a></code> from C++ code in your own packages, to cause your own C-style functions to be called back. This is safe to call from either the main R thread or a different thread; in both cases, your callback will be invoked from the main R thread.</p>
+<p>You can call <code><a href="../reference/later.html">later::later</a></code> from C++ code in your own
+packages, to cause your own C-style functions to be called back. This is
+safe to call from either the main R thread or a different thread; in
+both cases, your callback will be invoked from the main R thread.</p>
 <p>To use the C++ interface, you’ll need to:</p>
 <ul>
-<li>Add <code>later</code> to your <code>DESCRIPTION</code> file, under both <code>LinkingTo</code> and <code>Imports</code>
+<li>Add <code>later</code> to your <code>DESCRIPTION</code> file, under
+both <code>LinkingTo</code> and <code>Imports</code>
 </li>
-<li>Make sure that your <code>NAMESPACE</code> file has an <code>import(later)</code> entry. If your package uses roxygen2, you can do this by adding the following lines to any file under <code>R/</code>:</li>
+<li>Make sure that your <code>NAMESPACE</code> file has an
+<code>import(later)</code> entry. If your package uses roxygen2, you can
+do this by adding the following lines to any file under
+<code>R/</code>:</li>
 </ul>
 <pre><code><span><span class="co">#' @import later</span></span>
 <span><span class="cn">NULL</span></span></code></pre>
 <ul>
-<li>Add <code>#include &lt;later_api.h&gt;</code> to the top of each C++ file that uses the below APIs.</li>
+<li>Add <code>#include &lt;later_api.h&gt;</code> to the top of each C++
+file that uses the below APIs.</li>
 </ul>
 <div class="section level3">
 <h3 id="executing-a-c-function-later">Executing a C function later<a class="anchor" aria-label="anchor" href="#executing-a-c-function-later"></a>
 </h3>
-<p>The <code><a href="../reference/later.html">later::later</a></code> function is accessible from <code>later_api.h</code> and its prototype looks like this:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1"></a><span class="dt">void</span> later(<span class="dt">void</span> (*func)(<span class="dt">void</span>*), <span class="dt">void</span>* data, <span class="dt">double</span> secs)</span></code></pre></div>
-<p>The first argument is a pointer to a function that takes one <code>void*</code> argument and returns void. The second argument is a <code>void*</code> that will be passed to the function when it’s called back. And the third argument is the number of seconds to wait (at a minimum) before invoking. In all cases, the function will be invoked on the R thread, when no user R code is executing.</p>
+<p>The <code><a href="../reference/later.html">later::later</a></code> function is accessible from
+<code>later_api.h</code> and its prototype looks like this:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="dt">void</span> later<span class="op">(</span><span class="dt">void</span> <span class="op">(*</span>func<span class="op">)(</span><span class="dt">void</span><span class="op">*),</span> <span class="dt">void</span><span class="op">*</span> data<span class="op">,</span> <span class="dt">double</span> secs<span class="op">)</span></span></code></pre></div>
+<p>The first argument is a pointer to a function that takes one
+<code>void*</code> argument and returns void. The second argument is a
+<code>void*</code> that will be passed to the function when it’s called
+back. And the third argument is the number of seconds to wait (at a
+minimum) before invoking. In all cases, the function will be invoked on
+the R thread, when no user R code is executing.</p>
 </div>
 <div class="section level3">
 <h3 id="background-tasks">Background tasks<a class="anchor" aria-label="anchor" href="#background-tasks"></a>
 </h3>
-<p>This package also offers a higher-level C++ helper class called <code>later::BackgroundTask</code>, to make it easier to execute tasks on a background thread. It takes care of launching the background thread for you, and returning control back to the R thread at a later point; you’re responsible for providing the actual code that executes on the background thread, as well as code that executes on the R thread before and after the background task completes.</p>
+<p>This package also offers a higher-level C++ helper class called
+<code>later::BackgroundTask</code>, to make it easier to execute tasks
+on a background thread. It takes care of launching the background thread
+for you, and returning control back to the R thread at a later point;
+you’re responsible for providing the actual code that executes on the
+background thread, as well as code that executes on the R thread before
+and after the background task completes.</p>
 <p>Its public/protected interface looks like this:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">class</span> BackgroundTask {</span>
-<span id="cb3-2"><a href="#cb3-2"></a></span>
-<span id="cb3-3"><a href="#cb3-3"></a><span class="kw">public</span>:</span>
-<span id="cb3-4"><a href="#cb3-4"></a>  BackgroundTask();</span>
-<span id="cb3-5"><a href="#cb3-5"></a>  <span class="kw">virtual</span> ~BackgroundTask();</span>
-<span id="cb3-6"><a href="#cb3-6"></a></span>
-<span id="cb3-7"><a href="#cb3-7"></a>  <span class="co">// Start executing the task  </span></span>
-<span id="cb3-8"><a href="#cb3-8"></a>  <span class="dt">void</span> begin();</span>
-<span id="cb3-9"><a href="#cb3-9"></a></span>
-<span id="cb3-10"><a href="#cb3-10"></a><span class="kw">protected</span>:</span>
-<span id="cb3-11"><a href="#cb3-11"></a>  <span class="co">// The task to be executed on the background thread.</span></span>
-<span id="cb3-12"><a href="#cb3-12"></a>  <span class="co">// Neither the R runtime nor any R data structures may be</span></span>
-<span id="cb3-13"><a href="#cb3-13"></a>  <span class="co">// touched from the background thread; any values that need</span></span>
-<span id="cb3-14"><a href="#cb3-14"></a>  <span class="co">// to be passed into or out of the Execute method must be</span></span>
-<span id="cb3-15"><a href="#cb3-15"></a>  <span class="co">// included as fields on the Task subclass object.</span></span>
-<span id="cb3-16"><a href="#cb3-16"></a>  <span class="kw">virtual</span> <span class="dt">void</span> execute() = <span class="dv">0</span>;</span>
-<span id="cb3-17"><a href="#cb3-17"></a>  </span>
-<span id="cb3-18"><a href="#cb3-18"></a>  <span class="co">// A short task that runs on the main R thread after the</span></span>
-<span id="cb3-19"><a href="#cb3-19"></a>  <span class="co">// background task has completed. It's safe to access the</span></span>
-<span id="cb3-20"><a href="#cb3-20"></a>  <span class="co">// R runtime and R data structures from here.</span></span>
-<span id="cb3-21"><a href="#cb3-21"></a>  <span class="kw">virtual</span> <span class="dt">void</span> complete() = <span class="dv">0</span>;</span>
-<span id="cb3-22"><a href="#cb3-22"></a>}</span></code></pre></div>
-<p>Create your own subclass, implementing a custom constructor plus the <code>execute</code> and <code>complete</code> methods.</p>
-<p>It’s critical that the code in your <code>execute</code> method not mutate any R data structures, call any R code, or cause any R allocations, as it will execute in a background thread where such operations are unsafe. You can, however, perform such operations in the constructor (assuming you perform construction only from the main R thread) and <code>complete</code> method. Pass values between the constructor and methods using fields.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="kw">class</span> BackgroundTask <span class="op">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="kw">public</span><span class="op">:</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  BackgroundTask<span class="op">();</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  <span class="kw">virtual</span> <span class="op">~</span>BackgroundTask<span class="op">();</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  <span class="co">// Start executing the task  </span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="dt">void</span> begin<span class="op">();</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="kw">protected</span><span class="op">:</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>  <span class="co">// The task to be executed on the background thread.</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>  <span class="co">// Neither the R runtime nor any R data structures may be</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>  <span class="co">// touched from the background thread; any values that need</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>  <span class="co">// to be passed into or out of the Execute method must be</span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>  <span class="co">// included as fields on the Task subclass object.</span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>  <span class="kw">virtual</span> <span class="dt">void</span> execute<span class="op">()</span> <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>  </span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>  <span class="co">// A short task that runs on the main R thread after the</span></span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a>  <span class="co">// background task has completed. It's safe to access the</span></span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a>  <span class="co">// R runtime and R data structures from here.</span></span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a>  <span class="kw">virtual</span> <span class="dt">void</span> complete<span class="op">()</span> <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>Create your own subclass, implementing a custom constructor plus the
+<code>execute</code> and <code>complete</code> methods.</p>
+<p>It’s critical that the code in your <code>execute</code> method not
+mutate any R data structures, call any R code, or cause any R
+allocations, as it will execute in a background thread where such
+operations are unsafe. You can, however, perform such operations in the
+constructor (assuming you perform construction only from the main R
+thread) and <code>complete</code> method. Pass values between the
+constructor and methods using fields.</p>
 <pre class="rcpp"><code>#include &lt;Rcpp.h&gt;
 #include &lt;later_api.h&gt;
 
@@ -170,12 +197,18 @@ private:
   std::vector&lt;double&gt; inputVals;
   double result;
 };</code></pre>
-<p>To run the task, <code>new</code> up your subclass and call <code>begin()</code>, e.g. <code>(new MyTask(vec))-&gt;begin()</code>. There’s no need to keep track of the pointer; the task object will delete itself when the task is complete.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a><span class="op">/</span><span class="er">/</span><span class="st"> </span>[[Rcpp<span class="op">::</span>export]]</span>
-<span id="cb5-2"><a href="#cb5-2"></a>void <span class="kw">asyncMean</span>(Rcpp<span class="op">::</span>NumericVector data) {</span>
-<span id="cb5-3"><a href="#cb5-3"></a>  (new <span class="kw">MyTask</span>(data))-&gt;<span class="kw">begin</span>();</span>
-<span id="cb5-4"><a href="#cb5-4"></a>}</span></code></pre></div>
-<p>It’s not very useful to execute tasks on background threads if you can’t get access to the results back in R. We’ll soon be introducing a complementary R package that provides a suitable “promise” or “future” abstraction.</p>
+<p>To run the task, <code>new</code> up your subclass and call
+<code>begin()</code>, e.g. <code>(new MyTask(vec))-&gt;begin()</code>.
+There’s no need to keep track of the pointer; the task object will
+delete itself when the task is complete.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="sc">/</span><span class="er">/</span> [[Rcpp<span class="sc">::</span>export]]</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>void <span class="fu">asyncMean</span>(Rcpp<span class="sc">::</span>NumericVector data) {</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  (new <span class="fu">MyTask</span>(data))<span class="ot">-&gt;</span><span class="fu">begin</span>();</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>}</span></code></pre></div>
+<p>It’s not very useful to execute tasks on background threads if you
+can’t get access to the results back in R. We’ll soon be introducing a
+complementary R package that provides a suitable “promise” or “future”
+abstraction.</p>
 </div>
 </div>
   </div>
