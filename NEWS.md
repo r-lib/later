@@ -1,5 +1,7 @@
 # later 1.3.1.9000
 
+* Set file-level variables as `static` to avoid triggering `-Wmissing-variable-declarations` (@MichaelChirico, #163)
+
 * Fixed `unused varfiable` compiler warning. (@MichaelChirico, #176)
 
 # later 1.3.1
