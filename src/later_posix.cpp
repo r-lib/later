@@ -245,6 +245,7 @@ void deInitialize() {
     // Trigger remove_dummy_handler()
     // Store `ret` because otherwise it raises a significant warning.
     ssize_t ret = write(dummy_pipe_in, "a", 1);
+    (void)ret; // squelch compiler warning
   }
 }
 
