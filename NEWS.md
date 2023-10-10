@@ -1,6 +1,8 @@
 # later 1.3.1.9000
 
-* Fixed `unused varfiable` compiler warning. (@MichaelChirico, #176)
+* Fixed `unused variable` compiler warning. (@MichaelChirico, #176)
+
+* Fixed #177: The order of includes in `later.h` could cause compilation errors on some platforms. (@jeroen, #178)
 
 # later 1.3.1
 
