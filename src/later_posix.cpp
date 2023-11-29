@@ -133,7 +133,7 @@ static void async_input_handler(void *data) {
     std::string msg = "later: exception occurred while executing callback: \n";
     msg += e.what();
     msg += "\n";
-    REprintf(msg.c_str());
+    REprintf("%s", msg.c_str());
   }
   catch( ... ){
     REprintf("later: c++ exception (unknown reason) occurred while executing callback.\n");
