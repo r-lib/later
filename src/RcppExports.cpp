@@ -149,6 +149,17 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// queueLength
+size_t queueLength(int loop_id);
+RcppExport SEXP _later_queueLength(SEXP loop_idSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type loop_id(loop_idSEXP);
+    rcpp_result_gen = Rcpp::wrap(queueLength(loop_id));
+    return rcpp_result_gen;
+END_RCPP
+}
 // execLater
 std::string execLater(Rcpp::Function callback, double delaySecs, int loop_id);
 RcppExport SEXP _later_execLater(SEXP callbackSEXP, SEXP delaySecsSEXP, SEXP loop_idSEXP) {

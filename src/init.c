@@ -12,6 +12,7 @@ Check these declarations against the C/Fortran source code.
 extern SEXP _later_ensureInitialized(void);
 extern SEXP _later_execCallbacks(SEXP, SEXP, SEXP);
 extern SEXP _later_idle(SEXP);
+extern SEXP _later_queueLength(SEXP);
 extern SEXP _later_execLater(SEXP, SEXP, SEXP);
 extern SEXP _later_cancel(SEXP, SEXP);
 extern SEXP _later_nextOpSecs(SEXP);
@@ -30,6 +31,7 @@ static const R_CallMethodDef CallEntries[] = {
   {"_later_ensureInitialized",      (DL_FUNC) &_later_ensureInitialized,      0},
   {"_later_execCallbacks",          (DL_FUNC) &_later_execCallbacks,          3},
   {"_later_idle",                   (DL_FUNC) &_later_idle,                   1},
+  {"_later_queueLength",            (DL_FUNC) &_later_queueLength,            1},
   {"_later_execLater",              (DL_FUNC) &_later_execLater,              3},
   {"_later_cancel",                 (DL_FUNC) &_later_cancel,                 2},
   {"_later_nextOpSecs",             (DL_FUNC) &_later_nextOpSecs,             1},

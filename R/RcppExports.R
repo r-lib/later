@@ -53,6 +53,10 @@ ensureInitialized <- function() {
     invisible(.Call('_later_ensureInitialized', PACKAGE = 'later'))
 }
 
+queueLength <- function(loop_id) {
+    .Call('_later_queueLength', PACKAGE = 'later', loop_id)
+}
+
 execLater <- function(callback, delaySecs, loop_id) {
     .Call('_later_execLater', PACKAGE = 'later', callback, delaySecs, loop_id)
 }
