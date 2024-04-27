@@ -54,6 +54,7 @@ void R_init_later(DllInfo *dll)
 {
   R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
   R_useDynamicSymbols(dll, FALSE);
+  R_forceSymbols(dll, TRUE);
   // 2019-08-06
   // execLaterNative is registered here ONLY for backward compatibility; If
   // someone installed a package which had `#include <later_api.h>` (like

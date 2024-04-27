@@ -1,4 +1,4 @@
-#' @useDynLib later
+#' @useDynLib later, .registration=TRUE
 #' @importFrom Rcpp evalCpp
 
 .onLoad <- function(...) {
