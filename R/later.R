@@ -256,8 +256,10 @@ print.event_loop <- function(x, ...) {
 #'
 #' @export
 later <- function(func, delay = 0, loop = current_loop()) {
-  f <- rlang::as_function(func)
-  id <- execLater(f, delay, loop$id)
+  if (!is.function(func)) {
+    func <- rlang::as_function(func)
+  }
+  id <- execLater(func, delay, loop$id)
 
   invisible(create_canceller(id, loop$id))
 }
