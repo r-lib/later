@@ -14,6 +14,14 @@
 # this registry to keep the loop objects alive.
 .loops <- new.env(parent = emptyenv())
 
+new_weakref <- function(loop) {
+  .Call(`_later_new_weakref`, loop)
+}
+
+wref_key <- function(w) {
+  .Call(`_later_wref_key`, w)
+}
+
 #' Private event loops
 #'
 #' Normally, later uses a global event loop for scheduling and running
@@ -93,7 +101,7 @@ create_loop <- function(parent = current_loop(), autorun = NULL) {
   lockBinding("id", loop)
 
   # Add a weak reference to the loop object in our registry.
-  .loops[[sprintf("%d", id)]] <- rlang::new_weakref(loop)
+  .loops[[sprintf("%d", id)]] <- new_weakref(loop)
 
   if (id != 0L) {
     # Inform the C++ layer that there are no more R references when the handle
@@ -149,7 +157,7 @@ current_loop <- function() {
     stop("Current loop with id ", id, " not found.")
   }
 
-  loop <- rlang::wref_key(loop_weakref)
+  loop <- wref_key(loop_weakref)
   if (is.null(loop)) {
     stop("Current loop with id ", id, " not found.")
   }

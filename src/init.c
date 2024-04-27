@@ -25,6 +25,8 @@ SEXP _later_getCurrentRegistryId(void);
 SEXP _later_list_queue_(SEXP);
 SEXP _later_log_level(SEXP);
 SEXP _later_using_ubsan(void);
+SEXP _later_new_weakref(SEXP);
+SEXP _later_wref_key(SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
   {"_later_ensureInitialized",      (DL_FUNC) &_later_ensureInitialized,      0},
@@ -43,6 +45,8 @@ static const R_CallMethodDef CallEntries[] = {
   {"_later_list_queue_",            (DL_FUNC) &_later_list_queue_,            1},
   {"_later_log_level",              (DL_FUNC) &_later_log_level,              1},
   {"_later_using_ubsan",            (DL_FUNC) &_later_using_ubsan,            0},
+  {"_later_new_weakref",            (DL_FUNC) &_later_new_weakref,            1},
+  {"_later_wref_key",               (DL_FUNC) &_later_wref_key,               1},
   {NULL, NULL, 0}
 };
 
