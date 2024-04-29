@@ -14,6 +14,9 @@
 # this registry to keep the loop objects alive.
 .loops <- new.env(parent = emptyenv())
 
+# Our own weakref functions are implemented (instead of using those from
+# `rlang`) to avoid loading `rlang` automatically upon package load, as this
+# causes additional overhead for packages which only link to `later`.
 new_weakref <- function(loop) {
   .Call(`_later_new_weakref`, loop)
 }
@@ -256,6 +259,8 @@ print.event_loop <- function(x, ...) {
 #'
 #' @export
 later <- function(func, delay = 0, loop = current_loop()) {
+  # `rlang::as_function` is used conditionally so that `rlang` is not loaded
+  # until used, avoiding this overhead for packages only linking to `later`
   if (!is.function(func)) {
     func <- rlang::as_function(func)
   }
