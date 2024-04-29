@@ -1,5 +1,4 @@
-#' @useDynLib later
-#' @import Rcpp
+#' @useDynLib later, .registration=TRUE
 #' @importFrom Rcpp evalCpp
 
 .onLoad <- function(...) {
@@ -14,6 +13,17 @@
 # get the corresponding loop handle. We use weak refs because we don't want
 # this registry to keep the loop objects alive.
 .loops <- new.env(parent = emptyenv())
+
+# Our own weakref functions are implemented (instead of using those from
+# `rlang`) to avoid loading `rlang` automatically upon package load, as this
+# causes additional overhead for packages which only link to `later`.
+new_weakref <- function(loop) {
+  .Call(`_later_new_weakref`, loop)
+}
+
+wref_key <- function(w) {
+  .Call(`_later_wref_key`, w)
+}
 
 #' Private event loops
 #'
@@ -94,7 +104,7 @@ create_loop <- function(parent = current_loop(), autorun = NULL) {
   lockBinding("id", loop)
 
   # Add a weak reference to the loop object in our registry.
-  .loops[[sprintf("%d", id)]] <- rlang::new_weakref(loop)
+  .loops[[sprintf("%d", id)]] <- new_weakref(loop)
 
   if (id != 0L) {
     # Inform the C++ layer that there are no more R references when the handle
@@ -150,7 +160,7 @@ current_loop <- function() {
     stop("Current loop with id ", id, " not found.")
   }
 
-  loop <- rlang::wref_key(loop_weakref)
+  loop <- wref_key(loop_weakref)
   if (is.null(loop)) {
     stop("Current loop with id ", id, " not found.")
   }
@@ -249,8 +259,12 @@ print.event_loop <- function(x, ...) {
 #'
 #' @export
 later <- function(func, delay = 0, loop = current_loop()) {
-  f <- rlang::as_function(func)
-  id <- execLater(f, delay, loop$id)
+  # `rlang::as_function` is used conditionally so that `rlang` is not loaded
+  # until used, avoiding this overhead for packages only linking to `later`
+  if (!is.function(func)) {
+    func <- rlang::as_function(func)
+  }
+  id <- execLater(func, delay, loop$id)
 
   invisible(create_canceller(id, loop$id))
 }

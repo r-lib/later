@@ -9,22 +9,24 @@ Check these declarations against the C/Fortran source code.
 */
 
 /* .Call calls */
-extern SEXP _later_ensureInitialized(void);
-extern SEXP _later_execCallbacks(SEXP, SEXP, SEXP);
-extern SEXP _later_idle(SEXP);
-extern SEXP _later_execLater(SEXP, SEXP, SEXP);
-extern SEXP _later_cancel(SEXP, SEXP);
-extern SEXP _later_nextOpSecs(SEXP);
-extern SEXP _later_testCallbackOrdering(void);
-extern SEXP _later_createCallbackRegistry(SEXP, SEXP);
-extern SEXP _later_deleteCallbackRegistry(SEXP);
-extern SEXP _later_existsCallbackRegistry(SEXP);
-extern SEXP _later_notifyRRefDeleted(SEXP);
-extern SEXP _later_setCurrentRegistryId(SEXP);
-extern SEXP _later_getCurrentRegistryId(void);
-extern SEXP _later_list_queue_(SEXP);
-extern SEXP _later_log_level(SEXP);
-extern SEXP _later_using_ubsan(void);
+SEXP _later_ensureInitialized(void);
+SEXP _later_execCallbacks(SEXP, SEXP, SEXP);
+SEXP _later_idle(SEXP);
+SEXP _later_execLater(SEXP, SEXP, SEXP);
+SEXP _later_cancel(SEXP, SEXP);
+SEXP _later_nextOpSecs(SEXP);
+SEXP _later_testCallbackOrdering(void);
+SEXP _later_createCallbackRegistry(SEXP, SEXP);
+SEXP _later_deleteCallbackRegistry(SEXP);
+SEXP _later_existsCallbackRegistry(SEXP);
+SEXP _later_notifyRRefDeleted(SEXP);
+SEXP _later_setCurrentRegistryId(SEXP);
+SEXP _later_getCurrentRegistryId(void);
+SEXP _later_list_queue_(SEXP);
+SEXP _later_log_level(SEXP);
+SEXP _later_using_ubsan(void);
+SEXP _later_new_weakref(SEXP);
+SEXP _later_wref_key(SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
   {"_later_ensureInitialized",      (DL_FUNC) &_later_ensureInitialized,      0},
@@ -43,6 +45,8 @@ static const R_CallMethodDef CallEntries[] = {
   {"_later_list_queue_",            (DL_FUNC) &_later_list_queue_,            1},
   {"_later_log_level",              (DL_FUNC) &_later_log_level,              1},
   {"_later_using_ubsan",            (DL_FUNC) &_later_using_ubsan,            0},
+  {"_later_new_weakref",            (DL_FUNC) &_later_new_weakref,            1},
+  {"_later_wref_key",               (DL_FUNC) &_later_wref_key,               1},
   {NULL, NULL, 0}
 };
 
@@ -54,6 +58,7 @@ void R_init_later(DllInfo *dll)
 {
   R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
   R_useDynamicSymbols(dll, FALSE);
+  R_forceSymbols(dll, TRUE);
   // 2019-08-06
   // execLaterNative is registered here ONLY for backward compatibility; If
   // someone installed a package which had `#include <later_api.h>` (like
