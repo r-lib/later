@@ -1,5 +1,7 @@
 # later (development version)
 
+* Fixed #186: Improvements to package load time as `rlang` is now only loaded when used. This is a notable efficiency for packages with only a 'linking to' dependency on `later`. Also updates to native symbol registration from dynamic lookup. (@shikokuchuo and @wch, #187)
+
 # later 1.3.2
 
 * Fixed `unused variable` compiler warning. (@MichaelChirico, #176)
