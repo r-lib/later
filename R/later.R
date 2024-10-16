@@ -269,6 +269,39 @@ later <- function(func, delay = 0, loop = current_loop()) {
   invisible(create_canceller(id, loop$id))
 }
 
+#' Executes a function when a file descriptor is ready
+#'
+#' @param func A function that takes a single argument, a logical vector that
+#'   indicates which file descriptors are ready. This may be all `FALSE` if the
+#'   `timeout` argument is non-`Inf`.
+#' @param fd_set Integer vector of file descriptors to monitor. Or on Windows,
+#'   these may be `HANDLE` values.
+#' @param timeout Number of seconds to wait before giving up, and calling `func`
+#'   with all `FALSE`.
+#' @param loop A handle to an event loop. Defaults to the currently-active loop.
+#'
+#' @return A function, which, if invoked, will cancel the callback. The
+#'   function will return \code{TRUE} if the callback was successfully
+#'   cancelled and \code{FALSE} if not (this occurs if the callback has
+#'   executed or has been cancelled already).
+#'
+#' @export
+later_fd <- function(func, fd_set, timeout = Inf, loop = current_loop()) {
+  stop_at <- Sys.time() + timeout
+  check <- function() {
+    is_ready <- check_fd_ready(fd_set)
+    if (any(is_ready) || Sys.time() >= stop_at) {
+      func(is_ready)
+    } else {
+      cancel <<- later(check, 0.2, loop)
+    }
+  }
+  cancel <- later(check, 0, loop)
+  invisible(function() {
+    cancel()
+  })
+}
+
 # Returns a function that will cancel a callback with the given ID. If the
 # callback has already been executed or canceled, then the function has no
 # effect.

@@ -13,6 +13,10 @@ using_ubsan <- function() {
     .Call(`_later_using_ubsan`)
 }
 
+check_fd_ready <- function(fds) {
+    .Call(`_later_check_fd_ready`, fds)
+}
+
 setCurrentRegistryId <- function(id) {
     invisible(.Call(`_later_setCurrentRegistryId`, id))
 }

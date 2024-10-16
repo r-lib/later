@@ -20,6 +20,7 @@ SEXP _later_createCallbackRegistry(SEXP, SEXP);
 SEXP _later_deleteCallbackRegistry(SEXP);
 SEXP _later_existsCallbackRegistry(SEXP);
 SEXP _later_notifyRRefDeleted(SEXP);
+SEXP _later_check_fd_ready(SEXP fdsSEXP);
 SEXP _later_setCurrentRegistryId(SEXP);
 SEXP _later_getCurrentRegistryId(void);
 SEXP _later_list_queue_(SEXP);
@@ -40,6 +41,7 @@ static const R_CallMethodDef CallEntries[] = {
   {"_later_deleteCallbackRegistry", (DL_FUNC) &_later_deleteCallbackRegistry, 1},
   {"_later_existsCallbackRegistry", (DL_FUNC) &_later_existsCallbackRegistry, 1},
   {"_later_notifyRRefDeleted",      (DL_FUNC) &_later_notifyRRefDeleted,      1},
+  {"_later_check_fd_ready",         (DL_FUNC) &_later_check_fd_ready,         1},
   {"_later_setCurrentRegistryId",   (DL_FUNC) &_later_setCurrentRegistryId,   1},
   {"_later_getCurrentRegistryId",   (DL_FUNC) &_later_getCurrentRegistryId,   0},
   {"_later_list_queue_",            (DL_FUNC) &_later_list_queue_,            1},
