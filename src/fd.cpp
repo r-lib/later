@@ -11,10 +11,11 @@ typedef struct thread_args_s {
   SEXP func;
   int *fds;
   R_xlen_t num_fds;
-  int max_fd;
-  int loop;
   fd_set read_fds;
   struct timeval tv;
+  int max_fd;
+  int loop;
+  bool timerinf;
 } thread_args;
 
 static void later_callback(void *arg) {
@@ -37,7 +38,7 @@ static void *select_thread(void *arg) {
 
   thread_args *args = (thread_args *) arg;
 
-  int ready = select(args->max_fd + 1, &args->read_fds, NULL, NULL, &args->tv);
+  int ready = select(args->max_fd + 1, &args->read_fds, NULL, NULL, args->timerinf ? NULL : &args->tv);
 
   if (ready < 0) {
     // TODO: errno on Windows
@@ -86,7 +87,9 @@ Rcpp::LogicalVector execLater_fd(Rcpp::Function func, Rcpp::IntegerVector fds, R
   args->max_fd = max_fd;
   args->num_fds = num_fds;
 
-  if (timeoutsecs[0] >= 0 && timeoutsecs[0] != R_PosInf) {
+  if (timeoutsecs[0] == R_PosInf) {
+    args->timerinf = true;
+  } else if (timeoutsecs[0] > 0) {
     args->tv.tv_sec = (int) timeoutsecs[0];
     args->tv.tv_usec = ((int) timeoutsecs[0]) % 1 * 1^6;
   }
