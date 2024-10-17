@@ -287,14 +287,10 @@ later <- function(func, delay = 0, loop = current_loop()) {
 #'
 #' @export
 later_fd <- function(func, fd_set, timeout = Inf, loop = current_loop()) {
-  check <- function() {
-    is_ready <- check_fd_ready(fd_set, timeout)
-    func(is_ready)
+  if (!is.function(func)) {
+    func <- rlang::as_function(func)
   }
-  cancel <- later(check, 0, loop)
-  invisible(function() {
-    cancel()
-  })
+  invisible(check_fd_ready(func, fd_set, timeout, loop$id))
 }
 
 # Returns a function that will cancel a callback with the given ID. If the

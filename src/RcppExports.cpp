@@ -42,14 +42,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // check_fd_ready
-Rcpp::LogicalVector check_fd_ready(Rcpp::IntegerVector fds, Rcpp::NumericVector timeoutsecs);
-RcppExport SEXP _later_check_fd_ready(SEXP fdsSEXP, SEXP timeoutsecsSEXP) {
+Rcpp::LogicalVector check_fd_ready(Rcpp::Function func, Rcpp::IntegerVector fds, Rcpp::NumericVector timeoutsecs, Rcpp::IntegerVector loop);
+RcppExport SEXP _later_check_fd_ready(SEXP funcSEXP, SEXP fdsSEXP, SEXP timeoutsecsSEXP, SEXP loopSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::Function >::type func(funcSEXP);
     Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type fds(fdsSEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type timeoutsecs(timeoutsecsSEXP);
-    rcpp_result_gen = Rcpp::wrap(check_fd_ready(fds, timeoutsecs));
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type loop(loopSEXP);
+    rcpp_result_gen = Rcpp::wrap(check_fd_ready(func, fds, timeoutsecs, loop));
     return rcpp_result_gen;
 END_RCPP
 }
