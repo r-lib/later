@@ -285,12 +285,33 @@ later <- function(func, delay = 0, loop = current_loop()) {
 #'   cancelled and \code{FALSE} if not (this occurs if the callback has
 #'   executed or has been cancelled already).
 #'
+#' @examplesIf requireNamespace("nanonext", quietly = TRUE)
+#' library(nanonext)
+#' s1 <- socket(listen = "inproc://nano")
+#' s2 <- socket(dial = "inproc://nano")
+#' fd1 <- opt(s1, "recv-fd")
+#' fd2 <- opt(s2, "recv-fd")
+#' later_fd(print, c(fd1, fd2), 1)
+#' Sys.sleep(1.1)
+#' run_now()
+#' later_fd(print, c(fd1, fd2), 1)
+#' send(s1, "msg")
+#' Sys.sleep(0.1)
+#' run_now()
+#' recv(s2)
+#' send(s2, "msg")
+#' later_fd(print, c(fd1, fd2), 1)
+#' Sys.sleep(0.1)
+#' run_now()
+#' close(s2)
+#' close(s1)
+#'
 #' @export
 later_fd <- function(func, fd_set, timeout = Inf, loop = current_loop()) {
   if (!is.function(func)) {
     func <- rlang::as_function(func)
   }
-  invisible(check_fd_ready(func, fd_set, timeout, loop$id))
+  invisible(execLater_fd(func, fd_set, timeout, loop$id))
 }
 
 # Returns a function that will cancel a callback with the given ID. If the

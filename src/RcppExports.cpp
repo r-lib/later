@@ -41,9 +41,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// check_fd_ready
-Rcpp::LogicalVector check_fd_ready(Rcpp::Function func, Rcpp::IntegerVector fds, Rcpp::NumericVector timeoutsecs, Rcpp::IntegerVector loop);
-RcppExport SEXP _later_check_fd_ready(SEXP funcSEXP, SEXP fdsSEXP, SEXP timeoutsecsSEXP, SEXP loopSEXP) {
+// execLater_fd
+Rcpp::LogicalVector execLater_fd(Rcpp::Function func, Rcpp::IntegerVector fds, Rcpp::NumericVector timeoutsecs, Rcpp::IntegerVector loop);
+RcppExport SEXP _later_execLater_fd(SEXP funcSEXP, SEXP fdsSEXP, SEXP timeoutsecsSEXP, SEXP loopSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -51,7 +51,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type fds(fdsSEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type timeoutsecs(timeoutsecsSEXP);
     Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type loop(loopSEXP);
-    rcpp_result_gen = Rcpp::wrap(check_fd_ready(func, fds, timeoutsecs, loop));
+    rcpp_result_gen = Rcpp::wrap(execLater_fd(func, fds, timeoutsecs, loop));
     return rcpp_result_gen;
 END_RCPP
 }

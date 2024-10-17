@@ -66,7 +66,7 @@ static DWORD WINAPI select_thread_win(LPVOID lpParameter) {
 #endif
 
 // [[Rcpp::export]]
-Rcpp::LogicalVector check_fd_ready(Rcpp::Function func, Rcpp::IntegerVector fds, Rcpp::NumericVector timeoutsecs, Rcpp::IntegerVector loop) {
+Rcpp::LogicalVector execLater_fd(Rcpp::Function func, Rcpp::IntegerVector fds, Rcpp::NumericVector timeoutsecs, Rcpp::IntegerVector loop) {
 
   R_xlen_t num_fds = fds.size();
   int max_fd = -1;

@@ -23,6 +23,7 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Suggests:
     knitr,
+    nanonext,
     rmarkdown,
     testthat (>= 2.1.0)
 VignetteBuilder: knitr

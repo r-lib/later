@@ -28,3 +28,26 @@ executed or has been cancelled already).
 \description{
 Executes a function when a file descriptor is ready
 }
+\examples{
+\dontshow{if (requireNamespace("nanonext", quietly = TRUE)) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+library(nanonext)
+s1 <- socket(listen = "inproc://nano")
+s2 <- socket(dial = "inproc://nano")
+fd1 <- opt(s1, "recv-fd")
+fd2 <- opt(s2, "recv-fd")
+later_fd(print, c(fd1, fd2), 1)
+Sys.sleep(1.1)
+run_now()
+later_fd(print, c(fd1, fd2), 1)
+send(s1, "msg")
+Sys.sleep(0.1)
+run_now()
+recv(s2)
+send(s2, "msg")
+later_fd(print, c(fd1, fd2), 1)
+Sys.sleep(0.1)
+run_now()
+close(s2)
+close(s1)
+\dontshow{\}) # examplesIf}
+}
