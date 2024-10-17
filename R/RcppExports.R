@@ -13,8 +13,8 @@ using_ubsan <- function() {
     .Call(`_later_using_ubsan`)
 }
 
-check_fd_ready <- function(fds) {
-    .Call(`_later_check_fd_ready`, fds)
+check_fd_ready <- function(fds, timeoutsecs) {
+    .Call(`_later_check_fd_ready`, fds, timeoutsecs)
 }
 
 setCurrentRegistryId <- function(id) {

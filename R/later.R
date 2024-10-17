@@ -287,14 +287,9 @@ later <- function(func, delay = 0, loop = current_loop()) {
 #'
 #' @export
 later_fd <- function(func, fd_set, timeout = Inf, loop = current_loop()) {
-  stop_at <- Sys.time() + timeout
   check <- function() {
-    is_ready <- check_fd_ready(fd_set)
-    if (any(is_ready) || Sys.time() >= stop_at) {
-      func(is_ready)
-    } else {
-      cancel <<- later(check, 0.2, loop)
-    }
+    is_ready <- check_fd_ready(fd_set, timeout)
+    func(is_ready)
   }
   cancel <- later(check, 0, loop)
   invisible(function() {

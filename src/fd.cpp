@@ -5,11 +5,12 @@
 #include <unistd.h>
 
 // [[Rcpp::export]]
-Rcpp::LogicalVector check_fd_ready(Rcpp::IntegerVector fds) {
+Rcpp::LogicalVector check_fd_ready(Rcpp::IntegerVector fds, Rcpp::NumericVector timeoutsecs) {
   int num_fds = fds.size();
   fd_set read_fds;
   struct timeval tv;
   int max_fd = -1;
+  int ready;
 
   // Initialize the file descriptor set
   FD_ZERO(&read_fds);
@@ -22,11 +23,13 @@ Rcpp::LogicalVector check_fd_ready(Rcpp::IntegerVector fds) {
   }
 
   // Set the timeout to 0 for immediate return
-  tv.tv_sec = 0;
-  tv.tv_usec = 0;
-
-  // Use select to check which file descriptors are ready
-  int ready = select(max_fd + 1, &read_fds, NULL, NULL, &tv);
+  if (timeoutsecs[0] >= 0 && timeoutsecs[0] != R_PosInf) {
+    tv.tv_sec = (int) timeoutsecs[0];
+    tv.tv_usec = ((int) timeoutsecs[0]) % 1 * 1^6;
+    ready = select(max_fd + 1, &read_fds, NULL, NULL, &tv);
+  } else {
+    ready = select(max_fd + 1, &read_fds, NULL, NULL, NULL);
+  }
 
   // Check for errors
   if (ready == -1) {
