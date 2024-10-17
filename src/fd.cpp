@@ -40,6 +40,7 @@ static void *select_thread(void *arg) {
   int ready = select(args->max_fd + 1, &args->read_fds, NULL, NULL, &args->tv);
 
   if (ready < 0) {
+    // TODO: errno on Windows
     err_printf("select error: %s\n", strerror(errno));
     R_ReleaseObject(args->func);
     R_Free(args->fds);
@@ -69,8 +70,6 @@ Rcpp::LogicalVector check_fd_ready(Rcpp::Function func, Rcpp::IntegerVector fds,
 
   R_xlen_t num_fds = fds.size();
   int max_fd = -1;
-  pthread_attr_t attr;
-  pthread_t t;
   thread_args *args = R_Calloc(1, thread_args);
   args->fds = R_Calloc(num_fds, int);
   R_PreserveObject(func);
@@ -103,6 +102,9 @@ Rcpp::LogicalVector check_fd_ready(Rcpp::Function func, Rcpp::IntegerVector fds,
   CloseHandle(hThread);
 
 #else
+
+  pthread_attr_t attr;
+  pthread_t t;
 
   if (pthread_attr_init(&attr))
     Rcpp::stop("pthread error: " + std::string(strerror(errno)));

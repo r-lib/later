@@ -1,4 +1,5 @@
 PKG_CPPFLAGS = -DSTRICT_R_HEADERS
+PKG_LIBS = -lWs2_32
 
 #### Debugging flags ####
 # Uncomment to enable thread assertions
