@@ -9,39 +9,40 @@
 
 typedef struct thread_args_s {
   SEXP callback;
-  int *fds;
   R_xlen_t num_fds;
+  int *fds;
   fd_set read_fds;
   struct timeval tv;
   int max_fd;
   int loop;
-  bool timerinf;
+  bool timer_inf;
 } thread_args;
 
 static void later_callback(void *arg) {
+
   thread_args *args = (thread_args *) arg;
   SEXP results, call;
   PROTECT(results = Rf_allocVector(LGLSXP, args->num_fds));
   int *res = INTEGER(results);
-  for (R_xlen_t i = 0; i < args->num_fds; i++) {
-    res[i] = args->fds[i];
-  }
+  memcpy(res, args->fds, args->num_fds * sizeof(int));
   PROTECT(call = Rf_lcons(args->callback, Rf_cons(results, R_NilValue)));
   Rf_eval(call, R_GlobalEnv);
   UNPROTECT(2);
   R_ReleaseObject(args->callback);
   R_Free(args->fds);
   R_Free(args);
+
 }
 
+// TODO: add method for HANDLES on Windows
 static void *select_thread(void *arg) {
 
   thread_args *args = (thread_args *) arg;
 
-  int ready = select(args->max_fd + 1, &args->read_fds, NULL, NULL, args->timerinf ? NULL : &args->tv);
+  int ready = select(args->max_fd + 1, &args->read_fds, NULL, NULL, args->timer_inf ? NULL : &args->tv);
 
   if (ready < 0) {
-    // TODO: errno on Windows
+    // TODO: fix errno on Windows
     err_printf("select error: %s\n", strerror(errno));
     R_ReleaseObject(args->callback);
     R_Free(args->fds);
@@ -53,7 +54,7 @@ static void *select_thread(void *arg) {
     args->fds[i] = FD_ISSET(args->fds[i], &args->read_fds) != 0;
   }
 
-  execLaterNative2(later_callback, args, 0, args->loop);
+  execLaterNative2(later_callback, arg, 0, args->loop);
 
   return NULL;
 
@@ -70,25 +71,29 @@ static DWORD WINAPI select_thread_win(LPVOID lpParameter) {
 Rcpp::LogicalVector execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector fds, Rcpp::NumericVector timeoutSecs, Rcpp::IntegerVector loop_id) {
 
   R_xlen_t num_fds = fds.size();
+  int loop = loop_id[0];
   int max_fd = -1;
+
   thread_args *args = R_Calloc(1, thread_args);
-  args->fds = R_Calloc(num_fds, int);
+  int *fdvals = R_Calloc(num_fds, int);
+  args->fds = fdvals;
+  args->num_fds = num_fds;
   R_PreserveObject(callback);
   args->callback = callback;
-  args->loop = loop_id[0];
+  args->loop = loop;
 
   FD_ZERO(&args->read_fds);
 
-  for (int i = 0; i < num_fds; i++) {
-    args->fds[i] = fds[i];
-    FD_SET(args->fds[i], &args->read_fds);
-    max_fd = std::max(max_fd, args->fds[i]);
+  if (num_fds)
+    memcpy(fdvals, fds.begin(), num_fds * sizeof(int));
+  for (R_xlen_t i = 0; i < num_fds; i++) {
+    FD_SET(fdvals[i], &args->read_fds);
+    max_fd = std::max(max_fd, fdvals[i]);
   }
   args->max_fd = max_fd;
-  args->num_fds = num_fds;
 
   if (timeoutSecs[0] == R_PosInf) {
-    args->timerinf = true;
+    args->timer_inf = true;
   } else if (timeoutSecs[0] > 0) {
     args->tv.tv_sec = (int) timeoutSecs[0];
     args->tv.tv_usec = ((int) (timeoutSecs[0] * 1000)) % 1000 * 1000;
@@ -123,6 +128,8 @@ Rcpp::LogicalVector execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector fd
   }
 
 #endif
+
+  // TODO: add cancellation
 
   return true;
 

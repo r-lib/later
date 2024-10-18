@@ -287,11 +287,10 @@ later <- function(func, delay = 0, loop = current_loop()) {
 #'
 #' @examplesIf requireNamespace("nanonext", quietly = TRUE)
 #' # create nanonext socket
-#' library(nanonext)
-#' s1 <- socket(listen = "inproc://nano")
-#' s2 <- socket(dial = "inproc://nano")
-#' fd1 <- opt(s1, "recv-fd")
-#' fd2 <- opt(s2, "recv-fd")
+#' s1 <- nanonext::socket(listen = "inproc://nano")
+#' s2 <- nanonext::socket(dial = "inproc://nano")
+#' fd1 <- nanonext::opt(s1, "recv-fd")
+#' fd2 <- nanonext::opt(s2, "recv-fd")
 #'
 #' # 1. timeout: prints FALSE, FALSE
 #' later_fd(print, c(fd1, fd2), 1)
@@ -300,13 +299,18 @@ later <- function(func, delay = 0, loop = current_loop()) {
 #'
 #' # 2. fd1 active: prints TRUE, FALSE
 #' later_fd(print, c(fd1, fd2), 1)
-#' send(s2, "msg")
+#' res <- nanonext::send(s2, "msg")
 #' Sys.sleep(0.1)
 #' run_now()
 #'
-#' # 3. fd2 active: prints FALSE, TRUE
-#' recv(s1)
-#' send(s1, "msg")
+#' # 3. both active: prints TRUE, TRUE
+#' res <- nanonext::send(s1, "msg")
+#' later_fd(print, c(fd1, fd2), 1)
+#' #' Sys.sleep(1.1)
+#' run_now()
+#'
+#' # 4. fd2 active: prints FALSE, TRUE
+#' res <- nanonext::recv(s1)
 #' later_fd(print, c(fd1, fd2), 1)
 #' Sys.sleep(0.1)
 #' run_now()
