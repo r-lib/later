@@ -91,7 +91,7 @@ Rcpp::LogicalVector execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector fd
     args->timerinf = true;
   } else if (timeoutSecs[0] > 0) {
     args->tv.tv_sec = (int) timeoutSecs[0];
-    args->tv.tv_usec = ((int) (timeoutSecs[0] * 1000)) % 1000 / 1000;
+    args->tv.tv_usec = ((int) (timeoutSecs[0] * 1000)) % 1000 * 1000;
   }
 
 #ifdef _WIN32
