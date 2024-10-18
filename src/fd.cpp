@@ -1,6 +1,7 @@
 #ifdef _WIN32
 #include <winsock2.h>
 #endif
+#include <cmath>
 #include <Rcpp.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -64,7 +65,7 @@ static DWORD WINAPI select_thread_win(LPVOID lpParameter) {
 Rcpp::LogicalVector execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector fds, Rcpp::NumericVector timeoutSecs, Rcpp::IntegerVector loop_id) {
 
   R_xlen_t num_fds = fds.size();
-  double timeout = timeoutSecs[0];
+  double timeout = std::abs(timeoutSecs[0]);
   int loop = loop_id[0];
   int max_fd = -1;
 
@@ -88,9 +89,8 @@ Rcpp::LogicalVector execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector fd
   args->flag = timeout != R_PosInf;
 
   if (args->flag) {
-    // curl_multi_timeout() returns -1 if no stored timeout - use default of 1s
-    args->tv.tv_sec = timeout < 0 ? 1 : (int) timeoutSecs[0];
-    args->tv.tv_usec = timeout < 0 ? 0 : ((int) (timeoutSecs[0] * 1000)) % 1000 * 1000;
+    args->tv.tv_sec = (int) timeoutSecs[0];
+    args->tv.tv_usec = ((int) (timeoutSecs[0] * 1000)) % 1000 * 1000;
   }
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(new std::shared_ptr<ThreadArgs>(args));
