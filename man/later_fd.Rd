@@ -12,7 +12,7 @@ indicates which file descriptors are ready. This may be all \code{FALSE} if the
 \code{timeout} argument is non-\code{Inf}.}
 
 \item{fd_set}{Integer vector of file descriptors to monitor. Or on Windows,
-these may be \code{HANDLE} values.}
+\code{SOCKET} values.}
 
 \item{timeout}{Number of seconds to wait before giving up, and calling \code{func}
 with all \code{FALSE}.}
@@ -30,23 +30,31 @@ Executes a function when a file descriptor is ready
 }
 \examples{
 \dontshow{if (requireNamespace("nanonext", quietly = TRUE)) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+# create nanonext socket
 library(nanonext)
 s1 <- socket(listen = "inproc://nano")
 s2 <- socket(dial = "inproc://nano")
 fd1 <- opt(s1, "recv-fd")
 fd2 <- opt(s2, "recv-fd")
+
+# 1. timeout: prints FALSE, FALSE
 later_fd(print, c(fd1, fd2), 1)
 Sys.sleep(1.1)
 run_now()
+
+# 2. fd1 active: prints TRUE, FALSE
 later_fd(print, c(fd1, fd2), 1)
-send(s1, "msg")
-Sys.sleep(0.1)
-run_now()
-recv(s2)
 send(s2, "msg")
+Sys.sleep(0.1)
+run_now()
+
+# 3. fd2 active: prints FALSE, TRUE
+recv(s1)
+send(s1, "msg")
 later_fd(print, c(fd1, fd2), 1)
 Sys.sleep(0.1)
 run_now()
+
 close(s2)
 close(s1)
 \dontshow{\}) # examplesIf}
