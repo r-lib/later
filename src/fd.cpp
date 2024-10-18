@@ -74,7 +74,7 @@ Rcpp::LogicalVector execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector fd
   int max_fd = -1;
 
   std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>();
-  auto fdvals = std::make_unique<std::vector<int>>(num_fds);
+  std::unique_ptr<std::vector<int>> fdvals(new std::vector<int>(num_fds));
   args->num_fds = num_fds;
   R_PreserveObject(callback);
   args->callback = callback;
@@ -98,7 +98,7 @@ Rcpp::LogicalVector execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector fd
     args->tv.tv_usec = ((int) (timeoutSecs[0] * 1000)) % 1000 * 1000;
   }
 
-  auto argsptr = std::make_unique<std::shared_ptr<ThreadArgs>>(args);
+  std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(new std::shared_ptr<ThreadArgs>(args));
 
 #ifdef _WIN32
 
