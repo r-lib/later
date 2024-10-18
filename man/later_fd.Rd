@@ -9,7 +9,8 @@ later_fd(func, fd_set, timeout = Inf, loop = current_loop())
 \arguments{
 \item{func}{A function that takes a single argument, a logical vector that
 indicates which file descriptors are ready. This may be all \code{FALSE} if the
-\code{timeout} argument is non-\code{Inf}.}
+\code{timeout} argument is non-\code{Inf}, or all \code{NA} if one or more file
+descriptors are invalid.}
 
 \item{fd_set}{Integer vector of file descriptors to monitor. Or on Windows,
 \code{SOCKET} values.}
@@ -37,8 +38,8 @@ fd1 <- nanonext::opt(s1, "recv-fd")
 fd2 <- nanonext::opt(s2, "recv-fd")
 
 # 1. timeout: prints FALSE, FALSE
-later_fd(print, c(fd1, fd2), 1)
-Sys.sleep(1.1)
+later_fd(print, c(fd1, fd2), 0.1)
+Sys.sleep(0.2)
 run_now()
 
 # 2. fd1 active: prints TRUE, FALSE
@@ -50,7 +51,7 @@ run_now()
 # 3. both active: prints TRUE, TRUE
 res <- nanonext::send(s1, "msg")
 later_fd(print, c(fd1, fd2), 1)
-#' Sys.sleep(1.1)
+Sys.sleep(0.1)
 run_now()
 
 # 4. fd2 active: prints FALSE, TRUE
@@ -59,7 +60,11 @@ later_fd(print, c(fd1, fd2), 1)
 Sys.sleep(0.1)
 run_now()
 
+# 5. fds invalid: prints NA, NA
 close(s2)
 close(s1)
+later_fd(print, c(fd1, fd2), 1)
+Sys.sleep(0.1)
+run_now()
 \dontshow{\}) # examplesIf}
 }

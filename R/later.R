@@ -273,7 +273,8 @@ later <- function(func, delay = 0, loop = current_loop()) {
 #'
 #' @param func A function that takes a single argument, a logical vector that
 #'   indicates which file descriptors are ready. This may be all `FALSE` if the
-#'   `timeout` argument is non-`Inf`.
+#'   `timeout` argument is non-`Inf`, or all `NA` if one or more file
+#'   descriptors are invalid.
 #' @param fd_set Integer vector of file descriptors to monitor. Or on Windows,
 #'   `SOCKET` values.
 #' @param timeout Number of seconds to wait before giving up, and calling `func`
@@ -293,8 +294,8 @@ later <- function(func, delay = 0, loop = current_loop()) {
 #' fd2 <- nanonext::opt(s2, "recv-fd")
 #'
 #' # 1. timeout: prints FALSE, FALSE
-#' later_fd(print, c(fd1, fd2), 1)
-#' Sys.sleep(1.1)
+#' later_fd(print, c(fd1, fd2), 0.1)
+#' Sys.sleep(0.2)
 #' run_now()
 #'
 #' # 2. fd1 active: prints TRUE, FALSE
@@ -306,7 +307,7 @@ later <- function(func, delay = 0, loop = current_loop()) {
 #' # 3. both active: prints TRUE, TRUE
 #' res <- nanonext::send(s1, "msg")
 #' later_fd(print, c(fd1, fd2), 1)
-#' #' Sys.sleep(1.1)
+#' Sys.sleep(0.1)
 #' run_now()
 #'
 #' # 4. fd2 active: prints FALSE, TRUE
@@ -315,8 +316,12 @@ later <- function(func, delay = 0, loop = current_loop()) {
 #' Sys.sleep(0.1)
 #' run_now()
 #'
+#' # 5. fds invalid: prints NA, NA
 #' close(s2)
 #' close(s1)
+#' later_fd(print, c(fd1, fd2), 1)
+#' Sys.sleep(0.1)
+#' run_now()
 #'
 #' @export
 later_fd <- function(func, fd_set, timeout = Inf, loop = current_loop()) {
