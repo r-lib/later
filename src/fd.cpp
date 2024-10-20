@@ -26,6 +26,8 @@ static void later_callback(void *arg) {
   std::shared_ptr<ThreadArgs> args = *argsptr;
 
   SEXP results, call;
+  // TODO: actually pre-allocate call on main thread, values can be safely updated from background thread
+  // only call Rf_eval() here to minimise runtime in later callback.
   PROTECT(results = Rf_allocVector(LGLSXP, args->num_fds));
   std::memcpy((void *) DATAPTR_RO(results), args->fds->data(), args->num_fds * sizeof(int));
   PROTECT(call = Rf_lcons(args->callback, Rf_cons(results, R_NilValue)));
@@ -119,6 +121,7 @@ Rcpp::LogicalVector execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector fd
   pthread_attr_t attr;
   pthread_t t;
 
+  // TODO: actually allocate global pthread_attr in .onLoad() and re-use, destroy in .onUnload()
   if (pthread_attr_init(&attr))
     Rcpp::stop("thread creation error: " + std::string(strerror(errno)));
 
