@@ -5,6 +5,9 @@
 #include <unistd.h>
 #include <cstdlib>
 #include "later.h"
+#include "callback_registry_table.h"
+
+extern CallbackRegistryTable callbackRegistryTable;
 
 typedef struct ThreadArgs_s {
   SEXP callback;
@@ -53,7 +56,7 @@ static void *select_thread(void *arg) {
     (*args->fds)[i] = args->flag ? R_NaInt : FD_ISSET((*args->fds)[i], &args->read_fds) != 0;
   }
 
-  execLaterNative2(later_callback, static_cast<void *>(argsptr.release()), 0, args->loop);
+  callbackRegistryTable.scheduleCallback(later_callback, static_cast<void *>(argsptr.release()), 0, args->loop);
 
   return nullptr;
 
