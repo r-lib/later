@@ -37,12 +37,12 @@ test_that("later_fd", {
   run_now()
   expect_equal(result, c(FALSE, TRUE))
 
-  # 5. fd2 invalid - returns all NA
+  # 5. fd2 invalid - returns NA for fd2
   close(s2)
   later_fd(callback, c(fd1, fd2), 1)
   Sys.sleep(0.1)
   run_now()
-  expect_equal(result, c(NA, NA))
+  expect_equal(result, c(FALSE, NA))
 
   # 6. both fds invalid - returns all NA
   close(s1)

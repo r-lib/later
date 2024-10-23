@@ -9,8 +9,8 @@ later_fd(func, fd_set, timeout = Inf, loop = current_loop())
 \arguments{
 \item{func}{A function that takes a single argument, a logical vector that
 indicates which file descriptors are ready. This may be all \code{FALSE} if the
-\code{timeout} argument is non-\code{Inf}, or all \code{NA} if one or more file
-descriptors are invalid.}
+\code{timeout} argument is non-\code{Inf}. Invalid or already closed file descriptors
+will return \code{NA}.}
 
 \item{fd_set}{Integer vector of file descriptors to monitor. Or on Windows,
 \code{SOCKET} values.}

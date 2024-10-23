@@ -1,5 +1,7 @@
 #ifdef _WIN32
 #include <winsock2.h>
+#else
+#include <poll.h>
 #endif
 #include <Rcpp.h>
 #include <unistd.h>
@@ -11,9 +13,9 @@ extern CallbackRegistryTable callbackRegistryTable;
 
 typedef struct ThreadArgs_s {
   SEXP callback;
-  R_xlen_t num_fds;
-  std::unique_ptr<std::vector<int>> fds;
   double timeout;
+  std::unique_ptr<std::vector<int>> fds;
+  int num_fds;
   int loop;
 } ThreadArgs;
 
@@ -26,7 +28,7 @@ static void later_callback(void *arg) {
 
 }
 
-// CONSIDER: upgrade select() to poll() / WSAPoll().
+// CONSIDER: add interface to allow monitoring of different event types.
 // CONSIDER: add method for HANDLES on Windows. Assuming we only accept integer
 // values for both, we could use heuristics: check if it is a valid SOCKET or
 // else assume HANDLE - but this is not fool-proof.
@@ -36,42 +38,40 @@ static void *select_thread(void *arg) {
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
   std::shared_ptr<ThreadArgs> args = *argsptr;
 
-  fd_set readfds, writefds, exceptfds;
-  FD_ZERO(&readfds);
-  FD_ZERO(&writefds);
-  FD_ZERO(&exceptfds);
-  int max_fd = -1;
+  int timeout = args->timeout == R_PosInf ? -1 : args->timeout < 0 ? 1000 : (int) (args->timeout * 1000);
+  int result;
 
-  for (R_xlen_t i = 0; i < args->num_fds; i++) {
-    int fd = (*args->fds)[i];
-    FD_SET(fd, &readfds);
-    FD_SET(fd, &writefds);
-    FD_SET(fd, &exceptfds);
-    max_fd = std::max(max_fd, fd);
+#ifdef _WIN32
+  std::vector<WSAPOLLFD> pollfds;
+  for (int i = 0; i < args->num_fds; i++) {
+    WSAPOLLFD pfd;
+    pfd.fd = (*args->fds)[i];
+    pfd.events = POLLIN;
+    pfd.revents = 0;
+    pollfds.push_back(pfd);
   }
-
-  int use_timeout = args->timeout != R_PosInf;
-  struct timeval tv;
-
-  if (use_timeout) {
-    // curl_multi_timeout() returns -1 to indicate default of 1s
-    tv.tv_sec = args->timeout < 0 ? 1 : (int) args->timeout;
-    tv.tv_usec = args->timeout < 0 ? 0 : ((int) (args->timeout * 1000)) % 1000 * 1000;
+  result = WSAPoll(pollfds.data(), args->num_fds, timeout);
+#else
+  std::vector<struct pollfd> pollfds;
+  for (int i = 0; i < args->num_fds; i++) {
+    pollfd pfd;
+    pfd.fd = (*args->fds)[i];
+    pfd.events = POLLIN;
+    pfd.revents = 0;
+    pollfds.push_back(pfd);
   }
-
-  // CONSIDER: modify user interface to allow specifying event type
-  int result = select(max_fd + 1, &readfds, &writefds, &exceptfds, use_timeout ? &tv : NULL);
+  result = poll(pollfds.data(), args->num_fds, timeout);
+#endif
 
   int *values = (int *) DATAPTR_RO(CADR(args->callback));
-  if (result < 0) {
-    for (R_xlen_t i = 0; i < args->num_fds; i++) {
-      values[i] = R_NaInt;
+  // result == 0 if timed out
+  if (result) {
+    for (int i = 0; i < args->num_fds; i++) {
+      values[i] = pollfds[i].revents & POLLNVAL ? R_NaInt : pollfds[i].revents & POLLIN;
     }
   } else {
-    for (R_xlen_t i = 0; i < args->num_fds; i++) {
-      values[i] = FD_ISSET((*args->fds)[i], &readfds) ||
-        FD_ISSET((*args->fds)[i], &writefds) ||
-        FD_ISSET((*args->fds)[i], &exceptfds);
+    for (int i = 0; i < args->num_fds; i++) {
+      values[i] = 0;
     }
   }
 
@@ -91,7 +91,7 @@ static DWORD WINAPI select_thread_win(LPVOID lpParameter) {
 // [[Rcpp::export]]
 Rcpp::LogicalVector execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector fds, Rcpp::NumericVector timeoutSecs, Rcpp::IntegerVector loop_id) {
 
-  R_xlen_t num_fds = fds.size();
+  int num_fds = (int) fds.size();
   double timeout = timeoutSecs[0];
   int loop = loop_id[0];
 

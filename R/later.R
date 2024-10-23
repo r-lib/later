@@ -273,8 +273,8 @@ later <- function(func, delay = 0, loop = current_loop()) {
 #'
 #' @param func A function that takes a single argument, a logical vector that
 #'   indicates which file descriptors are ready. This may be all `FALSE` if the
-#'   `timeout` argument is non-`Inf`, or all `NA` if one or more file
-#'   descriptors are invalid.
+#'   `timeout` argument is non-`Inf`. Invalid or already closed file descriptors
+#'   will return `NA`.
 #' @param fd_set Integer vector of file descriptors to monitor. Or on Windows,
 #'   `SOCKET` values.
 #' @param timeout Number of seconds to wait before giving up, and calling `func`
