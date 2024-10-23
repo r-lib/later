@@ -24,15 +24,7 @@ static void later_callback(void *arg) {
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
   std::shared_ptr<ThreadArgs> args = *argsptr;
-
-  SEXP results, call;
-  // TODO: actually pre-allocate call on main thread, values can be safely updated from background thread
-  // only call Rf_eval() here to minimise runtime in later callback.
-  PROTECT(results = Rf_allocVector(LGLSXP, args->num_fds));
-  std::memcpy((void *) DATAPTR_RO(results), args->fds->data(), args->num_fds * sizeof(int));
-  PROTECT(call = Rf_lcons(args->callback, Rf_cons(results, R_NilValue)));
-  Rf_eval(call, R_GlobalEnv);
-  UNPROTECT(2);
+  Rf_eval(args->callback, R_GlobalEnv);
   R_ReleaseObject(args->callback);
 
 }
@@ -53,9 +45,10 @@ static void *select_thread(void *arg) {
   int ready = select(args->max_fd + 1, &args->read_fds, NULL, NULL, args->flag ? &args->tv : NULL);
 
   args->flag = ready < 0;
+  int *values = (int *) DATAPTR_RO(CADR(args->callback));
 
   for (R_xlen_t i = 0; i < args->num_fds; i++) {
-    (*args->fds)[i] = args->flag ? R_NaInt : FD_ISSET((*args->fds)[i], &args->read_fds) != 0;
+    values[i] = args->flag ? R_NaInt : FD_ISSET((*args->fds)[i], &args->read_fds) != 0;
   }
 
   callbackRegistryTable.scheduleCallback(later_callback, static_cast<void *>(argsptr.release()), 0, args->loop);
@@ -79,12 +72,14 @@ Rcpp::LogicalVector execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector fd
   int loop = loop_id[0];
   int max_fd = -1;
 
+  SEXP call = Rf_lcons(callback, Rf_cons(Rf_allocVector(LGLSXP, num_fds), R_NilValue));
+  R_PreserveObject(call);
+
   std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>();
   std::unique_ptr<std::vector<int>> fdvals(new std::vector<int>(num_fds));
   args->num_fds = num_fds;
-  R_PreserveObject(callback);
-  args->callback = callback;
   args->loop = loop;
+  args->callback = call;
 
   FD_ZERO(&args->read_fds);
 
@@ -119,21 +114,20 @@ Rcpp::LogicalVector execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector fd
 #else
 
   pthread_attr_t attr;
-  pthread_t t;
+  pthread_t thr;
 
-  // TODO: actually allocate global pthread_attr in .onLoad() and re-use, destroy in .onUnload()
+  // TODO: actually allocate global pthread_attr and cache for re-use
   if (pthread_attr_init(&attr))
     Rcpp::stop("thread creation error: " + std::string(strerror(errno)));
 
   if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) ||
-      pthread_create(&t, &attr, select_thread, static_cast<void *>(argsptr.release()))) {
+      pthread_create(&thr, &attr, select_thread, static_cast<void *>(argsptr.release()))) {
     pthread_attr_destroy(&attr);
     Rcpp::stop("thread creation error: " + std::string(strerror(errno)));
   }
 
-  if (pthread_attr_destroy(&attr)) {
+  if (pthread_attr_destroy(&attr))
     Rcpp::stop("thread creation error: " + std::string(strerror(errno)));
-  }
 
 #endif
 
