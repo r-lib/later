@@ -13,11 +13,8 @@ typedef struct ThreadArgs_s {
   SEXP callback;
   R_xlen_t num_fds;
   std::unique_ptr<std::vector<int>> fds;
-  fd_set read_fds;
-  struct timeval tv;
-  int max_fd;
+  double timeout;
   int loop;
-  bool flag;
 } ThreadArgs;
 
 static void later_callback(void *arg) {
@@ -39,16 +36,34 @@ static void *select_thread(void *arg) {
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
   std::shared_ptr<ThreadArgs> args = *argsptr;
 
+  fd_set read_fds;
+  FD_ZERO(&read_fds);
+  int max_fd = -1;
+
+  for (R_xlen_t i = 0; i < args->num_fds; i++) {
+    int fd = (*args->fds)[i];
+    FD_SET(fd, &read_fds);
+    max_fd = std::max(max_fd, fd);
+  }
+
+  int use_timeout = args->timeout != R_PosInf;
+  struct timeval tv;
+
+  if (use_timeout) {
+    // curl_multi_timeout() returns -1 to indicate default of 1s
+    tv.tv_sec = args->timeout < 0 ? 1 : (int) args->timeout;
+    tv.tv_usec = args->timeout < 0 ? 0 : ((int) (args->timeout * 1000)) % 1000 * 1000;
+  }
+
   // CONSIDER: if we should be checking more than read activity, i.e. write and error.
   // Could check all types for all fds, which would be inefficient but
   // otherwise would require user interface to specify events for each fd
-  int ready = select(args->max_fd + 1, &args->read_fds, NULL, NULL, args->flag ? &args->tv : NULL);
+  int result = select(max_fd + 1, &read_fds, NULL, NULL, use_timeout ? &tv : NULL);
 
-  args->flag = ready < 0;
   int *values = (int *) DATAPTR_RO(CADR(args->callback));
 
   for (R_xlen_t i = 0; i < args->num_fds; i++) {
-    values[i] = args->flag ? R_NaInt : FD_ISSET((*args->fds)[i], &args->read_fds) != 0;
+    values[i] = result < 0 ? R_NaInt : FD_ISSET((*args->fds)[i], &read_fds) != 0;
   }
 
   callbackRegistryTable.scheduleCallback(later_callback, static_cast<void *>(argsptr.release()), 0, args->loop);
@@ -70,7 +85,6 @@ Rcpp::LogicalVector execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector fd
   R_xlen_t num_fds = fds.size();
   double timeout = timeoutSecs[0];
   int loop = loop_id[0];
-  int max_fd = -1;
 
   SEXP call = Rf_lcons(callback, Rf_cons(Rf_allocVector(LGLSXP, num_fds), R_NilValue));
   R_PreserveObject(call);
@@ -78,26 +92,13 @@ Rcpp::LogicalVector execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector fd
   std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>();
   std::unique_ptr<std::vector<int>> fdvals(new std::vector<int>(num_fds));
   args->num_fds = num_fds;
+  args->timeout = timeout;
   args->loop = loop;
   args->callback = call;
 
-  FD_ZERO(&args->read_fds);
-
   if (num_fds)
     std::memcpy(fdvals->data(), fds.begin(), num_fds * sizeof(int));
-  for (R_xlen_t i = 0; i < num_fds; i++) {
-    FD_SET((*fdvals)[i], &args->read_fds);
-    max_fd = std::max(max_fd, (*fdvals)[i]);
-  }
   args->fds = std::move(fdvals);
-  args->max_fd = max_fd;
-  args->flag = timeout != R_PosInf;
-
-  // handle -1 returned by curl_multi_timeout() with default of 1s
-  if (args->flag) {
-    args->tv.tv_sec = timeout < 0 ? 1 : (int) timeoutSecs[0];
-    args->tv.tv_usec = timeout < 0 ? 0 : ((int) (timeoutSecs[0] * 1000)) % 1000 * 1000;
-  }
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(new std::shared_ptr<ThreadArgs>(args));
 
