@@ -4,16 +4,30 @@
 \alias{later_fd}
 \title{Executes a function when a file descriptor is ready}
 \usage{
-later_fd(func, fd_set, timeout = Inf, loop = current_loop())
+later_fd(
+  func,
+  readfds = integer(),
+  writefds = integer(),
+  exceptfds = integer(),
+  timeout = Inf,
+  loop = current_loop()
+)
 }
 \arguments{
 \item{func}{A function that takes a single argument, a logical vector that
-indicates which file descriptors are ready. This may be all \code{FALSE} if the
-\code{timeout} argument is non-\code{Inf}. Invalid or already closed file descriptors
-will return \code{NA}.}
+indicates which file descriptors are ready (a concatenation of \code{readfds},
+\code{writefds} and \code{exceptfds}). This may be all \code{FALSE} if the
+\code{timeout} argument is non-\code{Inf}. Invalid file descriptors or those with
+errors will return \code{NA}.}
 
-\item{fd_set}{Integer vector of file descriptors to monitor. Or on Windows,
-\code{SOCKET} values.}
+\item{readfds}{Integer vector of file descriptors, or Windows \code{SOCKET}s to
+monitor for read activity.}
+
+\item{writefds}{Integer vector of file descriptors, or Windows \code{SOCKET}s to
+monitor for write activity.}
+
+\item{exceptfds}{Integer vector of file descriptors, or Windows \code{SOCKET}s to
+monitor for exceptions / errors.}
 
 \item{timeout}{Number of seconds to wait before giving up, and calling \code{func}
 with all \code{FALSE}.}
@@ -38,32 +52,32 @@ fd1 <- nanonext::opt(s1, "recv-fd")
 fd2 <- nanonext::opt(s2, "recv-fd")
 
 # 1. timeout: prints FALSE, FALSE
-later_fd(print, c(fd1, fd2), 0.1)
+later_fd(print, c(fd1, fd2), timeout = 0.1)
 Sys.sleep(0.2)
 run_now()
 
 # 2. fd1 active: prints TRUE, FALSE
-later_fd(print, c(fd1, fd2), 1)
+later_fd(print, c(fd1, fd2), timeout = 1)
 res <- nanonext::send(s2, "msg")
 Sys.sleep(0.1)
 run_now()
 
 # 3. both active: prints TRUE, TRUE
 res <- nanonext::send(s1, "msg")
-later_fd(print, c(fd1, fd2), 1)
+later_fd(print, c(fd1, fd2), timeout = 1)
 Sys.sleep(0.1)
 run_now()
 
 # 4. fd2 active: prints FALSE, TRUE
 res <- nanonext::recv(s1)
-later_fd(print, c(fd1, fd2), 1)
+later_fd(print, c(fd1, fd2), timeout = 1)
 Sys.sleep(0.1)
 run_now()
 
 # 5. fds invalid: prints NA, NA
 close(s2)
 close(s1)
-later_fd(print, c(fd1, fd2), 1)
+later_fd(print, c(fd1, fd2), timeout = 1)
 Sys.sleep(0.1)
 run_now()
 \dontshow{\}) # examplesIf}

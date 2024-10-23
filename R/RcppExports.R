@@ -13,8 +13,8 @@ using_ubsan <- function() {
     .Call(`_later_using_ubsan`)
 }
 
-execLater_fd <- function(callback, fds, timeoutSecs, loop_id) {
-    .Call(`_later_execLater_fd`, callback, fds, timeoutSecs, loop_id)
+execLater_fd <- function(callback, readfds, writefds, exceptfds, timeoutSecs, loop_id) {
+    .Call(`_later_execLater_fd`, callback, readfds, writefds, exceptfds, timeoutSecs, loop_id)
 }
 
 setCurrentRegistryId <- function(id) {

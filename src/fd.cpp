@@ -16,6 +16,9 @@ typedef struct ThreadArgs_s {
   double timeout;
   std::unique_ptr<std::vector<int>> fds;
   int num_fds;
+  int rfds;
+  int wfds;
+  int efds;
   int loop;
 } ThreadArgs;
 
@@ -28,7 +31,6 @@ static void later_callback(void *arg) {
 
 }
 
-// CONSIDER: add interface to allow monitoring of different event types.
 // CONSIDER: add method for HANDLES on Windows. Assuming we only accept integer
 // values for both, we could use heuristics: check if it is a valid SOCKET or
 // else assume HANDLE - but this is not fool-proof.
@@ -41,12 +43,25 @@ static void *select_thread(void *arg) {
   int timeout = args->timeout == R_PosInf ? -1 : args->timeout < 0 ? 1000 : (int) (args->timeout * 1000);
   int result;
 
-
   std::vector<struct pollfd> pollfds;
-  for (int i = 0; i < args->num_fds; i++) {
+  for (int i = 0; i < args->rfds; i++) {
     struct pollfd pfd;
     pfd.fd = (*args->fds)[i];
     pfd.events = POLLIN;
+    pfd.revents = 0;
+    pollfds.push_back(pfd);
+  }
+  for (int i = args->rfds; i < (args->rfds + args->wfds); i++) {
+    struct pollfd pfd;
+    pfd.fd = (*args->fds)[i];
+    pfd.events = POLLOUT;
+    pfd.revents = 0;
+    pollfds.push_back(pfd);
+  }
+  for (int i = args->rfds + args->wfds; i < args->num_fds; i++) {
+    struct pollfd pfd;
+    pfd.fd = (*args->fds)[i];
+    pfd.events = 0;
     pfd.revents = 0;
     pollfds.push_back(pfd);
   }
@@ -60,7 +75,7 @@ static void *select_thread(void *arg) {
 
   if (result) {
     for (int i = 0; i < args->num_fds; i++) {
-      values[i] = pollfds[i].revents & POLLIN ? 1 : pollfds[i].revents & POLLNVAL ? R_NaInt : 0;
+      values[i] = pollfds[i].revents & (POLLIN | POLLOUT) ? 1 : pollfds[i].revents & (POLLNVAL | POLLHUP | POLLERR) ? R_NaInt : 0;
     }
   } else {
     for (int i = 0; i < args->num_fds; i++) {
@@ -82,9 +97,15 @@ static DWORD WINAPI select_thread_win(LPVOID lpParameter) {
 #endif
 
 // [[Rcpp::export]]
-Rcpp::LogicalVector execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector fds, Rcpp::NumericVector timeoutSecs, Rcpp::IntegerVector loop_id) {
+Rcpp::LogicalVector execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds, Rcpp::IntegerVector writefds,
+                                 Rcpp::IntegerVector exceptfds, Rcpp::NumericVector timeoutSecs, Rcpp::IntegerVector loop_id) {
 
-  int num_fds = (int) fds.size();
+  int rfds = (int) readfds.size();
+  int wfds = (int) writefds.size();
+  int efds = (int) exceptfds.size();
+  int num_fds = rfds + wfds + efds;
+  if (num_fds == 0)
+    Rf_error("later_fd: no file descriptors supplied");
   double timeout = timeoutSecs[0];
   int loop = loop_id[0];
 
@@ -93,13 +114,20 @@ Rcpp::LogicalVector execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector fd
 
   std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>();
   std::unique_ptr<std::vector<int>> fdvals(new std::vector<int>(num_fds));
-  args->num_fds = num_fds;
   args->timeout = timeout;
   args->loop = loop;
   args->callback = call;
+  args->num_fds = num_fds;
+  args->rfds = rfds;
+  args->wfds = wfds;
+  args->efds = efds;
 
-  if (num_fds)
-    std::memcpy(fdvals->data(), fds.begin(), num_fds * sizeof(int));
+  if (rfds)
+    std::memcpy(fdvals->data(), readfds.begin(), rfds * sizeof(int));
+  if (wfds)
+    std::memcpy(fdvals->data() + rfds * sizeof(int), writefds.begin(), wfds * sizeof(int));
+  if (efds)
+    std::memcpy(fdvals->data() + (rfds + wfds) * sizeof(int), exceptfds.begin(), efds * sizeof(int));
   args->fds = std::move(fdvals);
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(new std::shared_ptr<ThreadArgs>(args));

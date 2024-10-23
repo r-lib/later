@@ -272,11 +272,16 @@ later <- function(func, delay = 0, loop = current_loop()) {
 #' Executes a function when a file descriptor is ready
 #'
 #' @param func A function that takes a single argument, a logical vector that
-#'   indicates which file descriptors are ready. This may be all `FALSE` if the
-#'   `timeout` argument is non-`Inf`. Invalid or already closed file descriptors
-#'   will return `NA`.
-#' @param fd_set Integer vector of file descriptors to monitor. Or on Windows,
-#'   `SOCKET` values.
+#'   indicates which file descriptors are ready (a concatenation of `readfds`,
+#'   `writefds` and `exceptfds`). This may be all `FALSE` if the
+#'   `timeout` argument is non-`Inf`. Invalid file descriptors or those with
+#'   errors will return `NA`.
+#' @param readfds Integer vector of file descriptors, or Windows `SOCKET`s to
+#'   monitor for read activity.
+#' @param writefds Integer vector of file descriptors, or Windows `SOCKET`s to
+#'   monitor for write activity.
+#' @param exceptfds Integer vector of file descriptors, or Windows `SOCKET`s to
+#'   monitor for exceptions / errors.
 #' @param timeout Number of seconds to wait before giving up, and calling `func`
 #'   with all `FALSE`.
 #' @param loop A handle to an event loop. Defaults to the currently-active loop.
@@ -294,41 +299,42 @@ later <- function(func, delay = 0, loop = current_loop()) {
 #' fd2 <- nanonext::opt(s2, "recv-fd")
 #'
 #' # 1. timeout: prints FALSE, FALSE
-#' later_fd(print, c(fd1, fd2), 0.1)
+#' later_fd(print, c(fd1, fd2), timeout = 0.1)
 #' Sys.sleep(0.2)
 #' run_now()
 #'
 #' # 2. fd1 active: prints TRUE, FALSE
-#' later_fd(print, c(fd1, fd2), 1)
+#' later_fd(print, c(fd1, fd2), timeout = 1)
 #' res <- nanonext::send(s2, "msg")
 #' Sys.sleep(0.1)
 #' run_now()
 #'
 #' # 3. both active: prints TRUE, TRUE
 #' res <- nanonext::send(s1, "msg")
-#' later_fd(print, c(fd1, fd2), 1)
+#' later_fd(print, c(fd1, fd2), timeout = 1)
 #' Sys.sleep(0.1)
 #' run_now()
 #'
 #' # 4. fd2 active: prints FALSE, TRUE
 #' res <- nanonext::recv(s1)
-#' later_fd(print, c(fd1, fd2), 1)
+#' later_fd(print, c(fd1, fd2), timeout = 1)
 #' Sys.sleep(0.1)
 #' run_now()
 #'
 #' # 5. fds invalid: prints NA, NA
 #' close(s2)
 #' close(s1)
-#' later_fd(print, c(fd1, fd2), 1)
+#' later_fd(print, c(fd1, fd2), timeout = 1)
 #' Sys.sleep(0.1)
 #' run_now()
 #'
 #' @export
-later_fd <- function(func, fd_set, timeout = Inf, loop = current_loop()) {
+later_fd <- function(func, readfds = integer(), writefds = integer(), exceptfds = integer(),
+                     timeout = Inf, loop = current_loop()) {
   if (!is.function(func)) {
     func <- rlang::as_function(func)
   }
-  invisible(execLater_fd(func, fd_set, timeout, loop$id))
+  invisible(execLater_fd(func, readfds, writefds, exceptfds, timeout, loop$id))
 }
 
 # Returns a function that will cancel a callback with the given ID. If the
