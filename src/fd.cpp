@@ -41,33 +41,26 @@ static void *select_thread(void *arg) {
   int timeout = args->timeout == R_PosInf ? -1 : args->timeout < 0 ? 1000 : (int) (args->timeout * 1000);
   int result;
 
-#ifdef _WIN32
-  std::vector<WSAPOLLFD> pollfds;
-  for (int i = 0; i < args->num_fds; i++) {
-    WSAPOLLFD pfd;
-    pfd.fd = (*args->fds)[i];
-    pfd.events = POLLIN;
-    pfd.revents = 0;
-    pollfds.push_back(pfd);
-  }
-  result = WSAPoll(pollfds.data(), args->num_fds, timeout);
-#else
+
   std::vector<struct pollfd> pollfds;
   for (int i = 0; i < args->num_fds; i++) {
-    pollfd pfd;
+    struct pollfd pfd;
     pfd.fd = (*args->fds)[i];
     pfd.events = POLLIN;
     pfd.revents = 0;
     pollfds.push_back(pfd);
   }
+#ifdef _WIN32
+  result = WSAPoll(pollfds.data(), args->num_fds, timeout);
+#else
   result = poll(pollfds.data(), args->num_fds, timeout);
 #endif
 
   int *values = (int *) DATAPTR_RO(CADR(args->callback));
-  // result == 0 if timed out
+
   if (result) {
     for (int i = 0; i < args->num_fds; i++) {
-      values[i] = pollfds[i].revents & POLLNVAL ? R_NaInt : pollfds[i].revents & POLLIN;
+      values[i] = pollfds[i].revents & POLLIN ? 1 : pollfds[i].revents & POLLNVAL ? R_NaInt : 0;
     }
   } else {
     for (int i = 0; i < args->num_fds; i++) {
