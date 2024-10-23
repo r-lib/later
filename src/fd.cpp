@@ -36,13 +36,17 @@ static void *select_thread(void *arg) {
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
   std::shared_ptr<ThreadArgs> args = *argsptr;
 
-  fd_set read_fds;
-  FD_ZERO(&read_fds);
+  fd_set readfds, writefds, exceptfds;
+  FD_ZERO(&readfds);
+  FD_ZERO(&writefds);
+  FD_ZERO(&exceptfds);
   int max_fd = -1;
 
   for (R_xlen_t i = 0; i < args->num_fds; i++) {
     int fd = (*args->fds)[i];
-    FD_SET(fd, &read_fds);
+    FD_SET(fd, &readfds);
+    FD_SET(fd, &writefds);
+    FD_SET(fd, &exceptfds);
     max_fd = std::max(max_fd, fd);
   }
 
@@ -55,15 +59,20 @@ static void *select_thread(void *arg) {
     tv.tv_usec = args->timeout < 0 ? 0 : ((int) (args->timeout * 1000)) % 1000 * 1000;
   }
 
-  // CONSIDER: if we should be checking more than read activity, i.e. write and error.
-  // Could check all types for all fds, which would be inefficient but
-  // otherwise would require user interface to specify events for each fd
-  int result = select(max_fd + 1, &read_fds, NULL, NULL, use_timeout ? &tv : NULL);
+  // CONSIDER: modify user interface to allow specifying event type
+  int result = select(max_fd + 1, &readfds, &writefds, &exceptfds, use_timeout ? &tv : NULL);
 
   int *values = (int *) DATAPTR_RO(CADR(args->callback));
-
-  for (R_xlen_t i = 0; i < args->num_fds; i++) {
-    values[i] = result < 0 ? R_NaInt : FD_ISSET((*args->fds)[i], &read_fds) != 0;
+  if (result < 0) {
+    for (R_xlen_t i = 0; i < args->num_fds; i++) {
+      values[i] = R_NaInt;
+    }
+  } else {
+    for (R_xlen_t i = 0; i < args->num_fds; i++) {
+      values[i] = FD_ISSET((*args->fds)[i], &readfds) ||
+        FD_ISSET((*args->fds)[i], &writefds) ||
+        FD_ISSET((*args->fds)[i], &exceptfds);
+    }
   }
 
   callbackRegistryTable.scheduleCallback(later_callback, static_cast<void *>(argsptr.release()), 0, args->loop);
