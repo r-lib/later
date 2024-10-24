@@ -17,6 +17,10 @@ execLater_fd <- function(callback, readfds, writefds, exceptfds, timeoutSecs, lo
     .Call(`_later_execLater_fd`, callback, readfds, writefds, exceptfds, timeoutSecs, loop_id)
 }
 
+fd_cancel <- function(xptr) {
+    .Call(`_later_fd_cancel`, xptr)
+}
+
 setCurrentRegistryId <- function(id) {
     invisible(.Call(`_later_setCurrentRegistryId`, id))
 }

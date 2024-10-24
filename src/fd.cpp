@@ -9,6 +9,18 @@
 #include "later.h"
 #include "callback_registry_table.h"
 
+#if R_VERSION < R_Version(4, 5, 0)
+
+inline SEXP R_mkClosure(SEXP formals, SEXP body, SEXP env) {
+  SEXP fun = Rf_allocSExp(CLOSXP);
+  SET_FORMALS(fun, formals);
+  SET_BODY(fun, body);
+  SET_CLOENV(fun, env);
+  return fun;
+}
+
+#endif
+
 pthread_attr_t pt_attr;
 int pt_attr_created = 0;
 
@@ -22,6 +34,19 @@ typedef struct ThreadArgs_s {
   int num_fds;
   int loop;
 } ThreadArgs;
+
+static void thread_finalizer(SEXP xptr) {
+
+  if (R_ExternalPtrAddr(xptr) == NULL) return;
+#ifdef _WIN32
+  HANDLE *xp = (HANDLE *) R_ExternalPtrAddr(xptr);
+  CloseHandle(*xp);
+#else
+  pthread_t *xp = (pthread_t *) R_ExternalPtrAddr(xptr);
+#endif
+  R_Free(xp);
+
+}
 
 static void later_callback(void *arg) {
 
@@ -96,7 +121,7 @@ static DWORD WINAPI select_thread_win(LPVOID lpParameter) {
 #endif
 
 // [[Rcpp::export]]
-Rcpp::LogicalVector execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds, Rcpp::IntegerVector writefds,
+Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds, Rcpp::IntegerVector writefds,
                                  Rcpp::IntegerVector exceptfds, Rcpp::NumericVector timeoutSecs, Rcpp::IntegerVector loop_id) {
 
   int rfds = static_cast<int>(readfds.size());
@@ -132,16 +157,16 @@ Rcpp::LogicalVector execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector re
 
 #ifdef _WIN32
 
-  HANDLE hThread = CreateThread(NULL, 0, select_thread_win, static_cast<LPVOID>(argsptr.release()), 0, NULL);
+  HANDLE *thr = R_Calloc(1, HANDLE);
 
-  if (hThread == NULL)
+  *thr = CreateThread(NULL, 0, select_thread_win, static_cast<LPVOID>(argsptr.release()), 0, NULL);
+
+  if (*thr == NULL)
     Rcpp::stop("thread creation error: " + std::to_string(GetLastError()));
-
-  CloseHandle(hThread);
 
 #else
 
-  pthread_t thr;
+  pthread_t *thr = R_Calloc(1, pthread_t);
 
   if (pt_attr_created == 0) {
     if (pthread_attr_init(&pt_attr))
@@ -153,16 +178,37 @@ Rcpp::LogicalVector execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector re
     pt_attr_created = 1;
   }
 
-  if (pthread_create(&thr, &pt_attr, select_thread, static_cast<void *>(argsptr.release())))
+  if (pthread_create(thr, &pt_attr, select_thread, static_cast<void *>(argsptr.release())))
     Rcpp::stop("thread creation error: " + std::string(strerror(errno)));
 
 #endif
 
-  // TODO: Add cancellation: clean way is to insert something that is also
-  // waited on that we can signal to return. But due to the setup overhead
-  // perhaps have this be optional. Otherwise can retain a reference to the
-  // thead to forcefully terminate it - but am wary of potential edge cases.
+  SEXP xptr, func, body, out;
+  PROTECT(xptr = R_MakeExternalPtr(thr, R_NilValue, R_NilValue));
+  R_RegisterCFinalizerEx(xptr, thread_finalizer, FALSE);
+  PROTECT(func = Rf_lang3(R_TripleColonSymbol, Rf_install("later"), Rf_install("fd_cancel")));
+  PROTECT(body = Rf_lcons(func, Rf_cons(xptr, R_NilValue)));
+  PROTECT(out = R_mkClosure(R_NilValue, body, R_BaseEnv));
+  UNPROTECT(4);
 
-  return true;
+  return out;
+
+}
+
+// [[Rcpp::export]]
+Rcpp::LogicalVector fd_cancel(Rcpp::RObject xptr) {
+
+  if (TYPEOF(xptr) != EXTPTRSXP || R_ExternalPtrAddr(xptr) == NULL)
+    Rcpp::stop("invalid external pointer");
+
+#ifdef _WIN32
+  HANDLE *thr = (HANDLE *) R_ExternalPtrAddr(xptr);
+  return TerminateThread(*thr, 0) != 0;
+
+#else
+  pthread_t *thr = (pthread_t *) R_ExternalPtrAddr(xptr);
+  return pthread_cancel(*thr) == 0;
+
+#endif
 
 }

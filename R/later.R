@@ -288,8 +288,8 @@ later <- function(func, delay = 0, loop = current_loop()) {
 #'
 #' @return A function, which, if invoked, will cancel the callback. The
 #'   function will return \code{TRUE} if the callback was successfully
-#'   cancelled and \code{FALSE} if not (this occurs if the callback has
-#'   executed or has been cancelled already).
+#'   cancelled (or the callback has already been executed or cancelled) and
+#'   \code{FALSE} if there was an error in cancellation.
 #'
 #' @examplesIf requireNamespace("nanonext", quietly = TRUE)
 #' # create nanonext socket
