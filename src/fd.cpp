@@ -109,9 +109,11 @@ static void *select_thread(void *arg) {
     for (int i = args->rfds + args->wfds; i < args->num_fds; i++) {
       FD_ISSET((*args->fds)[i], &exceptfds);
     }
+  } else if (result == 0) {
+    std::memset(values, 0, args->num_fds * sizeof(int));
   } else {
     for (int i = 0; i < args->num_fds; i++) {
-      values[i] = result == 0 ? 0 : R_NaInt;
+      values[i] = R_NaInt;
     }
   }
 
@@ -140,6 +142,7 @@ static void *select_thread(void *arg) {
     pfd.revents = 0;
     pollfds.push_back(pfd);
   }
+
 #ifdef _WIN32
   result = WSAPoll(pollfds.data(), args->num_fds, timeout);
 #else
@@ -151,9 +154,11 @@ static void *select_thread(void *arg) {
     for (int i = 0; i < args->num_fds; i++) {
       values[i] = pollfds[i].revents & (POLLIN | POLLOUT) ? 1 : pollfds[i].revents & (POLLNVAL | POLLHUP | POLLERR) ? R_NaInt : 0;
     }
+  } else if (result == 0) {
+    std::memset(values, 0, args->num_fds * sizeof(int));
   } else {
     for (int i = 0; i < args->num_fds; i++) {
-      values[i] = result == 0 ? 0 : R_NaInt;
+      values[i] = R_NaInt;
     }
   }
 
