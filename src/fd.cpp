@@ -61,10 +61,8 @@ static void later_callback(void *arg) {
 
 }
 
-// CONSIDER: add method for HANDLES on Windows. Assuming we only accept integer
-// values for both, we could use heuristics: check if it is a valid SOCKET or
-// else assume HANDLE - but this is not fool-proof.
-// Otherwise would require an interface for user to specify type.
+// CONSIDER: if necessary to add method for HANDLES on Windows. Would be different code to SOCKETs.
+// TODO: implement re-usable background thread.
 static void *select_thread(void *arg) {
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
