@@ -4,6 +4,16 @@
 #include <R_ext/Rdynload.h>
 #include <stdint.h> // for uint64_t
 
+#ifndef _WIN32
+#include <pthread.h>
+extern pthread_attr_t pt_attr;
+extern int pt_attr_created;
+#endif
+
+// Symbols and preserved objects defined here.
+SEXP later_laterSymbol;
+SEXP later_fdcancel;
+
 /* FIXME:
 Check these declarations against the C/Fortran source code.
 */
@@ -58,11 +68,20 @@ uint64_t execLaterNative(void (*func)(void*), void* data, double secs);
 uint64_t execLaterNative2(void (*func)(void*), void* data, double secs, int loop);
 int apiVersion(void);
 
-void R_init_later(DllInfo *dll)
-{
+void PreserveObjects(void) {
+  later_laterSymbol = Rf_install("later");
+  R_PreserveObject(later_fdcancel = Rf_lang3(R_TripleColonSymbol, later_laterSymbol, Rf_install("fd_cancel")));
+}
+
+void ReleaseObjects(void) {
+  R_ReleaseObject(later_fdcancel);
+}
+
+void R_init_later(DllInfo *dll) {
   R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
   R_useDynamicSymbols(dll, FALSE);
   R_forceSymbols(dll, TRUE);
+  PreserveObjects();
   // 2019-08-06
   // execLaterNative is registered here ONLY for backward compatibility; If
   // someone installed a package which had `#include <later_api.h>` (like
@@ -86,12 +105,10 @@ void R_init_later(DllInfo *dll)
   R_RegisterCCallable("later", "apiVersion",       (DL_FUNC)&apiVersion);
 }
 
-#ifndef _WIN32
-#include <pthread.h>
-extern pthread_attr_t pt_attr;
-extern int pt_attr_created;
 void R_unload_later(DllInfo *info) {
+  ReleaseObjects();
+#ifndef _WIN32
   if (pt_attr_created)
     pthread_attr_destroy(&pt_attr);
-}
 #endif
+}

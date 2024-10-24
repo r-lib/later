@@ -25,6 +25,7 @@ pthread_attr_t pt_attr;
 int pt_attr_created = 0;
 
 extern CallbackRegistryTable callbackRegistryTable;
+extern SEXP later_fdcancel;
 
 typedef struct ThreadArgs_s {
   SEXP callback;
@@ -183,15 +184,14 @@ Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds,
 
 #endif
 
-  SEXP xptr, func, body, out;
-  PROTECT(xptr = R_MakeExternalPtr(thr, R_NilValue, R_NilValue));
-  R_RegisterCFinalizerEx(xptr, thread_finalizer, FALSE);
-  PROTECT(func = Rf_lang3(R_TripleColonSymbol, Rf_install("later"), Rf_install("fd_cancel")));
-  PROTECT(body = Rf_lcons(func, Rf_cons(xptr, R_NilValue)));
-  PROTECT(out = R_mkClosure(R_NilValue, body, R_BaseEnv));
-  UNPROTECT(4);
+  SEXP xptr, body, func;
+  xptr = R_MakeExternalPtr(thr, R_NilValue, R_NilValue);
+  PROTECT(body = Rf_lcons(later_fdcancel, Rf_cons(xptr, R_NilValue)));
+  R_RegisterCFinalizerEx(xptr, thread_finalizer, TRUE);
+  func = R_mkClosure(R_NilValue, body, R_BaseEnv);
+  UNPROTECT(1);
 
-  return out;
+  return func;
 
 }
 
