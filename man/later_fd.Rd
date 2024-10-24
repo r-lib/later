@@ -18,7 +18,7 @@ later_fd(
 indicates which file descriptors are ready (a concatenation of \code{readfds},
 \code{writefds} and \code{exceptfds}). This may be all \code{FALSE} if the
 \code{timeout} argument is non-\code{Inf}. Invalid file descriptors or those with
-errors will return \code{NA}.}
+exceptions will be returned as \code{NA}.}
 
 \item{readfds}{Integer vector of file descriptors, or Windows \code{SOCKET}s to
 monitor for read activity.}
@@ -38,7 +38,7 @@ with all \code{FALSE}.}
 A function, which, if invoked, will cancel the callback. The
 function will return \code{TRUE} if the callback was successfully
 cancelled (or the callback has already been executed or cancelled) and
-\code{FALSE} if there was an error in cancellation.
+\code{FALSE} if an error was encountered in cancellation.
 }
 \description{
 Executes a function when a file descriptor is ready

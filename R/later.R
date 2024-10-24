@@ -275,7 +275,7 @@ later <- function(func, delay = 0, loop = current_loop()) {
 #'   indicates which file descriptors are ready (a concatenation of `readfds`,
 #'   `writefds` and `exceptfds`). This may be all `FALSE` if the
 #'   `timeout` argument is non-`Inf`. Invalid file descriptors or those with
-#'   errors will return `NA`.
+#'   exceptions will be returned as `NA`.
 #' @param readfds Integer vector of file descriptors, or Windows `SOCKET`s to
 #'   monitor for read activity.
 #' @param writefds Integer vector of file descriptors, or Windows `SOCKET`s to
@@ -289,7 +289,7 @@ later <- function(func, delay = 0, loop = current_loop()) {
 #' @return A function, which, if invoked, will cancel the callback. The
 #'   function will return \code{TRUE} if the callback was successfully
 #'   cancelled (or the callback has already been executed or cancelled) and
-#'   \code{FALSE} if there was an error in cancellation.
+#'   \code{FALSE} if an error was encountered in cancellation.
 #'
 #' @examplesIf requireNamespace("nanonext", quietly = TRUE)
 #' # create nanonext socket

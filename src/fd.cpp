@@ -1,4 +1,7 @@
 #ifdef _WIN32
+#ifndef FD_SETSIZE
+#define FD_SETSIZE 2048  // Increase max fds - only for select() fallback
+#endif
 #include <winsock2.h>
 #else
 #include <poll.h>
@@ -67,8 +70,55 @@ static void *select_thread(void *arg) {
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
   std::shared_ptr<ThreadArgs> args = *argsptr;
 
-  int timeout = args->timeout == R_PosInf ? -1 : args->timeout < 0 ? 1000 : (int) (args->timeout * 1000);
   int result;
+  int *values;
+
+#ifndef POLLIN // fall back to select() for R on older Windows
+
+  fd_set readfds, writefds, exceptfds;
+  FD_ZERO(&readfds);
+  FD_ZERO(&writefds);
+  FD_ZERO(&exceptfds);
+  int max_fd = *std::max_element(args->fds->begin(), args->fds->end());
+  for (int i = 0; i < args->rfds; i++) {
+    FD_SET((*args->fds)[i], &readfds);
+  }
+  for (int i = args->rfds; i < (args->rfds + args->wfds); i++) {
+    FD_SET((*args->fds)[i], &writefds);
+  }
+  for (int i = args->rfds + args->wfds; i < args->num_fds; i++) {
+    FD_SET((*args->fds)[i], &exceptfds);
+  }
+
+  struct timeval tv;
+  int use_timeout = args->timeout != R_PosInf;
+  if (use_timeout) {
+    tv.tv_sec = args->timeout < 0 ? 1 : (int) args->timeout;
+    tv.tv_usec = args->timeout < 0 ? 0 : ((int) (args->timeout * 1000)) % 1000 * 1000;
+  }
+
+  result = select(max_fd + 1, &readfds, &writefds, &exceptfds, use_timeout ? &tv : NULL);
+
+  values = (int *) DATAPTR_RO(CADR(args->callback));
+  if (result > 0) {
+    for (int i = 0; i < args->rfds; i++) {
+      values[i] = FD_ISSET((*args->fds)[i], &readfds);
+    }
+    for (int i = args->rfds; i < (args->rfds + args->wfds); i++) {
+      FD_ISSET((*args->fds)[i], &writefds);
+    }
+    for (int i = args->rfds + args->wfds; i < args->num_fds; i++) {
+      FD_ISSET((*args->fds)[i], &exceptfds);
+    }
+  } else {
+    for (int i = 0; i < args->num_fds; i++) {
+      values[i] = result == 0 ? 0 : R_NaInt;
+    }
+  }
+
+#else
+
+  int timeout = args->timeout == R_PosInf ? -1 : args->timeout < 0 ? 1000 : (int) (args->timeout * 1000);
 
   std::vector<struct pollfd> pollfds;
   pollfds.reserve(args->num_fds);
@@ -97,7 +147,7 @@ static void *select_thread(void *arg) {
   result = poll(pollfds.data(), args->num_fds, timeout);
 #endif
 
-  int *values = (int *) DATAPTR_RO(CADR(args->callback));
+  values = (int *) DATAPTR_RO(CADR(args->callback));
   if (result > 0) {
     for (int i = 0; i < args->num_fds; i++) {
       values[i] = pollfds[i].revents & (POLLIN | POLLOUT) ? 1 : pollfds[i].revents & (POLLNVAL | POLLHUP | POLLERR) ? R_NaInt : 0;
@@ -107,6 +157,8 @@ static void *select_thread(void *arg) {
       values[i] = result == 0 ? 0 : R_NaInt;
     }
   }
+
+#endif // POLLIN
 
   callbackRegistryTable.scheduleCallback(later_callback, static_cast<void *>(argsptr.release()), 0, args->loop);
 
