@@ -62,4 +62,7 @@ test_that("later_fd", {
   run_now()
   expect_equal(result, c(NA, NA))
 
+  # 8. errors
+  expect_error(later_fd(print), "No file descriptors supplied")
+
 })

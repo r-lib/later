@@ -13,7 +13,6 @@
 #include "callback_registry_table.h"
 
 #if R_VERSION < R_Version(4, 5, 0)
-
 inline SEXP R_mkClosure(SEXP formals, SEXP body, SEXP env) {
   SEXP fun = Rf_allocSExp(CLOSXP);
   SET_FORMALS(fun, formals);
@@ -21,7 +20,6 @@ inline SEXP R_mkClosure(SEXP formals, SEXP body, SEXP env) {
   SET_CLOENV(fun, env);
   return fun;
 }
-
 #endif
 
 extern CallbackRegistryTable callbackRegistryTable;
@@ -29,8 +27,10 @@ extern SEXP later_fdcancel;
 
 #ifdef _WIN32
 typedef HANDLE thread_object;
+#define POLL_FUNC WSAPoll
 #else
 typedef pthread_t thread_object;
+#define POLL_FUNC poll
 #endif
 
 typedef struct ThreadArgs_s {
@@ -64,7 +64,7 @@ static void later_callback(void *arg) {
 
 // CONSIDER: if necessary to add method for HANDLES on Windows. Would be different code to SOCKETs.
 // TODO: implement re-usable background thread.
-static void *select_thread(void *arg) {
+static void *wait_thread(void *arg) {
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
   std::shared_ptr<ThreadArgs> args = *argsptr;
@@ -78,7 +78,7 @@ static void *select_thread(void *arg) {
   FD_ZERO(&readfds);
   FD_ZERO(&writefds);
   FD_ZERO(&exceptfds);
-  int max_fd = *std::max_element(args->fds->begin(), args->fds->end());
+  const int max_fd = *std::max_element(args->fds->begin(), args->fds->end());
   for (int i = 0; i < args->rfds; i++) {
     FD_SET((*args->fds)[i], &readfds);
   }
@@ -90,7 +90,7 @@ static void *select_thread(void *arg) {
   }
 
   struct timeval tv;
-  int use_timeout = args->timeout != R_PosInf;
+  const int use_timeout = args->timeout != R_PosInf;
   if (use_timeout) {
     tv.tv_sec = args->timeout < 0 ? 1 : (int) args->timeout;
     tv.tv_usec = args->timeout < 0 ? 0 : ((int) (args->timeout * 1000)) % 1000 * 1000;
@@ -143,11 +143,7 @@ static void *select_thread(void *arg) {
     pollfds.push_back(pfd);
   }
 
-#ifdef _WIN32
-  result = WSAPoll(pollfds.data(), args->num_fds, timeout);
-#else
-  result = poll(pollfds.data(), args->num_fds, timeout);
-#endif
+  result = POLL_FUNC(pollfds.data(), args->num_fds, timeout);
 
   values = (int *) DATAPTR_RO(CADR(args->callback));
   if (result > 0) {
@@ -171,8 +167,8 @@ static void *select_thread(void *arg) {
 }
 
 #ifdef _WIN32
-static DWORD WINAPI select_thread_win(LPVOID lpParameter) {
-  select_thread(lpParameter);
+static DWORD WINAPI wait_thread_win(LPVOID lpParameter) {
+  wait_thread(lpParameter);
   return 1;
 }
 #endif
@@ -181,23 +177,17 @@ static DWORD WINAPI select_thread_win(LPVOID lpParameter) {
 Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds, Rcpp::IntegerVector writefds,
                                  Rcpp::IntegerVector exceptfds, Rcpp::NumericVector timeoutSecs, Rcpp::IntegerVector loop_id) {
 
-  int rfds = static_cast<int>(readfds.size());
-  int wfds = static_cast<int>(writefds.size());
-  int efds = static_cast<int>(exceptfds.size());
-  int num_fds = rfds + wfds + efds;
+  const int rfds = static_cast<int>(readfds.size());
+  const int wfds = static_cast<int>(writefds.size());
+  const int efds = static_cast<int>(exceptfds.size());
+  const int num_fds = rfds + wfds + efds;
   if (num_fds == 0)
-    Rf_error("later_fd: no file descriptors supplied");
-  double timeout = timeoutSecs[0];
-  int loop = loop_id[0];
-
-  SEXP call = Rf_lcons(callback, Rf_cons(Rf_allocVector(LGLSXP, num_fds), R_NilValue));
-  R_PreserveObject(call);
+    Rcpp::stop("No file descriptors supplied");
 
   std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>();
   std::unique_ptr<std::vector<int>> fdvals(new std::vector<int>(num_fds));
-  args->timeout = timeout;
-  args->loop = loop;
-  args->callback = call;
+  args->timeout = timeoutSecs[0];
+  args->loop = loop_id[0];
   args->num_fds = num_fds;
   args->rfds = rfds;
   args->wfds = wfds;
@@ -210,29 +200,33 @@ Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds,
     std::memcpy(fdvals->data() + (rfds + wfds) * sizeof(int), exceptfds.begin(), efds * sizeof(int));
   args->fds = std::move(fdvals);
 
+  SEXP call = Rf_lcons(callback, Rf_cons(Rf_allocVector(LGLSXP, num_fds), R_NilValue));
+  R_PreserveObject(call);
+  args->callback = call;
+
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(new std::shared_ptr<ThreadArgs>(args));
 
   thread_object *thr = R_Calloc(1, thread_object);
 
 #ifdef _WIN32
 
-  *thr = CreateThread(NULL, 0, select_thread_win, static_cast<LPVOID>(argsptr.release()), 0, NULL);
+  *thr = CreateThread(NULL, 0, wait_thread_win, static_cast<LPVOID>(argsptr.release()), 0, NULL);
 
   if (*thr == NULL)
-    Rcpp::stop("thread creation error: " + std::to_string(GetLastError()));
+    Rcpp::stop("Thread creation error: " + std::to_string(GetLastError()));
 
 #else
 
   pthread_attr_t pt_attr;
   if (pthread_attr_init(&pt_attr))
-    Rcpp::stop("thread attr error: " + std::string(strerror(errno)));
+    Rcpp::stop("Thread creation error: " + std::string(strerror(errno)));
   if (pthread_attr_setdetachstate(&pt_attr, PTHREAD_CREATE_DETACHED) ||
-      pthread_create(thr, &pt_attr, select_thread, static_cast<void *>(argsptr.release()))) {
+      pthread_create(thr, &pt_attr, wait_thread, static_cast<void *>(argsptr.release()))) {
     pthread_attr_destroy(&pt_attr);
-    Rcpp::stop("thread creation error: " + std::string(strerror(errno)));
+    Rcpp::stop("Thread creation error: " + std::string(strerror(errno)));
   }
   if (pthread_attr_destroy(&pt_attr))
-    Rcpp::stop("thread attr error: " + std::string(strerror(errno)));
+    Rcpp::stop("Thread creation error: " + std::string(strerror(errno)));
 
 #endif
 
@@ -251,7 +245,7 @@ Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds,
 Rcpp::LogicalVector fd_cancel(Rcpp::RObject xptr) {
 
   if (TYPEOF(xptr) != EXTPTRSXP || R_ExternalPtrAddr(xptr) == NULL)
-    Rcpp::stop("invalid external pointer");
+    Rcpp::stop("Invalid external pointer");
 
   thread_object *thr = (thread_object *) R_ExternalPtrAddr(xptr);
 
