@@ -9,6 +9,9 @@
 #include "later.h"
 #include "callback_registry_table.h"
 
+pthread_attr_t pt_attr;
+int pt_attr_created = 0;
+
 extern CallbackRegistryTable callbackRegistryTable;
 
 typedef struct ThreadArgs_s {
@@ -131,28 +134,26 @@ Rcpp::LogicalVector execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector re
 
   HANDLE hThread = CreateThread(NULL, 0, select_thread_win, static_cast<LPVOID>(argsptr.release()), 0, NULL);
 
-  if (hThread == NULL) {
+  if (hThread == NULL)
     Rcpp::stop("thread creation error: " + std::to_string(GetLastError()));
-  }
 
   CloseHandle(hThread);
 
 #else
 
-  pthread_attr_t attr;
   pthread_t thr;
 
-  // TODO: actually allocate global pthread_attr and cache for re-use
-  if (pthread_attr_init(&attr))
-    Rcpp::stop("thread creation error: " + std::string(strerror(errno)));
-
-  if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) ||
-      pthread_create(&thr, &attr, select_thread, static_cast<void *>(argsptr.release()))) {
-    pthread_attr_destroy(&attr);
-    Rcpp::stop("thread creation error: " + std::string(strerror(errno)));
+  if (pt_attr_created == 0) {
+    if (pthread_attr_init(&pt_attr))
+      Rcpp::stop("thread attr error: " + std::string(strerror(errno)));
+    if (pthread_attr_setdetachstate(&pt_attr, PTHREAD_CREATE_DETACHED)) {
+      pthread_attr_destroy(&pt_attr);
+      Rcpp::stop("thread attr error: " + std::string(strerror(errno)));
+    }
+    pt_attr_created = 1;
   }
 
-  if (pthread_attr_destroy(&attr))
+  if (pthread_create(&thr, &pt_attr, select_thread, static_cast<void *>(argsptr.release())))
     Rcpp::stop("thread creation error: " + std::string(strerror(errno)));
 
 #endif

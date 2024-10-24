@@ -83,3 +83,13 @@ void R_init_later(DllInfo *dll)
   R_RegisterCCallable("later", "execLaterNative2", (DL_FUNC)&execLaterNative2);
   R_RegisterCCallable("later", "apiVersion",       (DL_FUNC)&apiVersion);
 }
+
+#ifndef _WIN32
+#include <pthread.h>
+extern pthread_attr_t pt_attr;
+extern int pt_attr_created;
+void R_unload_later(DllInfo *info) {
+  if (pt_attr_created)
+    pthread_attr_destroy(&pt_attr);
+}
+#endif
