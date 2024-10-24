@@ -15,10 +15,8 @@ typedef struct ThreadArgs_s {
   SEXP callback;
   double timeout;
   std::unique_ptr<std::vector<int>> fds;
+  int rfds, wfds, efds;
   int num_fds;
-  int rfds;
-  int wfds;
-  int efds;
   int loop;
 } ThreadArgs;
 
@@ -44,22 +42,21 @@ static void *select_thread(void *arg) {
   int result;
 
   std::vector<struct pollfd> pollfds;
+  pollfds.reserve(args->num_fds);
+  struct pollfd pfd;
   for (int i = 0; i < args->rfds; i++) {
-    struct pollfd pfd;
     pfd.fd = (*args->fds)[i];
     pfd.events = POLLIN;
     pfd.revents = 0;
     pollfds.push_back(pfd);
   }
   for (int i = args->rfds; i < (args->rfds + args->wfds); i++) {
-    struct pollfd pfd;
     pfd.fd = (*args->fds)[i];
     pfd.events = POLLOUT;
     pfd.revents = 0;
     pollfds.push_back(pfd);
   }
   for (int i = args->rfds + args->wfds; i < args->num_fds; i++) {
-    struct pollfd pfd;
     pfd.fd = (*args->fds)[i];
     pfd.events = 0;
     pfd.revents = 0;
@@ -72,14 +69,13 @@ static void *select_thread(void *arg) {
 #endif
 
   int *values = (int *) DATAPTR_RO(CADR(args->callback));
-
-  if (result) {
+  if (result > 0) {
     for (int i = 0; i < args->num_fds; i++) {
       values[i] = pollfds[i].revents & (POLLIN | POLLOUT) ? 1 : pollfds[i].revents & (POLLNVAL | POLLHUP | POLLERR) ? R_NaInt : 0;
     }
   } else {
     for (int i = 0; i < args->num_fds; i++) {
-      values[i] = 0;
+      values[i] = result == 0 ? 0 : R_NaInt;
     }
   }
 
@@ -100,9 +96,9 @@ static DWORD WINAPI select_thread_win(LPVOID lpParameter) {
 Rcpp::LogicalVector execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds, Rcpp::IntegerVector writefds,
                                  Rcpp::IntegerVector exceptfds, Rcpp::NumericVector timeoutSecs, Rcpp::IntegerVector loop_id) {
 
-  int rfds = (int) readfds.size();
-  int wfds = (int) writefds.size();
-  int efds = (int) exceptfds.size();
+  int rfds = static_cast<int>(readfds.size());
+  int wfds = static_cast<int>(writefds.size());
+  int efds = static_cast<int>(exceptfds.size());
   int num_fds = rfds + wfds + efds;
   if (num_fds == 0)
     Rf_error("later_fd: no file descriptors supplied");
@@ -121,7 +117,6 @@ Rcpp::LogicalVector execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector re
   args->rfds = rfds;
   args->wfds = wfds;
   args->efds = efds;
-
   if (rfds)
     std::memcpy(fdvals->data(), readfds.begin(), rfds * sizeof(int));
   if (wfds)
