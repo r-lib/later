@@ -24,11 +24,14 @@ inline SEXP R_mkClosure(SEXP formals, SEXP body, SEXP env) {
 
 #endif
 
-pthread_attr_t pt_attr;
-int pt_attr_created = 0;
-
 extern CallbackRegistryTable callbackRegistryTable;
 extern SEXP later_fdcancel;
+
+#ifdef _WIN32
+typedef HANDLE thread_object;
+#else
+typedef pthread_t thread_object;
+#endif
 
 typedef struct ThreadArgs_s {
   SEXP callback;
@@ -42,11 +45,9 @@ typedef struct ThreadArgs_s {
 static void thread_finalizer(SEXP xptr) {
 
   if (R_ExternalPtrAddr(xptr) == NULL) return;
+  thread_object *xp = (thread_object *) R_ExternalPtrAddr(xptr);
 #ifdef _WIN32
-  HANDLE *xp = (HANDLE *) R_ExternalPtrAddr(xptr);
   CloseHandle(*xp);
-#else
-  pthread_t *xp = (pthread_t *) R_ExternalPtrAddr(xptr);
 #endif
   R_Free(xp);
 
@@ -206,9 +207,9 @@ Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds,
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(new std::shared_ptr<ThreadArgs>(args));
 
-#ifdef _WIN32
+  thread_object *thr = R_Calloc(1, thread_object);
 
-  HANDLE *thr = R_Calloc(1, HANDLE);
+#ifdef _WIN32
 
   *thr = CreateThread(NULL, 0, select_thread_win, static_cast<LPVOID>(argsptr.release()), 0, NULL);
 
@@ -217,20 +218,16 @@ Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds,
 
 #else
 
-  pthread_t *thr = R_Calloc(1, pthread_t);
-
-  if (pt_attr_created == 0) {
-    if (pthread_attr_init(&pt_attr))
-      Rcpp::stop("thread attr error: " + std::string(strerror(errno)));
-    if (pthread_attr_setdetachstate(&pt_attr, PTHREAD_CREATE_DETACHED)) {
-      pthread_attr_destroy(&pt_attr);
-      Rcpp::stop("thread attr error: " + std::string(strerror(errno)));
-    }
-    pt_attr_created = 1;
-  }
-
-  if (pthread_create(thr, &pt_attr, select_thread, static_cast<void *>(argsptr.release())))
+  pthread_attr_t pt_attr;
+  if (pthread_attr_init(&pt_attr))
+    Rcpp::stop("thread attr error: " + std::string(strerror(errno)));
+  if (pthread_attr_setdetachstate(&pt_attr, PTHREAD_CREATE_DETACHED) ||
+      pthread_create(thr, &pt_attr, select_thread, static_cast<void *>(argsptr.release()))) {
+    pthread_attr_destroy(&pt_attr);
     Rcpp::stop("thread creation error: " + std::string(strerror(errno)));
+  }
+  if (pthread_attr_destroy(&pt_attr))
+    Rcpp::stop("thread attr error: " + std::string(strerror(errno)));
 
 #endif
 
@@ -251,14 +248,12 @@ Rcpp::LogicalVector fd_cancel(Rcpp::RObject xptr) {
   if (TYPEOF(xptr) != EXTPTRSXP || R_ExternalPtrAddr(xptr) == NULL)
     Rcpp::stop("invalid external pointer");
 
+  thread_object *thr = (thread_object *) R_ExternalPtrAddr(xptr);
+
 #ifdef _WIN32
-  HANDLE *thr = (HANDLE *) R_ExternalPtrAddr(xptr);
   return TerminateThread(*thr, 0) != 0;
-
 #else
-  pthread_t *thr = (pthread_t *) R_ExternalPtrAddr(xptr);
   return pthread_cancel(*thr) == 0;
-
 #endif
 
 }
