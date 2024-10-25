@@ -274,8 +274,8 @@ later <- function(func, delay = 0, loop = current_loop()) {
 #' @param func A function that takes a single argument, a logical vector that
 #'   indicates which file descriptors are ready (a concatenation of `readfds`,
 #'   `writefds` and `exceptfds`). This may be all `FALSE` if the
-#'   `timeout` argument is non-`Inf`. Invalid file descriptors or those with
-#'   exceptions will be returned as `NA`.
+#'   `timeout` argument is non-`Inf`. Invalid file descriptors and those with
+#'   activity other than the monitored type will be returned as `NA`.
 #' @param readfds Integer vector of file descriptors, or Windows `SOCKET`s to
 #'   monitor for read activity.
 #' @param writefds Integer vector of file descriptors, or Windows `SOCKET`s to
