@@ -140,10 +140,10 @@ static int wait_thread(void *arg) {
   values = (int *) DATAPTR_RO(CADR(args->callback));
   if (result > 0) {
     for (int i = 0; i < args->rfds; i++) {
-      values[i] = pollfds[i].revents & POLLIN ? 1 : pollfds[i].revents & (POLLNVAL | POLLHUP | POLLERR) ? R_NaInt : 0;
+      values[i] = pollfds[i].revents == 0 ? 0 : pollfds[i].revents & POLLIN ? 1: R_NaInt;
     }
     for (int i = args->rfds; i < (args->rfds + args->wfds); i++) {
-      values[i] = pollfds[i].revents & POLLOUT ? 1 : pollfds[i].revents & (POLLNVAL | POLLHUP | POLLERR) ? R_NaInt : 0;
+      values[i] = pollfds[i].revents == 0 ? 0 : pollfds[i].revents & POLLOUT ? 1 : R_NaInt;
     }
     for (int i = args->rfds + args->wfds; i < args->num_fds; i++) {
       values[i] = pollfds[i].revents != 0;
