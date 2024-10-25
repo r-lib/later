@@ -282,8 +282,9 @@ test_that("interrupt and exception handling", {
     # These tests may fail in automated test environments due to the way they
     # handle interrupts. (See #102)
     # jcheng 2024-10-24: Let's find out if this is still true
-    # skip_on_ci()
-    skip_on_cran()
+    if (Sys.info()[["sysname"]] == "Windows") {
+      skip_on_ci()
+    }
 
     # interrupt
     interrupted <- FALSE
