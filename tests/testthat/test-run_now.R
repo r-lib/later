@@ -204,7 +204,11 @@ test_that("interrupt and exception handling", {
 
         } else if (value == 3) {
           // Send an interrupt to the process.
+#ifdef _WIN32
+          GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);
+#else
           kill(getpid(), SIGINT);
+#endif
           R_CheckUserInterrupt();
 
         } else if (value == 4) {
