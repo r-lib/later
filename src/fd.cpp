@@ -9,6 +9,7 @@
 #include <Rcpp.h>
 #include <unistd.h>
 #include <cstdlib>
+#include "tinycthread.h"
 #include "later.h"
 #include "callback_registry_table.h"
 
@@ -68,6 +69,7 @@ static void *wait_thread(void *arg) {
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
   std::shared_ptr<ThreadArgs> args = *argsptr;
+  tct_thrd_detach(tct_thrd_current());
 
   int result;
   int *values;
@@ -211,21 +213,12 @@ Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds,
 #ifdef _WIN32
 
   *thr = CreateThread(NULL, 0, wait_thread_win, static_cast<LPVOID>(argsptr.release()), 0, NULL);
-
   if (*thr == NULL)
     Rcpp::stop("Thread creation error: " + std::to_string(GetLastError()));
 
 #else
 
-  pthread_attr_t pt_attr;
-  if (pthread_attr_init(&pt_attr))
-    Rcpp::stop("Thread creation error: " + std::string(strerror(errno)));
-  if (pthread_attr_setdetachstate(&pt_attr, PTHREAD_CREATE_DETACHED) ||
-      pthread_create(thr, &pt_attr, wait_thread, static_cast<void *>(argsptr.release()))) {
-    pthread_attr_destroy(&pt_attr);
-    Rcpp::stop("Thread creation error: " + std::string(strerror(errno)));
-  }
-  if (pthread_attr_destroy(&pt_attr))
+  if (pthread_create(thr, NULL, wait_thread, static_cast<void *>(argsptr.release())))
     Rcpp::stop("Thread creation error: " + std::string(strerror(errno)));
 
 #endif
