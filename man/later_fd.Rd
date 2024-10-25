@@ -37,8 +37,8 @@ with all \code{FALSE}.}
 \value{
 A function, which, if invoked, will cancel the callback. The
 function will return \code{TRUE} if the callback was successfully
-cancelled (or the callback has already been executed or cancelled) and
-\code{FALSE} if an error was encountered in cancellation.
+cancelled and \code{FALSE} if not (this occurs if the callback has
+executed or has been cancelled already).
 }
 \description{
 Executes a function when a file descriptor is ready

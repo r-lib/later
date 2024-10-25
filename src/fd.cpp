@@ -9,6 +9,7 @@
 #include <Rcpp.h>
 #include <unistd.h>
 #include <cstdlib>
+#include <atomic>
 #include "tinycthread.h"
 #include "later.h"
 #include "callback_registry_table.h"
@@ -27,45 +28,35 @@ extern CallbackRegistryTable callbackRegistryTable;
 extern SEXP later_fdcancel;
 
 #ifdef _WIN32
-typedef HANDLE thread_object;
 #define POLL_FUNC WSAPoll
 #else
-typedef pthread_t thread_object;
 #define POLL_FUNC poll
 #endif
 
 typedef struct ThreadArgs_s {
+  std::shared_ptr<std::atomic<bool>> flag;
+  std::unique_ptr<std::vector<int>> fds;
   SEXP callback;
   double timeout;
-  std::unique_ptr<std::vector<int>> fds;
   int rfds, wfds, efds;
   int num_fds;
   int loop;
 } ThreadArgs;
 
-static void thread_finalizer(SEXP xptr) {
-
-  if (R_ExternalPtrAddr(xptr) == NULL) return;
-  thread_object *xp = (thread_object *) R_ExternalPtrAddr(xptr);
-#ifdef _WIN32
-  CloseHandle(*xp);
-#endif
-  R_Free(xp);
-
-}
-
 static void later_callback(void *arg) {
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
   std::shared_ptr<ThreadArgs> args = *argsptr;
-  Rf_eval(args->callback, R_GlobalEnv);
+  const bool flag = args->flag->load();
+  args->flag->store(true);
+  if (!flag) Rf_eval(args->callback, R_GlobalEnv);
   R_ReleaseObject(args->callback);
 
 }
 
 // CONSIDER: if necessary to add method for HANDLES on Windows. Would be different code to SOCKETs.
 // TODO: implement re-usable background thread.
-static void *wait_thread(void *arg) {
+static int wait_thread(void *arg) {
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
   std::shared_ptr<ThreadArgs> args = *argsptr;
@@ -164,16 +155,9 @@ static void *wait_thread(void *arg) {
 
   callbackRegistryTable.scheduleCallback(later_callback, static_cast<void *>(argsptr.release()), 0, args->loop);
 
-  return nullptr;
+  return 0;
 
 }
-
-#ifdef _WIN32
-static DWORD WINAPI wait_thread_win(LPVOID lpParameter) {
-  wait_thread(lpParameter);
-  return 1;
-}
-#endif
 
 // [[Rcpp::export]]
 Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds, Rcpp::IntegerVector writefds,
@@ -188,6 +172,8 @@ Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds,
 
   std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>();
   std::unique_ptr<std::vector<int>> fdvals(new std::vector<int>(num_fds));
+  std::shared_ptr<std::atomic<bool>> flag = std::make_shared<std::atomic<bool>>();
+  args->flag = flag;
   args->timeout = timeoutSecs[0];
   args->loop = loop_id[0];
   args->num_fds = num_fds;
@@ -208,25 +194,18 @@ Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds,
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(new std::shared_ptr<ThreadArgs>(args));
 
-  thread_object *thr = R_Calloc(1, thread_object);
-
+  tct_thrd_t thr;
+  if (tct_thrd_create(&thr, &wait_thread, static_cast<void *>(argsptr.release())) != tct_thrd_success)
 #ifdef _WIN32
-
-  *thr = CreateThread(NULL, 0, wait_thread_win, static_cast<LPVOID>(argsptr.release()), 0, NULL);
-  if (*thr == NULL)
     Rcpp::stop("Thread creation error: " + std::to_string(GetLastError()));
-
 #else
-
-  if (pthread_create(thr, NULL, wait_thread, static_cast<void *>(argsptr.release())))
     Rcpp::stop("Thread creation error: " + std::string(strerror(errno)));
-
 #endif
 
-  SEXP xptr, body, func;
-  xptr = R_MakeExternalPtr(thr, R_NilValue, R_NilValue);
+  Rcpp::XPtr<std::shared_ptr<std::atomic<bool>>> xptr(new std::shared_ptr<std::atomic<bool>>(flag), true);
+
+  SEXP body, func;
   PROTECT(body = Rf_lcons(later_fdcancel, Rf_cons(xptr, R_NilValue)));
-  R_RegisterCFinalizerEx(xptr, thread_finalizer, TRUE);
   func = R_mkClosure(R_NilValue, body, R_BaseEnv);
   UNPROTECT(1);
 
@@ -240,12 +219,12 @@ Rcpp::LogicalVector fd_cancel(Rcpp::RObject xptr) {
   if (TYPEOF(xptr) != EXTPTRSXP || R_ExternalPtrAddr(xptr) == NULL)
     Rcpp::stop("Invalid external pointer");
 
-  thread_object *thr = (thread_object *) R_ExternalPtrAddr(xptr);
+  Rcpp::XPtr<std::shared_ptr<std::atomic<bool>>> flag(xptr);
 
-#ifdef _WIN32
-  return TerminateThread(*thr, 0) != 0;
-#else
-  return pthread_cancel(*thr) == 0;
-#endif
+  if ((*flag)->load())
+    return false;
+
+  (*flag)->store(true);
+  return true;
 
 }

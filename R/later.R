@@ -286,10 +286,7 @@ later <- function(func, delay = 0, loop = current_loop()) {
 #'   with all `FALSE`.
 #' @param loop A handle to an event loop. Defaults to the currently-active loop.
 #'
-#' @return A function, which, if invoked, will cancel the callback. The
-#'   function will return \code{TRUE} if the callback was successfully
-#'   cancelled (or the callback has already been executed or cancelled) and
-#'   \code{FALSE} if an error was encountered in cancellation.
+#' @inherit later return
 #'
 #' @examplesIf requireNamespace("nanonext", quietly = TRUE)
 #' # create nanonext socket

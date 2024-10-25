@@ -22,7 +22,7 @@ test_that("later_fd", {
   expect_type(cancel, "closure")
   expect_true(cancel())
   Sys.sleep(0.25)
-  expect_type(cancel(), "logical")
+  expect_false(cancel())
   run_now()
   expect_null(result)
 
