@@ -271,25 +271,30 @@ later <- function(func, delay = 0, loop = current_loop()) {
 
 #' Executes a function when a file descriptor is ready
 #'
+#' Schedule an R function or formula to run after an indeterminate amount of
+#' time when file descriptors are ready for reading or writing, subject to an
+#' optional timeout.
+#'
 #' @param func A function that takes a single argument, a logical vector that
 #'   indicates which file descriptors are ready (a concatenation of `readfds`,
 #'   `writefds` and `exceptfds`). This may be all `FALSE` if the
-#'   `timeout` argument is non-`Inf`. Invalid file descriptors and those with
-#'   activity other than the monitored type will be returned as `NA`.
+#'   `timeout` argument is non-`Inf`. Invalid file descriptors (such as those
+#'   already closed) are returned as `NA`, as are `readfds` and `writefds` with
+#'   error conditions pending.
 #' @param readfds Integer vector of file descriptors, or Windows `SOCKET`s to
-#'   monitor for read activity.
+#'   monitor for being ready to read.
 #' @param writefds Integer vector of file descriptors, or Windows `SOCKET`s to
-#'   monitor for write activity.
+#'   monitor being ready to write.
 #' @param exceptfds Integer vector of file descriptors, or Windows `SOCKET`s to
-#'   monitor for exceptions / errors.
+#'   monitor for error conditions pending.
 #' @param timeout Number of seconds to wait before giving up, and calling `func`
 #'   with all `FALSE`.
 #' @param loop A handle to an event loop. Defaults to the currently-active loop.
 #'
-#' @inherit later return
+#' @inherit later return note
 #'
 #' @examplesIf requireNamespace("nanonext", quietly = TRUE)
-#' # create nanonext socket
+#' # create nanonext sockets
 #' s1 <- nanonext::socket(listen = "inproc://nano")
 #' s2 <- nanonext::socket(dial = "inproc://nano")
 #' fd1 <- nanonext::opt(s1, "recv-fd")

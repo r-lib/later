@@ -5,6 +5,7 @@ Version: 1.3.2.9000
 Authors@R: c(
     person("Winston", "Chang", role = c("aut", "cre"), email = "winston@posit.co"),
     person("Joe", "Cheng", role = c("aut"), email = "joe@posit.co"),
+    person("Charlie", "Gao", role = c("aut"), email = "charlie.gao@shikokuchuo.net", comment = c(ORCID = "0000-0002-0750-061X")),
     person(family = "Posit Software, PBC", role = "cph"),
     person("Marcus", "Geelnard", role = c("ctb", "cph"), comment = "TinyCThread library, https://tinycthread.github.io/"),
     person("Evan", "Nemerson", role = c("ctb", "cph"), comment = "TinyCThread library, https://tinycthread.github.io/")

@@ -17,17 +17,18 @@ later_fd(
 \item{func}{A function that takes a single argument, a logical vector that
 indicates which file descriptors are ready (a concatenation of \code{readfds},
 \code{writefds} and \code{exceptfds}). This may be all \code{FALSE} if the
-\code{timeout} argument is non-\code{Inf}. Invalid file descriptors and those with
-activity other than the monitored type will be returned as \code{NA}.}
+\code{timeout} argument is non-\code{Inf}. Invalid file descriptors (such as those
+already closed) are returned as \code{NA}, as are \code{readfds} and \code{writefds} with
+error conditions pending.}
 
 \item{readfds}{Integer vector of file descriptors, or Windows \code{SOCKET}s to
-monitor for read activity.}
+monitor for being ready to read.}
 
 \item{writefds}{Integer vector of file descriptors, or Windows \code{SOCKET}s to
-monitor for write activity.}
+monitor being ready to write.}
 
 \item{exceptfds}{Integer vector of file descriptors, or Windows \code{SOCKET}s to
-monitor for exceptions / errors.}
+monitor for error conditions pending.}
 
 \item{timeout}{Number of seconds to wait before giving up, and calling \code{func}
 with all \code{FALSE}.}
@@ -41,11 +42,25 @@ cancelled and \code{FALSE} if not (this occurs if the callback has
 executed or has been cancelled already).
 }
 \description{
-Executes a function when a file descriptor is ready
+Schedule an R function or formula to run after an indeterminate amount of
+time when file descriptors are ready for reading or writing, subject to an
+optional timeout.
+}
+\note{
+To avoid bugs due to reentrancy, by default, scheduled operations only run
+when there is no other R code present on the execution stack; i.e., when R is
+sitting at the top-level prompt. You can force past-due operations to run at
+a time of your choosing by calling \code{\link[=run_now]{run_now()}}.
+
+Error handling is not particularly well-defined and may change in the future.
+options(error=browser) should work and errors in \code{func} should generally not
+crash the R process, but not much else can be said about it at this point.
+If you must have specific behavior occur in the face of errors, put error
+handling logic inside of \code{func}.
 }
 \examples{
 \dontshow{if (requireNamespace("nanonext", quietly = TRUE)) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
-# create nanonext socket
+# create nanonext sockets
 s1 <- nanonext::socket(listen = "inproc://nano")
 s2 <- nanonext::socket(dial = "inproc://nano")
 fd1 <- nanonext::opt(s1, "recv-fd")

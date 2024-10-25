@@ -32,6 +32,17 @@ Or a formula (in this case, run as soon as control returns to the top-level):
 ```r
 later::later(~print("Got here!"))
 ```
+### File Descriptor Readiness
+
+It is also possible to have a function run based on when file descriptors are ready for reading or writing, at some indeterminate time in the future.
+
+Here, the fictitious `read()` function will be called on a logical vector indicating which (if any) of file descriptors 35 or 37 were ready, subject to a timeout of 5s:
+
+```r
+later::later_fd(read, c(35, 37), timeout = 5)
+```
+
+This is useful in particular for asynchronous or streaming data transfer over the network / internet, so that reads can be made from TCP sockets as soon as data is available. `later::later_fd()` pairs well with functions such as `curl::multi_fdset()` that return the relevant file descriptors to be monitored .
 
 ## Usage from C++
 
@@ -121,4 +132,4 @@ void asyncMean(Rcpp::NumericVector data) {
 }
 ```
 
-It's not very useful to execute tasks on background threads if you can't get access to the results back in R. We'll soon be introducing a complementary R package that provides a suitable "promise" or "future" abstraction.
+It's not very useful to execute tasks on background threads if you can't get access to the results back in R. The [promises](https://github.com/rstudio/promises) package complements later by providing a "promise" abstraction.
