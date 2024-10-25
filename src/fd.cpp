@@ -60,7 +60,6 @@ static int wait_thread(void *arg) {
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
   std::shared_ptr<ThreadArgs> args = *argsptr;
-  tct_thrd_detach(tct_thrd_current());
 
   int result;
   int *values;
@@ -201,6 +200,7 @@ Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds,
 #else
     Rcpp::stop("Thread creation error: " + std::string(strerror(errno)));
 #endif
+  tct_thrd_detach(thr);
 
   Rcpp::XPtr<std::shared_ptr<std::atomic<bool>>> xptr(new std::shared_ptr<std::atomic<bool>>(flag), true);
 
