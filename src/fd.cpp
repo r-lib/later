@@ -26,6 +26,7 @@ inline SEXP R_mkClosure(SEXP formals, SEXP body, SEXP env) {
 
 extern CallbackRegistryTable callbackRegistryTable;
 extern SEXP later_fdcancel;
+extern SEXP later_invisibleSymbol;
 
 #ifdef _WIN32
 #define POLL_FUNC WSAPoll
@@ -205,9 +206,8 @@ Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds,
   tct_thrd_detach(thr);
 
   Rcpp::XPtr<std::shared_ptr<std::atomic<bool>>> xptr(new std::shared_ptr<std::atomic<bool>>(flag), true);
-
   SEXP body, func;
-  PROTECT(body = Rf_lcons(later_fdcancel, Rf_cons(xptr, R_NilValue)));
+  PROTECT(body = Rf_lang2(later_invisibleSymbol, Rf_lang2(later_fdcancel, xptr)));
   func = R_mkClosure(R_NilValue, body, R_BaseEnv);
   UNPROTECT(1);
 

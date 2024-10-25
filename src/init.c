@@ -5,8 +5,9 @@
 #include <stdint.h> // for uint64_t
 
 // Symbols and preserved objects defined here.
-SEXP later_laterSymbol;
 SEXP later_fdcancel;
+SEXP later_invisibleSymbol;
+SEXP later_laterSymbol;
 
 /* FIXME:
 Check these declarations against the C/Fortran source code.
@@ -63,6 +64,7 @@ uint64_t execLaterNative2(void (*func)(void*), void* data, double secs, int loop
 int apiVersion(void);
 
 void PreserveObjects(void) {
+  later_invisibleSymbol = Rf_install("invisible");
   later_laterSymbol = Rf_install("later");
   R_PreserveObject(later_fdcancel = Rf_lang3(R_TripleColonSymbol, later_laterSymbol, Rf_install("fd_cancel")));
 }

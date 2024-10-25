@@ -23,6 +23,7 @@ test_that("later_fd", {
   expect_true(cancel())
   Sys.sleep(0.25)
   expect_false(cancel())
+  expect_invisible(cancel())
   run_now()
   expect_null(result)
 
