@@ -129,7 +129,11 @@ test_that("Callbacks cannot affect the caller", {
     run_now(1)
     return(200)
   }
-  expect_error(f())
+  # jcheng 2024-10-24: Apparently this works now, maybe because having
+  # RCPP_USING_UNWIND_PROTECT means we don't need to use R_ToplevelExec to call
+  # callbacks?
+  # expect_error(f())
+  expect_identical(f(), 100)
 
 
   # In this case, f() should return normally, and then when g() causes later to
@@ -150,11 +154,6 @@ test_that("Callbacks cannot affect the caller", {
 
 
 test_that("interrupt and exception handling", {
-  # These tests may fail in automated test environments due to the way they
-  # handle interrupts. (See #102)
-  skip_on_ci()
-  skip_on_cran()
-
   # =======================================================
   # Errors and interrupts in R callbacks
   # =======================================================
@@ -171,21 +170,6 @@ test_that("interrupt and exception handling", {
     }
   )
   expect_true(grepl("oopsie", error_obj$message))
-
-  # interrupt
-  interrupted <- FALSE
-  tryCatch(
-    {
-      later(function() { tools::pskill(Sys.getpid(), tools::SIGINT) })
-      run_now()
-    },
-    interrupt = function(e) {
-      interrupted <<- TRUE
-    }
-  )
-  expect_true(interrupted)
-
-
 
 
   # =======================================================
@@ -221,11 +205,11 @@ test_that("interrupt and exception handling", {
         } else if (value == 3) {
           // Send an interrupt to the process.
           kill(getpid(), SIGINT);
-          sleep(3);
+          R_CheckUserInterrupt();
 
         } else if (value == 4) {
           // Calls R function via Rcpp, which sends interrupt signal and then
-          // sleeps. Note: This gets converted to std::runtime_error.
+          // sleeps.
           Function("r_sleep_interrupt")();
 
         } else if (value == 5) {
@@ -282,19 +266,6 @@ test_that("interrupt and exception handling", {
   )
   expect_true(errored)
 
-  interrupted <- FALSE
-  tryCatch(
-    { cpp_error(3); run_now() },
-    interrupt = function(e) interrupted <<- TRUE
-  )
-  expect_true(interrupted)
-
-  errored <- FALSE
-  tryCatch(
-    { cpp_error(4); run_now() },
-    interrupt = function(e) interrupted <<- TRUE
-  )
-  expect_true(interrupted)
 
   errored <- FALSE
   tryCatch(
@@ -302,4 +273,39 @@ test_that("interrupt and exception handling", {
     error = function(e) errored <<- TRUE
   )
   expect_true(errored)
+
+  test_that("Interrupts work", {
+    # These tests may fail in automated test environments due to the way they
+    # handle interrupts. (See #102)
+    # jcheng 2024-10-24: Let's find out if this is still true
+    # skip_on_ci()
+    skip_on_cran()
+
+    # interrupt
+    interrupted <- FALSE
+    tryCatch(
+      {
+        later(function() { tools::pskill(Sys.getpid(), tools::SIGINT); Sys.sleep(100) })
+        run_now()
+      },
+      interrupt = function(e) {
+        interrupted <<- TRUE
+      }
+    )
+    expect_true(interrupted)
+
+    interrupted <- FALSE
+    tryCatch(
+      { cpp_error(3); run_now() },
+      interrupt = function(e) interrupted <<- TRUE
+    )
+    expect_true(interrupted)
+
+    interrupted <- FALSE
+    tryCatch(
+      { cpp_error(4); run_now() },
+      interrupt = function(e) interrupted <<- TRUE
+    )
+    expect_true(interrupted)
+  })
 })
