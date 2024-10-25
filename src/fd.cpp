@@ -201,11 +201,7 @@ Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds,
 
   tct_thrd_t thr;
   if (tct_thrd_create(&thr, &wait_thread, static_cast<void *>(argsptr.release())) != tct_thrd_success)
-#ifdef _WIN32
-    Rcpp::stop("Thread creation error: " + std::to_string(GetLastError()));
-#else
-    Rcpp::stop("Thread creation error: " + std::string(strerror(errno)));
-#endif
+    Rcpp::stop("Thread creation failed");
   tct_thrd_detach(thr);
 
   Rcpp::XPtr<std::shared_ptr<std::atomic<bool>>> xptr(new std::shared_ptr<std::atomic<bool>>(flag), true);
