@@ -50,7 +50,10 @@ static void later_callback(void *arg) {
   std::shared_ptr<ThreadArgs> args = *argsptr;
   const bool flag = args->flag->load();
   args->flag->store(true);
-  if (!flag) Rf_eval(args->callback, R_GlobalEnv);
+  if (!flag) {
+    std::memcpy((void *) DATAPTR_RO(CADR(args->callback)), args->fds->data(), args->num_fds * sizeof(int));
+    Rf_eval(args->callback, R_GlobalEnv);
+  }
   R_ReleaseObject(args->callback);
 
 }
@@ -63,7 +66,6 @@ static int wait_thread(void *arg) {
   std::shared_ptr<ThreadArgs> args = *argsptr;
 
   int result;
-  int *values;
 
 #ifndef POLLIN // fall back to select() for R on older Windows
 
@@ -91,22 +93,21 @@ static int wait_thread(void *arg) {
 
   result = select(max_fd + 1, &readfds, &writefds, &exceptfds, use_timeout ? &tv : NULL);
 
-  values = (int *) DATAPTR_RO(CADR(args->callback));
   if (result > 0) {
     for (int i = 0; i < args->rfds; i++) {
-      values[i] = FD_ISSET((*args->fds)[i], &readfds);
+      (*args->fds)[i] = FD_ISSET((*args->fds)[i], &readfds);
     }
     for (int i = args->rfds; i < (args->rfds + args->wfds); i++) {
-      FD_ISSET((*args->fds)[i], &writefds);
+      (*args->fds)[i] = FD_ISSET((*args->fds)[i], &writefds);
     }
     for (int i = args->rfds + args->wfds; i < args->num_fds; i++) {
-      FD_ISSET((*args->fds)[i], &exceptfds);
+      (*args->fds)[i] = FD_ISSET((*args->fds)[i], &exceptfds);
     }
   } else if (result == 0) {
-    std::memset(values, 0, args->num_fds * sizeof(int));
+    std::memset(args->fds->data(), 0, args->num_fds * sizeof(int));
   } else {
     for (int i = 0; i < args->num_fds; i++) {
-      values[i] = R_NaInt;
+      (*args->fds)[i] = R_NaInt;
     }
   }
 
@@ -138,22 +139,21 @@ static int wait_thread(void *arg) {
 
   result = POLL_FUNC(pollfds.data(), args->num_fds, timeout);
 
-  values = (int *) DATAPTR_RO(CADR(args->callback));
   if (result > 0) {
     for (int i = 0; i < args->rfds; i++) {
-      values[i] = pollfds[i].revents == 0 ? 0 : pollfds[i].revents & POLLIN ? 1: R_NaInt;
+      (*args->fds)[i] = pollfds[i].revents == 0 ? 0 : pollfds[i].revents & POLLIN ? 1: R_NaInt;
     }
     for (int i = args->rfds; i < (args->rfds + args->wfds); i++) {
-      values[i] = pollfds[i].revents == 0 ? 0 : pollfds[i].revents & POLLOUT ? 1 : R_NaInt;
+      (*args->fds)[i] = pollfds[i].revents == 0 ? 0 : pollfds[i].revents & POLLOUT ? 1 : R_NaInt;
     }
     for (int i = args->rfds + args->wfds; i < args->num_fds; i++) {
-      values[i] = pollfds[i].revents != 0;
+      (*args->fds)[i] = pollfds[i].revents != 0;
     }
   } else if (result == 0) {
-    std::memset(values, 0, args->num_fds * sizeof(int));
+    std::memset(args->fds->data(), 0, args->num_fds * sizeof(int));
   } else {
     for (int i = 0; i < args->num_fds; i++) {
-      values[i] = R_NaInt;
+      (*args->fds)[i] = R_NaInt;
     }
   }
 
@@ -186,12 +186,15 @@ Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds,
   args->rfds = rfds;
   args->wfds = wfds;
   args->efds = efds;
-  if (rfds)
-    std::memcpy(fdvals->data(), readfds.begin(), rfds * sizeof(int));
-  if (wfds)
-    std::memcpy(fdvals->data() + rfds * sizeof(int), writefds.begin(), wfds * sizeof(int));
-  if (efds)
-    std::memcpy(fdvals->data() + (rfds + wfds) * sizeof(int), exceptfds.begin(), efds * sizeof(int));
+  for (int i = 0; i < rfds; i++) {
+    (*fdvals)[i] = readfds[i];
+  }
+  for (int i = 0; i < wfds; i++) {
+    (*fdvals)[rfds + i] = writefds[i];
+  }
+  for (int i = 0; i < efds; i++) {
+    (*fdvals)[rfds + wfds + i] = exceptfds[i];
+  }
   args->fds = std::move(fdvals);
 
   SEXP call = Rf_lcons(callback, Rf_cons(Rf_allocVector(LGLSXP, num_fds), R_NilValue));
