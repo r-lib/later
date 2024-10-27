@@ -39,7 +39,7 @@ extern SEXP later_invisibleSymbol;
 typedef struct ThreadArgs_s {
   std::shared_ptr<std::atomic<bool>> flag;
   std::unique_ptr<std::vector<int>> fds;
-  SEXP callback;
+  std::unique_ptr<Rcpp::Function> callback;
   double timeout;
   int rfds, wfds, efds;
   int num_fds;
@@ -53,10 +53,9 @@ static void later_callback(void *arg) {
   const bool flag = args->flag->load();
   args->flag->store(true);
   if (!flag) {
-    std::memcpy((void *) DATAPTR_RO(CADR(args->callback)), args->fds->data(), args->num_fds * sizeof(int));
-    Rf_eval(args->callback, R_GlobalEnv);
+    Rcpp::LogicalVector results = Rcpp::wrap(*args->fds);
+    (*args->callback)(results);
   }
-  R_ReleaseObject(args->callback);
 
 }
 
@@ -98,7 +97,7 @@ static int wait_thread(void *arg) {
 
     result = select(max_fd + 1, &readfds, &writefds, &exceptfds, &tv);
 
-    if (args->flag->load()) goto callback;
+    if (args->flag->load()) return 1;
     if (result) break;
   } while (infinite || (repeats-- && (timeoutms -= LATER_INTERVAL)));
 
@@ -146,7 +145,7 @@ static int wait_thread(void *arg) {
 
   do {
     result = POLL_FUNC(pollfds.data(), args->num_fds, repeats ? LATER_INTERVAL : timeoutms);
-    if (args->flag->load()) goto callback;
+    if (args->flag->load()) return 1;
     if (result) break;
   } while (infinite || (repeats-- && (timeoutms -= LATER_INTERVAL)));
 
@@ -170,7 +169,6 @@ static int wait_thread(void *arg) {
 
 #endif // POLLIN
 
-  callback:
   callbackRegistryTable.scheduleCallback(later_callback, static_cast<void *>(argsptr.release()), 0, args->loop);
 
   return 0;
@@ -179,7 +177,7 @@ static int wait_thread(void *arg) {
 
 // [[Rcpp::export]]
 Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds, Rcpp::IntegerVector writefds,
-                                 Rcpp::IntegerVector exceptfds, Rcpp::NumericVector timeoutSecs, Rcpp::IntegerVector loop_id) {
+                           Rcpp::IntegerVector exceptfds, Rcpp::NumericVector timeoutSecs, Rcpp::IntegerVector loop_id) {
 
   const int rfds = static_cast<int>(readfds.size());
   const int wfds = static_cast<int>(writefds.size());
@@ -193,12 +191,14 @@ Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds,
   fds->reserve(num_fds);
   std::shared_ptr<std::atomic<bool>> flag = std::make_shared<std::atomic<bool>>();
   args->flag = flag;
+  args->callback = std::unique_ptr<Rcpp::Function>(new Rcpp::Function(callback));
   args->timeout = timeoutSecs[0];
   args->loop = loop_id[0];
   args->num_fds = num_fds;
   args->rfds = rfds;
   args->wfds = wfds;
   args->efds = efds;
+
   for (int i = 0; i < rfds; i++) {
     fds->push_back(readfds[i]);
   }
@@ -209,10 +209,6 @@ Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds,
     fds->push_back(exceptfds[i]);
   }
   args->fds = std::move(fds);
-
-  SEXP call = Rf_lcons(callback, Rf_cons(Rf_allocVector(LGLSXP, num_fds), R_NilValue));
-  R_PreserveObject(call);
-  args->callback = call;
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(new std::shared_ptr<ThreadArgs>(args));
 
