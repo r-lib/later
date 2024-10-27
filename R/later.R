@@ -269,6 +269,17 @@ later <- function(func, delay = 0, loop = current_loop()) {
   invisible(create_canceller(id, loop$id))
 }
 
+# Returns a function that will cancel a callback with the given ID. If the
+# callback has already been executed or canceled, then the function has no
+# effect.
+create_canceller <- function(id, loop_id) {
+  force(id)
+  force(loop_id)
+  function() {
+    invisible(cancel(id, loop_id))
+  }
+}
+
 #' Executes a function when a file descriptor is ready
 #'
 #' Schedule an R function or formula to run after an indeterminate amount of
@@ -336,17 +347,18 @@ later_fd <- function(func, readfds = integer(), writefds = integer(), exceptfds 
   if (!is.function(func)) {
     func <- rlang::as_function(func)
   }
-  invisible(execLater_fd(func, readfds, writefds, exceptfds, timeout, loop$id))
+  xptr <- execLater_fd(func, readfds, writefds, exceptfds, timeout, loop$id)
+
+  invisible(create_fd_canceller(xptr))
 }
 
-# Returns a function that will cancel a callback with the given ID. If the
-# callback has already been executed or canceled, then the function has no
-# effect.
-create_canceller <- function(id, loop_id) {
-  force(id)
-  force(loop_id)
+# Returns a function that will cancel a callback with the given external
+# pointer. If the callback has already been executed or canceled, then the
+# function has no effect.
+create_fd_canceller <- function(xptr) {
+  force(xptr)
   function() {
-    invisible(cancel(id, loop_id))
+    invisible(fd_cancel(xptr))
   }
 }
 

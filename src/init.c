@@ -4,11 +4,6 @@
 #include <R_ext/Rdynload.h>
 #include <stdint.h> // for uint64_t
 
-// Symbols and preserved objects defined here.
-SEXP later_fdcancel;
-SEXP later_invisibleSymbol;
-SEXP later_laterSymbol;
-
 /* FIXME:
 Check these declarations against the C/Fortran source code.
 */
@@ -63,21 +58,10 @@ uint64_t execLaterNative(void (*func)(void*), void* data, double secs);
 uint64_t execLaterNative2(void (*func)(void*), void* data, double secs, int loop);
 int apiVersion(void);
 
-void PreserveObjects(void) {
-  later_invisibleSymbol = Rf_install("invisible");
-  later_laterSymbol = Rf_install("later");
-  R_PreserveObject(later_fdcancel = Rf_lang3(R_TripleColonSymbol, later_laterSymbol, Rf_install("fd_cancel")));
-}
-
-void ReleaseObjects(void) {
-  R_ReleaseObject(later_fdcancel);
-}
-
 void R_init_later(DllInfo *dll) {
   R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
   R_useDynamicSymbols(dll, FALSE);
   R_forceSymbols(dll, TRUE);
-  PreserveObjects();
   // 2019-08-06
   // execLaterNative is registered here ONLY for backward compatibility; If
   // someone installed a package which had `#include <later_api.h>` (like
@@ -99,8 +83,4 @@ void R_init_later(DllInfo *dll) {
   R_RegisterCCallable("later", "execLaterNative",  (DL_FUNC)&execLaterNative);
   R_RegisterCCallable("later", "execLaterNative2", (DL_FUNC)&execLaterNative2);
   R_RegisterCCallable("later", "apiVersion",       (DL_FUNC)&apiVersion);
-}
-
-void R_unload_later(DllInfo *info) {
-  ReleaseObjects();
 }

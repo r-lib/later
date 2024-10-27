@@ -10,23 +10,12 @@
 #include <unistd.h>
 #include <cstdlib>
 #include <atomic>
+#include <memory>
 #include "tinycthread.h"
 #include "later.h"
 #include "callback_registry_table.h"
 
-#if R_VERSION < R_Version(4, 5, 0)
-inline SEXP R_mkClosure(SEXP formals, SEXP body, SEXP env) {
-  SEXP fun = Rf_allocSExp(CLOSXP);
-  SET_FORMALS(fun, formals);
-  SET_BODY(fun, body);
-  SET_CLOENV(fun, env);
-  return fun;
-}
-#endif
-
 extern CallbackRegistryTable callbackRegistryTable;
-extern SEXP later_fdcancel;
-extern SEXP later_invisibleSymbol;
 
 #define LATER_INTERVAL 1024
 
@@ -214,12 +203,8 @@ Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds,
   tct_thrd_detach(thr);
 
   Rcpp::XPtr<std::shared_ptr<std::atomic<bool>>> xptr(new std::shared_ptr<std::atomic<bool>>(args->flag), true);
-  SEXP body, func;
-  PROTECT(body = Rf_lang2(later_invisibleSymbol, Rf_lang2(later_fdcancel, xptr)));
-  func = R_mkClosure(R_NilValue, body, R_BaseEnv);
-  UNPROTECT(1);
 
-  return func;
+  return Rcpp::RObject(xptr);
 
 }
 
