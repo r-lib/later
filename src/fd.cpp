@@ -2,10 +2,8 @@
 #ifndef FD_SETSIZE
 #define FD_SETSIZE 2048  // set max fds - only for select() fallback on R <= 4.1
 #endif
-#define LATER POLL_FUNC WSAPoll
 #include <winsock2.h>
 #else
-#define LATER_POLL_FUNC poll
 #include <poll.h>
 #endif
 #include <Rcpp.h>
@@ -17,6 +15,11 @@
 #include "later.h"
 
 #define LATER_INTERVAL 1024
+#ifdef _WIN32
+#define LATER_POLL_FUNC WSAPoll
+#else
+#define LATER_POLL_FUNC poll
+#endif
 
 typedef struct ThreadArgs_s {
   std::shared_ptr<std::atomic<bool>> flag;
