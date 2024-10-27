@@ -38,11 +38,10 @@ extern SEXP later_invisibleSymbol;
 
 typedef struct ThreadArgs_s {
   std::shared_ptr<std::atomic<bool>> flag;
-  std::unique_ptr<std::vector<int>> fds;
   std::unique_ptr<Rcpp::Function> callback;
+  std::unique_ptr<std::vector<int>> fds;
   double timeout;
-  int rfds, wfds, efds;
-  int num_fds;
+  int rfds, wfds, efds, num_fds;
   int loop;
 } ThreadArgs;
 
@@ -65,7 +64,6 @@ static int wait_thread(void *arg) {
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
   std::shared_ptr<ThreadArgs> args = *argsptr;
-  int *fds = args->fds->data();
 
   int result;
 
@@ -84,13 +82,13 @@ static int wait_thread(void *arg) {
 
   do {
     for (int i = 0; i < args->rfds; i++) {
-      FD_SET(fds[i], &readfds);
+      FD_SET((*args->fds)[i], &readfds);
     }
     for (int i = args->rfds; i < (args->rfds + args->wfds); i++) {
-      FD_SET(fds[i], &writefds);
+      FD_SET((*args->fds)[i], &writefds);
     }
     for (int i = args->rfds + args->wfds; i < args->num_fds; i++) {
-      FD_SET(fds[i], &exceptfds);
+      FD_SET((*args->fds)[i], &exceptfds);
     }
     tv.tv_sec = (repeats ? LATER_INTERVAL : timeoutms) / 1000;
     tv.tv_usec = ((repeats ? LATER_INTERVAL : timeoutms) % 1000) * 1000;
@@ -103,19 +101,19 @@ static int wait_thread(void *arg) {
 
   if (result > 0) {
     for (int i = 0; i < args->rfds; i++) {
-      fds[i] = FD_ISSET(fds[i], &readfds);
+      (*args->fds)[i] = FD_ISSET((*args->fds)[i], &readfds);
     }
     for (int i = args->rfds; i < (args->rfds + args->wfds); i++) {
-      fds[i] = FD_ISSET(fds[i], &writefds);
+      (*args->fds)[i] = FD_ISSET((*args->fds)[i], &writefds);
     }
     for (int i = args->rfds + args->wfds; i < args->num_fds; i++) {
-      fds[i] = FD_ISSET(fds[i], &exceptfds);
+      (*args->fds)[i] = FD_ISSET((*args->fds)[i], &exceptfds);
     }
   } else if (result == 0) {
-    std::memset(fds, 0, args->num_fds * sizeof(int));
+    std::memset(args->fds->data(), 0, args->num_fds * sizeof(int));
   } else {
     for (int i = 0; i < args->num_fds; i++) {
-      fds[i] = R_NaInt;
+      (*args->fds)[i] = R_NaInt;
     }
   }
 
@@ -125,19 +123,19 @@ static int wait_thread(void *arg) {
   pollfds.reserve(args->num_fds);
   struct pollfd pfd;
   for (int i = 0; i < args->rfds; i++) {
-    pfd.fd = fds[i];
+    pfd.fd = (*args->fds)[i];
     pfd.events = POLLIN;
     pfd.revents = 0;
     pollfds.push_back(pfd);
   }
   for (int i = args->rfds; i < (args->rfds + args->wfds); i++) {
-    pfd.fd = fds[i];
+    pfd.fd = (*args->fds)[i];
     pfd.events = POLLOUT;
     pfd.revents = 0;
     pollfds.push_back(pfd);
   }
   for (int i = args->rfds + args->wfds; i < args->num_fds; i++) {
-    pfd.fd = fds[i];
+    pfd.fd = (*args->fds)[i];
     pfd.events = 0;
     pfd.revents = 0;
     pollfds.push_back(pfd);
@@ -151,19 +149,19 @@ static int wait_thread(void *arg) {
 
   if (result > 0) {
     for (int i = 0; i < args->rfds; i++) {
-      fds[i] = pollfds[i].revents == 0 ? 0 : pollfds[i].revents & POLLIN ? 1: R_NaInt;
+      (*args->fds)[i] = pollfds[i].revents == 0 ? 0 : pollfds[i].revents & POLLIN ? 1: R_NaInt;
     }
     for (int i = args->rfds; i < (args->rfds + args->wfds); i++) {
-      fds[i] = pollfds[i].revents == 0 ? 0 : pollfds[i].revents & POLLOUT ? 1 : R_NaInt;
+      (*args->fds)[i] = pollfds[i].revents == 0 ? 0 : pollfds[i].revents & POLLOUT ? 1 : R_NaInt;
     }
     for (int i = args->rfds + args->wfds; i < args->num_fds; i++) {
-      fds[i] = pollfds[i].revents != 0;
+      (*args->fds)[i] = pollfds[i].revents != 0;
     }
   } else if (result == 0) {
-    std::memset(fds, 0, args->num_fds * sizeof(int));
+    std::memset(args->fds->data(), 0, args->num_fds * sizeof(int));
   } else {
     for (int i = 0; i < args->num_fds; i++) {
-      fds[i] = R_NaInt;
+      (*args->fds)[i] = R_NaInt;
     }
   }
 
@@ -187,28 +185,26 @@ Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds,
     Rcpp::stop("No file descriptors supplied");
 
   std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>();
-  std::unique_ptr<std::vector<int>> fds(new std::vector<int>());
-  fds->reserve(num_fds);
-  std::shared_ptr<std::atomic<bool>> flag = std::make_shared<std::atomic<bool>>();
-  args->flag = flag;
+
   args->callback = std::unique_ptr<Rcpp::Function>(new Rcpp::Function(callback));
+  args->flag = std::make_shared<std::atomic<bool>>();
   args->timeout = timeoutSecs[0];
   args->loop = loop_id[0];
-  args->num_fds = num_fds;
   args->rfds = rfds;
   args->wfds = wfds;
   args->efds = efds;
-
+  args->num_fds = num_fds;
+  args->fds = std::unique_ptr<std::vector<int>>(new std::vector<int>());
+  args->fds->reserve(num_fds);
   for (int i = 0; i < rfds; i++) {
-    fds->push_back(readfds[i]);
+    args->fds->push_back(readfds[i]);
   }
   for (int i = 0; i < wfds; i++) {
-    fds->push_back(writefds[i]);
+    args->fds->push_back(writefds[i]);
   }
   for (int i = 0; i < efds; i++) {
-    fds->push_back(exceptfds[i]);
+    args->fds->push_back(exceptfds[i]);
   }
-  args->fds = std::move(fds);
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(new std::shared_ptr<ThreadArgs>(args));
 
@@ -217,7 +213,7 @@ Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds,
     Rcpp::stop("Thread creation failed");
   tct_thrd_detach(thr);
 
-  Rcpp::XPtr<std::shared_ptr<std::atomic<bool>>> xptr(new std::shared_ptr<std::atomic<bool>>(flag), true);
+  Rcpp::XPtr<std::shared_ptr<std::atomic<bool>>> xptr(new std::shared_ptr<std::atomic<bool>>(args->flag), true);
   SEXP body, func;
   PROTECT(body = Rf_lang2(later_invisibleSymbol, Rf_lang2(later_fdcancel, xptr)));
   func = R_mkClosure(R_NilValue, body, R_BaseEnv);
