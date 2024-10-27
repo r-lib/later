@@ -25,6 +25,7 @@ typedef struct ThreadArgs_s {
   std::shared_ptr<std::atomic<bool>> flag;
   std::unique_ptr<Rcpp::Function> callback;
   std::unique_ptr<std::vector<int>> fds;
+  std::unique_ptr<std::vector<int>> results;
   double timeout;
   int rfds, wfds, efds, num_fds;
   int loop;
@@ -37,7 +38,7 @@ static void later_callback(void *arg) {
   const bool flag = args->flag->load();
   args->flag->store(true);
   if (!flag) {
-    Rcpp::LogicalVector results = Rcpp::wrap(*args->fds);
+    Rcpp::LogicalVector results = Rcpp::wrap(*args->results);
     (*args->callback)(results);
   }
 
@@ -53,15 +54,16 @@ static int wait_thread(void *arg) {
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
   std::shared_ptr<ThreadArgs> args = *argsptr;
 
-  int result;
-
+  // process timeouts
   const bool infinite = args->timeout == R_PosInf;
   int timeoutms = infinite || args->timeout < 0 ? 1000 : (int) (args->timeout * 1000);
   int repeats = infinite || args->timeout < 0 ? 0 : timeoutms / LATER_INTERVAL;
 
+  // setup pollfd structs from args->fds
   std::vector<struct pollfd> pollfds;
   pollfds.reserve(args->num_fds);
   struct pollfd pfd;
+
   for (int i = 0; i < args->rfds; i++) {
     pfd.fd = (*args->fds)[i];
     pfd.events = POLLIN;
@@ -81,27 +83,29 @@ static int wait_thread(void *arg) {
     pollfds.push_back(pfd);
   }
 
+  int ready;
   do {
-    result = LATER_POLL_FUNC(pollfds.data(), args->num_fds, repeats ? LATER_INTERVAL : timeoutms);
+    ready = LATER_POLL_FUNC(pollfds.data(), args->num_fds, repeats ? LATER_INTERVAL : timeoutms);
     if (args->flag->load()) return 1;
-    if (result) break;
+    if (ready) break;
   } while (infinite || (repeats-- && (timeoutms -= LATER_INTERVAL)));
 
-  if (result > 0) {
+  // store pollfd revents in args->results for use by callback
+  if (ready > 0) {
     for (int i = 0; i < args->rfds; i++) {
-      (*args->fds)[i] = pollfds[i].revents == 0 ? 0 : pollfds[i].revents & POLLIN ? 1: R_NaInt;
+      (*args->results)[i] = pollfds[i].revents == 0 ? 0 : pollfds[i].revents & POLLIN ? 1: R_NaInt;
     }
     for (int i = args->rfds; i < (args->rfds + args->wfds); i++) {
-      (*args->fds)[i] = pollfds[i].revents == 0 ? 0 : pollfds[i].revents & POLLOUT ? 1 : R_NaInt;
+      (*args->results)[i] = pollfds[i].revents == 0 ? 0 : pollfds[i].revents & POLLOUT ? 1 : R_NaInt;
     }
     for (int i = args->rfds + args->wfds; i < args->num_fds; i++) {
-      (*args->fds)[i] = pollfds[i].revents != 0;
+      (*args->results)[i] = pollfds[i].revents != 0;
     }
-  } else if (result == 0) {
-    std::memset(args->fds->data(), 0, args->num_fds * sizeof(int));
+  } else if (ready == 0) {
+    std::memset(args->results->data(), 0, args->num_fds * sizeof(int));
   } else {
     for (int i = 0; i < args->num_fds; i++) {
-      (*args->fds)[i] = R_NaInt;
+      (*args->results)[i] = R_NaInt;
     }
   }
 
@@ -118,20 +122,22 @@ static int wait_thread(void *arg) {
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
   std::shared_ptr<ThreadArgs> args = *argsptr;
 
-  int result;
-
+  // process timeouts
   const bool infinite = args->timeout == R_PosInf;
   int timeoutms = infinite || args->timeout < 0 ? 1000 : (int) (args->timeout * 1000);
   int repeats = infinite || args->timeout < 0 ? 0 : timeoutms / LATER_INTERVAL;
+  struct timeval tv;
 
+  // create and zero fd_set structs
   fd_set readfds, writefds, exceptfds;
   FD_ZERO(&readfds);
   FD_ZERO(&writefds);
   FD_ZERO(&exceptfds);
   const int max_fd = *std::max_element(args->fds->begin(), args->fds->end());
-  struct timeval tv;
 
+  int ready;
   do {
+    // update fd_sets (already zero at this point) from args->fds
     for (int i = 0; i < args->rfds; i++) {
       FD_SET((*args->fds)[i], &readfds);
     }
@@ -144,27 +150,28 @@ static int wait_thread(void *arg) {
     tv.tv_sec = (repeats ? LATER_INTERVAL : timeoutms) / 1000;
     tv.tv_usec = ((repeats ? LATER_INTERVAL : timeoutms) % 1000) * 1000;
 
-    result = select(max_fd + 1, &readfds, &writefds, &exceptfds, &tv);
+    ready = select(max_fd + 1, &readfds, &writefds, &exceptfds, &tv);
 
     if (args->flag->load()) return 1;
-    if (result) break;
+    if (ready) break;
   } while (infinite || (repeats-- && (timeoutms -= LATER_INTERVAL)));
 
-  if (result > 0) {
+  // store fd_set members in args->results for use by callback
+  if (ready > 0) {
     for (int i = 0; i < args->rfds; i++) {
-      (*args->fds)[i] = FD_ISSET((*args->fds)[i], &readfds);
+      (*args->results)[i] = FD_ISSET((*args->fds)[i], &readfds);
     }
     for (int i = args->rfds; i < (args->rfds + args->wfds); i++) {
-      (*args->fds)[i] = FD_ISSET((*args->fds)[i], &writefds);
+      (*args->results)[i] = FD_ISSET((*args->fds)[i], &writefds);
     }
     for (int i = args->rfds + args->wfds; i < args->num_fds; i++) {
-      (*args->fds)[i] = FD_ISSET((*args->fds)[i], &exceptfds);
+      (*args->results)[i] = FD_ISSET((*args->fds)[i], &exceptfds);
     }
-  } else if (result == 0) {
-    std::memset(args->fds->data(), 0, args->num_fds * sizeof(int));
+  } else if (ready == 0) {
+    std::memset(args->results->data(), 0, args->num_fds * sizeof(int));
   } else {
     for (int i = 0; i < args->num_fds; i++) {
-      (*args->fds)[i] = R_NaInt;
+      (*args->results)[i] = R_NaInt;
     }
   }
 
@@ -208,6 +215,7 @@ Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds,
   for (int i = 0; i < efds; i++) {
     args->fds->push_back(exceptfds[i]);
   }
+  args->results = std::unique_ptr<std::vector<int>>(new std::vector<int>(num_fds));
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(new std::shared_ptr<ThreadArgs>(args));
 
