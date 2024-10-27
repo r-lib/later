@@ -71,19 +71,19 @@ later_fd(print, c(fd1, fd2), timeout = 0.1)
 Sys.sleep(0.2)
 run_now()
 
-# 2. fd1 active: prints TRUE, FALSE
+# 2. fd1 ready: prints TRUE, FALSE
 later_fd(print, c(fd1, fd2), timeout = 1)
 res <- nanonext::send(s2, "msg")
 Sys.sleep(0.1)
 run_now()
 
-# 3. both active: prints TRUE, TRUE
+# 3. both ready: prints TRUE, TRUE
 res <- nanonext::send(s1, "msg")
 later_fd(print, c(fd1, fd2), timeout = 1)
 Sys.sleep(0.1)
 run_now()
 
-# 4. fd2 active: prints FALSE, TRUE
+# 4. fd2 ready: prints FALSE, TRUE
 res <- nanonext::recv(s1)
 later_fd(print, c(fd1, fd2), timeout = 1)
 Sys.sleep(0.1)
