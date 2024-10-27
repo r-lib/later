@@ -46,6 +46,12 @@ Schedule an R function or formula to run after an indeterminate amount of
 time when file descriptors are ready for reading or writing, subject to an
 optional timeout.
 }
+\details{
+On the occasion the system-level \code{poll} (on Windows \code{WSAPoll} or \code{select})
+returns an error, the callback will be made on a vector of all \code{NA}s. This is
+indistinguishable from a case where the \code{poll} succeeds but there are error
+conditions pending against each file descriptor.
+}
 \note{
 To avoid bugs due to reentrancy, by default, scheduled operations only run
 when there is no other R code present on the execution stack; i.e., when R is

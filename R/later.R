@@ -286,6 +286,11 @@ create_canceller <- function(id, loop_id) {
 #' time when file descriptors are ready for reading or writing, subject to an
 #' optional timeout.
 #'
+#' On the occasion the system-level `poll` (on Windows `WSAPoll` or `select`)
+#' returns an error, the callback will be made on a vector of all `NA`s. This is
+#' indistinguishable from a case where the `poll` succeeds but there are error
+#' conditions pending against each file descriptor.
+#'
 #' @param func A function that takes a single argument, a logical vector that
 #'   indicates which file descriptors are ready (a concatenation of `readfds`,
 #'   `writefds` and `exceptfds`). This may be all `FALSE` if the
