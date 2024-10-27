@@ -1,9 +1,11 @@
 #ifdef _WIN32
 #ifndef FD_SETSIZE
-#define FD_SETSIZE 2048  // Set max fds - only for select() fallback
+#define FD_SETSIZE 2048  // set max fds - only for select() fallback on R <= 4.1
 #endif
+#define LATER POLL_FUNC WSAPoll
 #include <winsock2.h>
 #else
+#define LATER_POLL_FUNC poll
 #include <poll.h>
 #endif
 #include <Rcpp.h>
@@ -15,12 +17,6 @@
 #include "later.h"
 
 #define LATER_INTERVAL 1024
-
-#ifdef _WIN32
-#define POLL_FUNC WSAPoll
-#else
-#define POLL_FUNC poll
-#endif
 
 typedef struct ThreadArgs_s {
   std::shared_ptr<std::atomic<bool>> flag;
@@ -46,6 +42,9 @@ static void later_callback(void *arg) {
 
 // CONSIDER: if necessary to add method for HANDLES on Windows. Would be different code to SOCKETs.
 // TODO: implement re-usable background thread.
+
+#ifdef POLLIN // all platforms except R <= 4.1 on Windows
+
 static int wait_thread(void *arg) {
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
@@ -57,7 +56,70 @@ static int wait_thread(void *arg) {
   int timeoutms = infinite || args->timeout < 0 ? 1000 : (int) (args->timeout * 1000);
   int repeats = infinite || args->timeout < 0 ? 0 : timeoutms / LATER_INTERVAL;
 
-#ifndef POLLIN // fall back to select() for R <= 4.1 and older Windows
+  std::vector<struct pollfd> pollfds;
+  pollfds.reserve(args->num_fds);
+  struct pollfd pfd;
+  for (int i = 0; i < args->rfds; i++) {
+    pfd.fd = (*args->fds)[i];
+    pfd.events = POLLIN;
+    pfd.revents = 0;
+    pollfds.push_back(pfd);
+  }
+  for (int i = args->rfds; i < (args->rfds + args->wfds); i++) {
+    pfd.fd = (*args->fds)[i];
+    pfd.events = POLLOUT;
+    pfd.revents = 0;
+    pollfds.push_back(pfd);
+  }
+  for (int i = args->rfds + args->wfds; i < args->num_fds; i++) {
+    pfd.fd = (*args->fds)[i];
+    pfd.events = 0;
+    pfd.revents = 0;
+    pollfds.push_back(pfd);
+  }
+
+  do {
+    result = LATER_POLL_FUNC(pollfds.data(), args->num_fds, repeats ? LATER_INTERVAL : timeoutms);
+    if (args->flag->load()) return 1;
+    if (result) break;
+  } while (infinite || (repeats-- && (timeoutms -= LATER_INTERVAL)));
+
+  if (result > 0) {
+    for (int i = 0; i < args->rfds; i++) {
+      (*args->fds)[i] = pollfds[i].revents == 0 ? 0 : pollfds[i].revents & POLLIN ? 1: R_NaInt;
+    }
+    for (int i = args->rfds; i < (args->rfds + args->wfds); i++) {
+      (*args->fds)[i] = pollfds[i].revents == 0 ? 0 : pollfds[i].revents & POLLOUT ? 1 : R_NaInt;
+    }
+    for (int i = args->rfds + args->wfds; i < args->num_fds; i++) {
+      (*args->fds)[i] = pollfds[i].revents != 0;
+    }
+  } else if (result == 0) {
+    std::memset(args->fds->data(), 0, args->num_fds * sizeof(int));
+  } else {
+    for (int i = 0; i < args->num_fds; i++) {
+      (*args->fds)[i] = R_NaInt;
+    }
+  }
+
+  execLaterNative2(later_callback, static_cast<void *>(argsptr.release()), 0, args->loop);
+
+  return 0;
+
+}
+
+#else // no POLLIN: fall back to select() for R <= 4.1 on Windows
+
+static int wait_thread(void *arg) {
+
+  std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
+  std::shared_ptr<ThreadArgs> args = *argsptr;
+
+  int result;
+
+  const bool infinite = args->timeout == R_PosInf;
+  int timeoutms = infinite || args->timeout < 0 ? 1000 : (int) (args->timeout * 1000);
+  int repeats = infinite || args->timeout < 0 ? 0 : timeoutms / LATER_INTERVAL;
 
   fd_set readfds, writefds, exceptfds;
   FD_ZERO(&readfds);
@@ -103,61 +165,13 @@ static int wait_thread(void *arg) {
     }
   }
 
-#else
-
-  std::vector<struct pollfd> pollfds;
-  pollfds.reserve(args->num_fds);
-  struct pollfd pfd;
-  for (int i = 0; i < args->rfds; i++) {
-    pfd.fd = (*args->fds)[i];
-    pfd.events = POLLIN;
-    pfd.revents = 0;
-    pollfds.push_back(pfd);
-  }
-  for (int i = args->rfds; i < (args->rfds + args->wfds); i++) {
-    pfd.fd = (*args->fds)[i];
-    pfd.events = POLLOUT;
-    pfd.revents = 0;
-    pollfds.push_back(pfd);
-  }
-  for (int i = args->rfds + args->wfds; i < args->num_fds; i++) {
-    pfd.fd = (*args->fds)[i];
-    pfd.events = 0;
-    pfd.revents = 0;
-    pollfds.push_back(pfd);
-  }
-
-  do {
-    result = POLL_FUNC(pollfds.data(), args->num_fds, repeats ? LATER_INTERVAL : timeoutms);
-    if (args->flag->load()) return 1;
-    if (result) break;
-  } while (infinite || (repeats-- && (timeoutms -= LATER_INTERVAL)));
-
-  if (result > 0) {
-    for (int i = 0; i < args->rfds; i++) {
-      (*args->fds)[i] = pollfds[i].revents == 0 ? 0 : pollfds[i].revents & POLLIN ? 1: R_NaInt;
-    }
-    for (int i = args->rfds; i < (args->rfds + args->wfds); i++) {
-      (*args->fds)[i] = pollfds[i].revents == 0 ? 0 : pollfds[i].revents & POLLOUT ? 1 : R_NaInt;
-    }
-    for (int i = args->rfds + args->wfds; i < args->num_fds; i++) {
-      (*args->fds)[i] = pollfds[i].revents != 0;
-    }
-  } else if (result == 0) {
-    std::memset(args->fds->data(), 0, args->num_fds * sizeof(int));
-  } else {
-    for (int i = 0; i < args->num_fds; i++) {
-      (*args->fds)[i] = R_NaInt;
-    }
-  }
-
-#endif // POLLIN
-
   execLaterNative2(later_callback, static_cast<void *>(argsptr.release()), 0, args->loop);
 
   return 0;
 
 }
+
+#endif // POLLIN
 
 // [[Rcpp::export]]
 Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds, Rcpp::IntegerVector writefds,
