@@ -16,7 +16,7 @@ using std::shared_ptr;
 
 static size_t exec_callbacks_reentrancy_count = 0;
 
-CallbackRegistryTable callbackRegistryTable;
+static CallbackRegistryTable callbackRegistryTable;
 
 
 class ProtectCallbacks {

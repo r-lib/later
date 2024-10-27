@@ -13,9 +13,6 @@
 #include <memory>
 #include "tinycthread.h"
 #include "later.h"
-#include "callback_registry_table.h"
-
-extern CallbackRegistryTable callbackRegistryTable;
 
 #define LATER_INTERVAL 1024
 
@@ -156,7 +153,7 @@ static int wait_thread(void *arg) {
 
 #endif // POLLIN
 
-  callbackRegistryTable.scheduleCallback(later_callback, static_cast<void *>(argsptr.release()), 0, args->loop);
+  execLaterNative2(later_callback, static_cast<void *>(argsptr.release()), 0, args->loop);
 
   return 0;
 
