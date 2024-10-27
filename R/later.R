@@ -297,14 +297,16 @@ create_canceller <- function(id, loop_id) {
 #'   `timeout` argument is non-`Inf`. Invalid file descriptors (such as those
 #'   already closed) are returned as `NA`, as are `readfds` and `writefds` with
 #'   error conditions pending.
-#' @param readfds Integer vector of file descriptors, or Windows `SOCKET`s to
+#' @param readfds Integer vector of file descriptors, or Windows SOCKETs, to
 #'   monitor for being ready to read.
-#' @param writefds Integer vector of file descriptors, or Windows `SOCKET`s to
+#' @param writefds Integer vector of file descriptors, or Windows SOCKETs, to
 #'   monitor being ready to write.
-#' @param exceptfds Integer vector of file descriptors, or Windows `SOCKET`s to
+#' @param exceptfds Integer vector of file descriptors, or Windows SOCKETs, to
 #'   monitor for error conditions pending.
 #' @param timeout Number of seconds to wait before giving up, and calling `func`
-#'   with all `FALSE`.
+#'   with all `FALSE`. The default `Inf` implies waiting indefinitely.
+#'   Specifying `0` will check once without blocking, and supplying a negative
+#'   value defaults to a timeout of 1s.
 #' @param loop A handle to an event loop. Defaults to the currently-active loop.
 #'
 #' @inherit later return note
@@ -342,7 +344,7 @@ create_canceller <- function(id, loop_id) {
 #' # 5. fds invalid: prints NA, NA
 #' close(s2)
 #' close(s1)
-#' later_fd(print, c(fd1, fd2), timeout = 1)
+#' later_fd(print, c(fd1, fd2), timeout = 0)
 #' Sys.sleep(0.1)
 #' run_now()
 #'

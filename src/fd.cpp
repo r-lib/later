@@ -14,7 +14,7 @@
 #include "tinycthread.h"
 #include "later.h"
 
-#define LATER_INTERVAL 1024
+#define LATER_POLL_INTERVAL 1024
 #ifdef _WIN32
 #define LATER_POLL_FUNC WSAPoll
 #else
@@ -26,7 +26,7 @@ typedef struct ThreadArgs_s {
   std::unique_ptr<Rcpp::Function> callback;
   std::unique_ptr<std::vector<int>> fds;
   std::unique_ptr<std::vector<int>> results;
-  double timeout;
+  Timestamp timeout;
   int rfds, wfds, efds, num_fds;
   int loop;
 } ThreadArgs;
@@ -54,11 +54,6 @@ static int wait_thread(void *arg) {
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
   std::shared_ptr<ThreadArgs> args = *argsptr;
 
-  // process timeouts
-  const bool infinite = args->timeout == R_PosInf;
-  int timeoutms = infinite || args->timeout < 0 ? 1000 : (int) (args->timeout * 1000);
-  int repeats = infinite || args->timeout < 0 ? 0 : timeoutms / LATER_INTERVAL;
-
   // setup pollfd structs from args->fds
   std::vector<struct pollfd> pollfds;
   pollfds.reserve(args->num_fds);
@@ -83,12 +78,20 @@ static int wait_thread(void *arg) {
     pollfds.push_back(pfd);
   }
 
-  int ready;
-  do {
-    ready = LATER_POLL_FUNC(pollfds.data(), args->num_fds, repeats ? LATER_INTERVAL : timeoutms);
+  // poll() whilst checking for cancellation at intervals
+  int ready = -1; // initialized at -1 to ensure it runs at least once
+  while (true) {
+    int waitFor = (int) (args->timeout.diff_secs(Timestamp()) * 1000); // milliseconds
+    if (waitFor <= 0) {
+      if (!ready) break; // only breaks after the first time
+      waitFor = 0;
+    } else if (waitFor > LATER_POLL_INTERVAL) {
+      waitFor = LATER_POLL_INTERVAL;
+    }
+    ready = LATER_POLL_FUNC(pollfds.data(), args->num_fds, waitFor);
     if (args->flag->load()) return 1;
     if (ready) break;
-  } while (infinite || (repeats-- && (timeoutms -= LATER_INTERVAL)));
+  }
 
   // store pollfd revents in args->results for use by callback
   if (ready > 0) {
@@ -122,10 +125,6 @@ static int wait_thread(void *arg) {
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
   std::shared_ptr<ThreadArgs> args = *argsptr;
 
-  // process timeouts
-  const bool infinite = args->timeout == R_PosInf;
-  int timeoutms = infinite || args->timeout < 0 ? 1000 : (int) (args->timeout * 1000);
-  int repeats = infinite || args->timeout < 0 ? 0 : timeoutms / LATER_INTERVAL;
   struct timeval tv;
 
   // create and zero fd_set structs
@@ -135,8 +134,9 @@ static int wait_thread(void *arg) {
   FD_ZERO(&exceptfds);
   const int max_fd = *std::max_element(args->fds->begin(), args->fds->end());
 
-  int ready;
-  do {
+  // select() whilst checking for cancellation at intervals
+  int ready = -1; // initialized at -1 to ensure it runs at least once
+  while (true) {
     // update fd_sets (already zero at this point) from args->fds
     for (int i = 0; i < args->rfds; i++) {
       FD_SET((*args->fds)[i], &readfds);
@@ -147,14 +147,22 @@ static int wait_thread(void *arg) {
     for (int i = args->rfds + args->wfds; i < args->num_fds; i++) {
       FD_SET((*args->fds)[i], &exceptfds);
     }
-    tv.tv_sec = (repeats ? LATER_INTERVAL : timeoutms) / 1000;
-    tv.tv_usec = ((repeats ? LATER_INTERVAL : timeoutms) % 1000) * 1000;
+
+    int waitFor = (int) (args->timeout.diff_secs(Timestamp()) * 1000); // milliseconds
+    if (waitFor <= 0) {
+      if (!ready) break; // only breaks after the first time
+      waitFor = 0;
+    } else if (waitFor > LATER_POLL_INTERVAL) {
+      waitFor = LATER_POLL_INTERVAL;
+    }
+    tv.tv_sec = waitFor / 1000;
+    tv.tv_usec = (waitFor % 1000) * 1000;
 
     ready = select(max_fd + 1, &readfds, &writefds, &exceptfds, &tv);
 
     if (args->flag->load()) return 1;
     if (ready) break;
-  } while (infinite || (repeats-- && (timeoutms -= LATER_INTERVAL)));
+  }
 
   // store fd_set members in args->results for use by callback
   if (ready > 0) {
@@ -196,6 +204,16 @@ Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds,
 
   std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>();
 
+  double timeout;
+  if (timeoutSecs[0] == R_PosInf) {
+    timeout = 3e10; // "1000 years ought to be enough for anybody" --Bill Gates
+  } else if (timeoutSecs[0] < 0) {
+    timeout = 1; // curl_multi_timeout() uses -1 to denote a default we set at 1s
+  } else {
+    timeout = timeoutSecs[0];
+  }
+
+  args->timeout = Timestamp(timeout);
   args->callback = std::unique_ptr<Rcpp::Function>(new Rcpp::Function(callback));
   args->flag = std::make_shared<std::atomic<bool>>();
   args->timeout = timeoutSecs[0];

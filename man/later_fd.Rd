@@ -21,17 +21,19 @@ indicates which file descriptors are ready (a concatenation of \code{readfds},
 already closed) are returned as \code{NA}, as are \code{readfds} and \code{writefds} with
 error conditions pending.}
 
-\item{readfds}{Integer vector of file descriptors, or Windows \code{SOCKET}s to
+\item{readfds}{Integer vector of file descriptors, or Windows SOCKETs, to
 monitor for being ready to read.}
 
-\item{writefds}{Integer vector of file descriptors, or Windows \code{SOCKET}s to
+\item{writefds}{Integer vector of file descriptors, or Windows SOCKETs, to
 monitor being ready to write.}
 
-\item{exceptfds}{Integer vector of file descriptors, or Windows \code{SOCKET}s to
+\item{exceptfds}{Integer vector of file descriptors, or Windows SOCKETs, to
 monitor for error conditions pending.}
 
 \item{timeout}{Number of seconds to wait before giving up, and calling \code{func}
-with all \code{FALSE}.}
+with all \code{FALSE}. The default \code{Inf} implies waiting indefinitely.
+Specifying \code{0} will check once without blocking, and supplying a negative
+value defaults to a timeout of 1s.}
 
 \item{loop}{A handle to an event loop. Defaults to the currently-active loop.}
 }
@@ -98,7 +100,7 @@ run_now()
 # 5. fds invalid: prints NA, NA
 close(s2)
 close(s1)
-later_fd(print, c(fd1, fd2), timeout = 1)
+later_fd(print, c(fd1, fd2), timeout = 0)
 Sys.sleep(0.1)
 run_now()
 \dontshow{\}) # examplesIf}

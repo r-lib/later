@@ -74,7 +74,7 @@ test_that("later_fd", {
 
   # both fd1, fd2 invalid
   close(s1)
-  later_fd(callback, c(fd1, fd2), c(fd1, fd2), timeout = -1L)
+  later_fd(callback, c(fd1, fd2), c(fd1, fd2), timeout = 0)
   Sys.sleep(0.2)
   run_now()
   expect_equal(result, c(NA, NA, NA, NA))
