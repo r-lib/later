@@ -3,15 +3,7 @@
 #include <stdlib.h> // for NULL
 #include <R_ext/Rdynload.h>
 #include <stdint.h> // for uint64_t
-
-#ifdef _WIN32
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0600 // so R <= 4.1 can find WSAPoll() on Windows
-#endif
-#include <winsock2.h>
-#else
-#include <poll.h>
-#endif
+#include "fd.h" // for struct pollfd
 
 /* FIXME:
 Check these declarations against the C/Fortran source code.

@@ -1,11 +1,3 @@
-#ifdef _WIN32
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0600 // so R <= 4.1 can find WSAPoll() on Windows
-#endif
-#include <winsock2.h>
-#else
-#include <poll.h>
-#endif
 #include <Rcpp.h>
 #include <unistd.h>
 #include <cstdlib>
@@ -14,13 +6,7 @@
 #include "tinycthread.h"
 #include "later.h"
 #include "callback_registry_table.h"
-
-#define LATER_POLL_INTERVAL 1024
-#ifdef _WIN32
-#define LATER_POLL_FUNC WSAPoll
-#else
-#define LATER_POLL_FUNC poll
-#endif
+#include "fd.h"
 
 extern CallbackRegistryTable callbackRegistryTable;
 
@@ -159,10 +145,10 @@ Rcpp::RObject execLater_fd_impl(Rcpp::Function callback, int num_fds, struct pol
 }
 
 // native version
-Rcpp::RObject execLater_fd_impl(void (*func)(int *, void *), void *arg, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
+Rcpp::RObject execLater_fd_impl(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
 
   std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(num_fds, fds, timeout, loop_id);
-  args->func = std::bind(func, std::placeholders::_1, arg);
+  args->func = std::bind(func, std::placeholders::_1, data);
 
   return execLater_fd_threaded(args);
 
@@ -228,7 +214,7 @@ Rcpp::LogicalVector fd_cancel(Rcpp::RObject xptr) {
 // Schedules a C function that takes a pointer to an integer vector and a void *
 // argument, to execute on file descriptor readiness. Returns an external
 // pointer that can be used to signal cancellation.
-extern "C" SEXP execLaterFDNative(void (*func)(int *, void *), void *arg, int num_fds, struct pollfd *fds, double timeoutSecs, int loop_id) {
+extern "C" SEXP execLaterFDNative(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double timeoutSecs, int loop_id) {
   ensureInitialized();
-  return execLater_fd_impl(func, arg, num_fds, fds, timeoutSecs, loop_id);
+  return execLater_fd_impl(func, data, num_fds, fds, timeoutSecs, loop_id);
 }
