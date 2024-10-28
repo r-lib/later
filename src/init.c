@@ -4,6 +4,15 @@
 #include <R_ext/Rdynload.h>
 #include <stdint.h> // for uint64_t
 
+#ifdef _WIN32
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0600 // so R <= 4.1 can find WSAPoll() on Windows
+#endif
+#include <winsock2.h>
+#else
+#include <poll.h>
+#endif
+
 /* FIXME:
 Check these declarations against the C/Fortran source code.
 */
@@ -56,6 +65,7 @@ static const R_CallMethodDef CallEntries[] = {
 
 uint64_t execLaterNative(void (*func)(void*), void* data, double secs);
 uint64_t execLaterNative2(void (*func)(void*), void* data, double secs, int loop);
+SEXP execLaterFDNative(void (*)(int *, void *), void *, int, struct pollfd, double, int);
 int apiVersion(void);
 
 void R_init_later(DllInfo *dll) {
@@ -82,5 +92,6 @@ void R_init_later(DllInfo *dll) {
   // https://github.com/r-lib/later/issues/97
   R_RegisterCCallable("later", "execLaterNative",  (DL_FUNC)&execLaterNative);
   R_RegisterCCallable("later", "execLaterNative2", (DL_FUNC)&execLaterNative2);
+  R_RegisterCCallable("later", "execLaterFDNative",(DL_FUNC)&execLaterFDNative);
   R_RegisterCCallable("later", "apiVersion",       (DL_FUNC)&apiVersion);
 }
