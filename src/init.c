@@ -57,7 +57,7 @@ static const R_CallMethodDef CallEntries[] = {
 
 uint64_t execLaterNative(void (*func)(void*), void* data, double secs);
 uint64_t execLaterNative2(void (*func)(void*), void* data, double secs, int loop);
-SEXP execLaterFDNative(void (*)(int *, void *), void *, int, struct pollfd *, double, int);
+void execLaterFDNative(void (*)(int *, void *), void *, int, struct pollfd *, double, int);
 int apiVersion(void);
 
 void R_init_later(DllInfo *dll) {

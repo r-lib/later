@@ -114,7 +114,7 @@ static int wait_thread(void *arg) {
 
 }
 
-Rcpp::RObject execLater_fd_threaded(std::shared_ptr<ThreadArgs> args) {
+void execLater_launch_thread(std::shared_ptr<ThreadArgs> args) {
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(new std::shared_ptr<ThreadArgs>(args));
 
@@ -123,11 +123,6 @@ Rcpp::RObject execLater_fd_threaded(std::shared_ptr<ThreadArgs> args) {
     Rcpp::stop("Thread creation failed");
   tct_thrd_detach(thr);
 
-  Rcpp::XPtr<std::shared_ptr<std::atomic<bool>>> xptr(new std::shared_ptr<std::atomic<bool>>(args->flag), true);
-  SEXP ret = xptr;
-
-  return ret;
-
 }
 
 Rcpp::RObject execLater_fd_impl(Rcpp::Function callback, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
@@ -135,17 +130,22 @@ Rcpp::RObject execLater_fd_impl(Rcpp::Function callback, int num_fds, struct pol
   std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(num_fds, fds, timeout, loop_id);
   args->callback = std::unique_ptr<Rcpp::Function>(new Rcpp::Function(callback));
 
-  return execLater_fd_threaded(args);
+  execLater_launch_thread(args);
+
+  Rcpp::XPtr<std::shared_ptr<std::atomic<bool>>> xptr(new std::shared_ptr<std::atomic<bool>>(args->flag), true);
+  SEXP ret = xptr;
+
+  return ret;
 
 }
 
 // native version
-Rcpp::RObject execLater_fd_impl(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
+void execLater_fd_impl(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
 
   std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(num_fds, fds, timeout, loop_id);
   args->func = std::bind(func, std::placeholders::_1, data);
 
-  return execLater_fd_threaded(args);
+  execLater_launch_thread(args);
 
 }
 
@@ -207,9 +207,8 @@ Rcpp::LogicalVector fd_cancel(Rcpp::RObject xptr) {
 }
 
 // Schedules a C function that takes a pointer to an integer vector and a void *
-// argument, to execute on file descriptor readiness. Returns an external
-// pointer that can be used to signal cancellation.
-extern "C" SEXP execLaterFDNative(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double timeoutSecs, int loop_id) {
+// argument, to execute on file descriptor readiness. Returns void.
+extern "C" void execLaterFDNative(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double timeoutSecs, int loop_id) {
   ensureInitialized();
-  return execLater_fd_impl(func, data, num_fds, fds, timeoutSecs, loop_id);
+  execLater_fd_impl(func, data, num_fds, fds, timeoutSecs, loop_id);
 }
