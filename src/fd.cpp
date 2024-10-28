@@ -104,14 +104,8 @@ static int wait_thread(void *arg) {
     for (int i = 0; i < args->num_fds; i++) {
       (*args->results)[i] = (*args->fds)[i].revents == 0 ? 0 : (*args->fds)[i].revents & (POLLIN | POLLOUT) ? 1: R_NaInt;
     }
-  } else if (ready == 0) {
-    for (int i = 0; i < args->num_fds; i++) {
-      (*args->results)[i] = 0;
-    }
-  } else {
-    for (int i = 0; i < args->num_fds; i++) {
-      (*args->results)[i] = R_NaInt;
-    }
+  } else if (ready < 0) {
+    std::fill(args->results->begin(), args->results->end(), R_NaInt);
   }
 
   callbackRegistryTable.scheduleCallback(later_callback, static_cast<void *>(argsptr.release()), 0, args->loop);
