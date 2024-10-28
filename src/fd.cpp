@@ -130,8 +130,9 @@ Rcpp::RObject execLater_fd_threaded(std::shared_ptr<ThreadArgs> args) {
   tct_thrd_detach(thr);
 
   Rcpp::XPtr<std::shared_ptr<std::atomic<bool>>> xptr(new std::shared_ptr<std::atomic<bool>>(args->flag), true);
+  SEXP ret = xptr;
 
-  return Rcpp::RObject(xptr);
+  return ret;
 
 }
 
