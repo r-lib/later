@@ -46,8 +46,9 @@ test_that("later_fd", {
 
   # both fd1, fd2 ready
   res <- nanonext::send(s1, "msg")
+  Sys.sleep(0.1)
   later_fd(callback, c(fd1, fd2), timeout = 1)
-  Sys.sleep(0.2)
+  Sys.sleep(0.1)
   run_now()
   expect_equal(result, c(TRUE, TRUE))
 
