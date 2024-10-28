@@ -56,6 +56,13 @@ void later(void (*func)(void*), void* data, double secs)
 
 The first argument is a pointer to a function that takes one `void*` argument and returns void. The second argument is a `void*` that will be passed to the function when it's called back. And the third argument is the number of seconds to wait (at a minimum) before invoking.
 
+`later::later_fd` is also accessible from `later_api.h` and its prototype looks like this:
+
+```cpp
+void later_fd(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double secs)
+```
+The first argument is a pointer to a function that takes two arguments. The first of those is an `int*` which is provided by `later_fd()` when called back containing the values `0`, `1` or `NA_INTEGER` for the readiness of each file descriptor (or an error condition). The second argumentis a `void*` that will be passed as the second argument of the function when it's called back. The third is the total number of file descriptors being passed, the fourth a pointer to a vector of `stuct pollfds`, and the fifth being the number of seconds until timing out.
+
 To use the C++ interface, you'll need to add `later` to your `DESCRIPTION` file under both `LinkingTo` and `Imports`, and also make sure that your `NAMESPACE` file has an `import(later)` entry.
 
 ### Background tasks

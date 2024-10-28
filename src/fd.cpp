@@ -13,8 +13,8 @@ extern CallbackRegistryTable callbackRegistryTable;
 class ThreadArgs {
 public:
   ThreadArgs(
+    struct pollfd *fds,
     int num_fds = 0,
-    struct pollfd *fds = nullptr,
     double timeout = 0,
     int loop = 0
   )
@@ -102,10 +102,10 @@ static int wait_thread(void *arg) {
 
   if (ready > 0) {
     for (int i = 0; i < args->num_fds; i++) {
-      (*args->results)[i] = (*args->fds)[i].revents == 0 ? 0 : (*args->fds)[i].revents & (POLLIN | POLLOUT) ? 1: R_NaInt;
+      (*args->results)[i] = (*args->fds)[i].revents == 0 ? 0 : (*args->fds)[i].revents & (POLLIN | POLLOUT) ? 1: NA_INTEGER;
     }
   } else if (ready < 0) {
-    std::fill(args->results->begin(), args->results->end(), R_NaInt);
+    std::fill(args->results->begin(), args->results->end(), NA_INTEGER);
   }
 
   callbackRegistryTable.scheduleCallback(later_callback, static_cast<void *>(argsptr.release()), 0, args->loop);
@@ -132,7 +132,7 @@ Rcpp::RObject execLater_fd_threaded(std::shared_ptr<ThreadArgs> args) {
 
 Rcpp::RObject execLater_fd_impl(Rcpp::Function callback, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
 
-  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(num_fds, fds, timeout, loop_id);
+  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(fds, num_fds, timeout, loop_id);
   args->callback = std::unique_ptr<Rcpp::Function>(new Rcpp::Function(callback));
 
   return execLater_fd_threaded(args);
@@ -142,7 +142,7 @@ Rcpp::RObject execLater_fd_impl(Rcpp::Function callback, int num_fds, struct pol
 // native version
 Rcpp::RObject execLater_fd_impl(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
 
-  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(num_fds, fds, timeout, loop_id);
+  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(fds, num_fds, timeout, loop_id);
   args->func = std::bind(func, std::placeholders::_1, data);
 
   return execLater_fd_threaded(args);
