@@ -99,7 +99,7 @@ inline void later(void (*func)(void*), void* data, double secs) {
 inline void later_fd(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double secs, int loop_id) {
   // See above note for later()
 
-  // The function type for the real execLaterFDNative
+  // The function type for the real execLaterFdNative
   typedef void (*elfdnfun)(void (*)(int *, void *), void *, int, struct pollfd *, double, int);
   static elfdnfun elfdn = NULL;
   if (!elfdn) {
@@ -108,11 +108,11 @@ inline void later_fd(void (*func)(int *, void *), void *data, int num_fds, struc
       // We're not initialized but someone's trying to actually schedule
       // some code to be executed!
       REprintf(
-        "Warning: later::execLaterFDNative called in uninitialized state. "
+        "Warning: later::execLaterFdNative called in uninitialized state. "
         "If you're using <later.h>, please switch to <later_api.h>.\n"
       );
     }
-    elfdn = (elfdnfun) R_GetCCallable("later", "execLaterFDNative");
+    elfdn = (elfdnfun) R_GetCCallable("later", "execLaterFdNative");
   }
 
   // We didn't want to execute anything, just initialize

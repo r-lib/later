@@ -207,7 +207,7 @@ Rcpp::LogicalVector fd_cancel(Rcpp::RObject xptr) {
 
 // Schedules a C function that takes a pointer to an integer vector and a void *
 // argument, to execute on file descriptor readiness. Returns void.
-extern "C" void execLaterFDNative(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double timeoutSecs, int loop_id) {
+extern "C" void execLaterFdNative(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double timeoutSecs, int loop_id) {
   ensureInitialized();
   execLater_fd_impl(func, data, num_fds, fds, timeoutSecs, loop_id);
 }
