@@ -82,6 +82,8 @@ static int wait_thread(void *arg) {
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
   std::shared_ptr<ThreadArgs> args = *argsptr;
 
+  tct_thrd_detach(tct_thrd_current());
+
   // poll() whilst checking for cancellation at intervals
 
   int ready = -1; // initialized at -1 to ensure it runs at least once
@@ -121,7 +123,6 @@ void execLater_launch_thread(std::shared_ptr<ThreadArgs> args) {
   tct_thrd_t thr;
   if (tct_thrd_create(&thr, &wait_thread, static_cast<void *>(argsptr.release())) != tct_thrd_success)
     Rcpp::stop("Thread creation failed");
-  tct_thrd_detach(thr);
 
 }
 
