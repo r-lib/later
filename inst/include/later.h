@@ -13,6 +13,10 @@
 #endif
 
 #ifdef _WIN32
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0600 // so R <= 4.1 can find WSAPoll() on Windows
+#endif
+#include <winsock2.h>
 #define WIN32_LEAN_AND_MEAN
 // Taken from http://tolstoy.newcastle.edu.au/R/e2/devel/06/11/1242.html
 // Undefine the Realloc macro, which is defined by both R and by Windows stuff
@@ -20,13 +24,9 @@
 // Also need to undefine the Free macro
 #undef Free
 #include <windows.h>
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0600 // so R <= 4.1 can find WSAPoll() on Windows
-#endif
-#include <winsock2.h>
 #else // _WIN32
-#include <pthread.h>
 #include <poll.h>
+#include <pthread.h>
 #endif // _WIN32
 
 #include <Rinternals.h>

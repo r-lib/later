@@ -1,3 +1,4 @@
+#include "fd.h"
 #include <Rcpp.h>
 #include <unistd.h>
 #include <cstdlib>
@@ -6,15 +7,14 @@
 #include "tinycthread.h"
 #include "later.h"
 #include "callback_registry_table.h"
-#include "fd.h"
 
 extern CallbackRegistryTable callbackRegistryTable;
 
 class ThreadArgs {
 public:
   ThreadArgs(
-    struct pollfd *fds,
     int num_fds = 0,
+    struct pollfd *fds = nullptr,
     double timeout = 0,
     int loop = 0
   )
@@ -132,7 +132,7 @@ Rcpp::RObject execLater_fd_threaded(std::shared_ptr<ThreadArgs> args) {
 
 Rcpp::RObject execLater_fd_impl(Rcpp::Function callback, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
 
-  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(fds, num_fds, timeout, loop_id);
+  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(num_fds, fds, timeout, loop_id);
   args->callback = std::unique_ptr<Rcpp::Function>(new Rcpp::Function(callback));
 
   return execLater_fd_threaded(args);
@@ -142,7 +142,7 @@ Rcpp::RObject execLater_fd_impl(Rcpp::Function callback, int num_fds, struct pol
 // native version
 Rcpp::RObject execLater_fd_impl(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
 
-  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(fds, num_fds, timeout, loop_id);
+  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(num_fds, fds, timeout, loop_id);
   args->func = std::bind(func, std::placeholders::_1, data);
 
   return execLater_fd_threaded(args);
