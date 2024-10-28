@@ -66,7 +66,7 @@ test_that("later_fd", {
 
   # fd2 invalid
   res <- nanonext::recv(s2)
-  later_fd(callback, c(fd1, fd2), exceptfds = c(fd1, fd2), timeout = 0.2)
+  later_fd(callback, c(fd1, fd2), exceptfds = c(fd1, fd2), timeout = 0.1)
   close(s2)
   Sys.sleep(0.2)
   run_now()
