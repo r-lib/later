@@ -78,14 +78,14 @@ static int wait_thread(void *arg) {
   // poll() whilst checking for cancellation at intervals
   int ready = -1; // initialized at -1 to ensure it runs at least once
   while (true) {
-    int waitFor = (int) (args->timeout.diff_secs(Timestamp()) * 1000); // milliseconds
-    if (waitFor <= 0) {
+    double waitFor_ms = args->timeout.diff_secs(Timestamp()) * 1000;
+    if (waitFor_ms <= 0) {
       if (!ready) break; // only breaks after the first time
-      waitFor = 0;
-    } else if (waitFor > LATER_POLL_INTERVAL) {
-      waitFor = LATER_POLL_INTERVAL;
+      waitFor_ms = 0;
+    } else if (waitFor_ms > LATER_POLL_INTERVAL) {
+      waitFor_ms = LATER_POLL_INTERVAL;
     }
-    ready = LATER_POLL_FUNC(pollfds.data(), args->num_fds, waitFor);
+    ready = LATER_POLL_FUNC(pollfds.data(), args->num_fds, static_cast<int>(waitFor_ms));
     if (args->flag->load()) return 1;
     if (ready) break;
   }
@@ -102,7 +102,9 @@ static int wait_thread(void *arg) {
       (*args->results)[i] = pollfds[i].revents != 0;
     }
   } else if (ready == 0) {
-    std::memset(args->results->data(), 0, args->num_fds * sizeof(int));
+    for (int i = 0; i < args->num_fds; i++) {
+      (*args->results)[i] = 0;
+    }
   } else {
     for (int i = 0; i < args->num_fds; i++) {
       (*args->results)[i] = R_NaInt;
