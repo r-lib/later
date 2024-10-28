@@ -134,10 +134,7 @@ static int wait_thread(void *arg) {
 
 }
 
-Rcpp::RObject execLater_fd_impl(Rcpp::Function callback, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
-
-  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(num_fds, fds, timeout, loop_id);
-  args->callback = std::unique_ptr<Rcpp::Function>(new Rcpp::Function(callback));
+Rcpp::RObject execLater_fd_threaded(std::shared_ptr<ThreadArgs> args) {
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(new std::shared_ptr<ThreadArgs>(args));
 
@@ -152,22 +149,22 @@ Rcpp::RObject execLater_fd_impl(Rcpp::Function callback, int num_fds, struct pol
 
 }
 
+Rcpp::RObject execLater_fd_impl(Rcpp::Function callback, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
+
+  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(num_fds, fds, timeout, loop_id);
+  args->callback = std::unique_ptr<Rcpp::Function>(new Rcpp::Function(callback));
+
+  return execLater_fd_threaded(args);
+
+}
+
 // native version
 Rcpp::RObject execLater_fd_impl(void (*func)(int *, void *), void *arg, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
 
   std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(num_fds, fds, timeout, loop_id);
   args->func = std::bind(func, std::placeholders::_1, arg);
 
-  std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(new std::shared_ptr<ThreadArgs>(args));
-
-  tct_thrd_t thr;
-  if (tct_thrd_create(&thr, &wait_thread, static_cast<void *>(argsptr.release())) != tct_thrd_success)
-    Rcpp::stop("Thread creation failed");
-  tct_thrd_detach(thr);
-
-  Rcpp::XPtr<std::shared_ptr<std::atomic<bool>>> xptr(new std::shared_ptr<std::atomic<bool>>(args->flag), true);
-
-  return Rcpp::RObject(xptr);
+  return execLater_fd_threaded(args);
 
 }
 
