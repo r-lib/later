@@ -28,11 +28,12 @@ class ThreadArgs {
 public:
   ThreadArgs(
     int num_fds = 0,
+    struct pollfd *fds = nullptr,
     double timeout = 0,
     int loop = 0
   )
     : flag(std::make_shared<std::atomic<bool>>(false)),
-      fds(std::unique_ptr<std::vector<struct pollfd>>(new std::vector<struct pollfd>(num_fds))),
+      fds(initializeFds(num_fds, fds)),
       results(std::unique_ptr<std::vector<int>>(new std::vector<int>(num_fds))),
       callback(nullptr),
       func(nullptr),
@@ -50,6 +51,16 @@ public:
   int loop;
 
 private:
+  static std::unique_ptr<std::vector<struct pollfd>> initializeFds(int num_fds, struct pollfd *fds) {
+    std::unique_ptr<std::vector<struct pollfd>> pollfds(new std::vector<struct pollfd>());
+    if (fds != nullptr) {
+      pollfds->reserve(num_fds);
+      for (int i = 0; i < num_fds; i++) {
+        pollfds->push_back(fds[i]);
+      }
+    }
+    return pollfds;
+  }
   static Timestamp createTimestamp(double timeout) {
     if (timeout == R_PosInf) {
       timeout = 3e10; // "1000 years ought to be enough for anybody" --Bill Gates
@@ -69,7 +80,7 @@ static void later_callback(void *arg) {
   args->flag->store(true);
   if (flag)
     return;
-  if (args->func != NULL) {
+  if (args->func != nullptr) {
     args->func(args->results->data());
   } else {
     Rcpp::LogicalVector results = Rcpp::wrap(*args->results);
@@ -125,11 +136,8 @@ static int wait_thread(void *arg) {
 
 Rcpp::RObject execLater_fd_impl(Rcpp::Function callback, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
 
-  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(num_fds, timeout, loop_id);
+  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(num_fds, fds, timeout, loop_id);
   args->callback = std::unique_ptr<Rcpp::Function>(new Rcpp::Function(callback));
-  for (int i = 0; i < num_fds; i++) {
-    (*args->fds)[i] = fds[i];
-  }
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(new std::shared_ptr<ThreadArgs>(args));
 
@@ -147,11 +155,8 @@ Rcpp::RObject execLater_fd_impl(Rcpp::Function callback, int num_fds, struct pol
 // native version
 Rcpp::RObject execLater_fd_impl(void (*func)(int *, void *), void *arg, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
 
-  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(num_fds, timeout, loop_id);
+  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(num_fds, fds, timeout, loop_id);
   args->func = std::bind(func, std::placeholders::_1, arg);
-  for (int i = 0; i < num_fds; i++) {
-    (*args->fds)[i] = fds[i];
-  }
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(new std::shared_ptr<ThreadArgs>(args));
 
