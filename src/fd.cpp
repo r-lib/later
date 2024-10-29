@@ -116,13 +116,15 @@ static int wait_thread(void *arg) {
 
 }
 
-void execLater_launch_thread(std::shared_ptr<ThreadArgs> args) {
+int execLater_launch_thread(std::shared_ptr<ThreadArgs> args) {
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(new std::shared_ptr<ThreadArgs>(args));
 
   tct_thrd_t thr;
   if (tct_thrd_create(&thr, &wait_thread, static_cast<void *>(argsptr.release())) != tct_thrd_success)
-    Rcpp::stop("Thread creation failed");
+    return 1;
+
+  return 0;
 
 }
 
@@ -131,7 +133,8 @@ SEXP execLater_fd_impl(Rcpp::Function callback, int num_fds, struct pollfd *fds,
   std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(num_fds, fds, timeout, loop_id);
   args->callback = std::unique_ptr<Rcpp::Function>(new Rcpp::Function(callback));
 
-  execLater_launch_thread(args);
+  if (execLater_launch_thread(args))
+    Rcpp::stop("Thread creation failed");
 
   Rcpp::XPtr<std::shared_ptr<std::atomic<bool>>> xptr(new std::shared_ptr<std::atomic<bool>>(args->flag), true);
   return xptr;
