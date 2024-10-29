@@ -116,7 +116,7 @@ static int wait_thread(void *arg) {
 
 }
 
-bool execLater_launch_thread(std::shared_ptr<ThreadArgs> args) {
+static bool execLater_launch_thread(std::shared_ptr<ThreadArgs> args) {
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(new std::shared_ptr<ThreadArgs>(args));
 
@@ -126,7 +126,7 @@ bool execLater_launch_thread(std::shared_ptr<ThreadArgs> args) {
 
 }
 
-SEXP execLater_fd_impl(Rcpp::Function callback, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
+static SEXP execLater_fd_impl(Rcpp::Function callback, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
 
   std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(num_fds, fds, timeout, loop_id);
   args->callback = std::unique_ptr<Rcpp::Function>(new Rcpp::Function(callback));
@@ -140,7 +140,7 @@ SEXP execLater_fd_impl(Rcpp::Function callback, int num_fds, struct pollfd *fds,
 }
 
 // native version
-void execLater_fd_impl(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
+static void execLater_fd_impl(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
 
   std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(num_fds, fds, timeout, loop_id);
   args->func = std::bind(func, std::placeholders::_1, data);
