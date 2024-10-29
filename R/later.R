@@ -294,9 +294,9 @@ create_canceller <- function(id, loop_id) {
 #' @param func A function that takes a single argument, a logical vector that
 #'   indicates which file descriptors are ready (a concatenation of `readfds`,
 #'   `writefds` and `exceptfds`). This may be all `FALSE` if the
-#'   `timeout` argument is non-`Inf`. Invalid file descriptors (such as those
-#'   already closed) are returned as `NA`, as are `readfds` and `writefds` with
-#'   error conditions pending.
+#'   `timeout` argument is non-`Inf`. File descriptors with error conditions
+#'   pending are represented as `NA`, as are invalid file descriptors such as
+#'   those already closed.
 #' @param readfds Integer vector of file descriptors, or Windows SOCKETs, to
 #'   monitor for being ready to read.
 #' @param writefds Integer vector of file descriptors, or Windows SOCKETs, to

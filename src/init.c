@@ -3,6 +3,7 @@
 #include <stdlib.h> // for NULL
 #include <R_ext/Rdynload.h>
 #include <stdint.h> // for uint64_t
+#include "fd.h" // for struct pollfd
 
 /* FIXME:
 Check these declarations against the C/Fortran source code.
@@ -56,6 +57,7 @@ static const R_CallMethodDef CallEntries[] = {
 
 uint64_t execLaterNative(void (*func)(void*), void* data, double secs);
 uint64_t execLaterNative2(void (*func)(void*), void* data, double secs, int loop);
+void execLaterFdNative(void (*)(int *, void *), void *, int, struct pollfd *, double, int);
 int apiVersion(void);
 
 void R_init_later(DllInfo *dll) {
@@ -82,5 +84,6 @@ void R_init_later(DllInfo *dll) {
   // https://github.com/r-lib/later/issues/97
   R_RegisterCCallable("later", "execLaterNative",  (DL_FUNC)&execLaterNative);
   R_RegisterCCallable("later", "execLaterNative2", (DL_FUNC)&execLaterNative2);
+  R_RegisterCCallable("later", "execLaterFdNative",(DL_FUNC)&execLaterFdNative);
   R_RegisterCCallable("later", "apiVersion",       (DL_FUNC)&apiVersion);
 }

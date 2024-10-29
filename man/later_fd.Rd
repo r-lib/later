@@ -17,9 +17,9 @@ later_fd(
 \item{func}{A function that takes a single argument, a logical vector that
 indicates which file descriptors are ready (a concatenation of \code{readfds},
 \code{writefds} and \code{exceptfds}). This may be all \code{FALSE} if the
-\code{timeout} argument is non-\code{Inf}. Invalid file descriptors (such as those
-already closed) are returned as \code{NA}, as are \code{readfds} and \code{writefds} with
-error conditions pending.}
+\code{timeout} argument is non-\code{Inf}. File descriptors with error conditions
+pending are represented as \code{NA}, as are invalid file descriptors such as
+those already closed.}
 
 \item{readfds}{Integer vector of file descriptors, or Windows SOCKETs, to
 monitor for being ready to read.}

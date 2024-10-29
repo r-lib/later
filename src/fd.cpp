@@ -1,11 +1,4 @@
-#ifdef _WIN32
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0600 // so R <= 4.1 can find WSAPoll() on Windows
-#endif
-#include <winsock2.h>
-#else
-#include <poll.h>
-#endif
+#include "fd.h"
 #include <Rcpp.h>
 #include <unistd.h>
 #include <cstdlib>
@@ -13,23 +6,57 @@
 #include <memory>
 #include "tinycthread.h"
 #include "later.h"
+#include "callback_registry_table.h"
 
-#define LATER_POLL_INTERVAL 1024
-#ifdef _WIN32
-#define LATER_POLL_FUNC WSAPoll
-#else
-#define LATER_POLL_FUNC poll
-#endif
+extern CallbackRegistryTable callbackRegistryTable;
 
-typedef struct ThreadArgs_s {
+class ThreadArgs {
+public:
+  ThreadArgs(
+    int num_fds = 0,
+    struct pollfd *fds = nullptr,
+    double timeout = 0,
+    int loop = 0
+  )
+    : flag(std::make_shared<std::atomic<bool>>(false)),
+      fds(initializeFds(num_fds, fds)),
+      results(std::unique_ptr<std::vector<int>>(new std::vector<int>(num_fds))),
+      callback(nullptr),
+      func(nullptr),
+      timeout(createTimestamp(timeout)),
+      num_fds(num_fds),
+      loop(loop) {}
+
   std::shared_ptr<std::atomic<bool>> flag;
-  std::unique_ptr<Rcpp::Function> callback;
-  std::unique_ptr<std::vector<int>> fds;
+  std::unique_ptr<std::vector<struct pollfd>> fds;
   std::unique_ptr<std::vector<int>> results;
+  std::unique_ptr<Rcpp::Function> callback;
+  std::function<void (int *)> func;
   Timestamp timeout;
-  int rfds, wfds, efds, num_fds;
+  int num_fds;
   int loop;
-} ThreadArgs;
+
+private:
+  static std::unique_ptr<std::vector<struct pollfd>> initializeFds(int num_fds, struct pollfd *fds) {
+    std::unique_ptr<std::vector<struct pollfd>> pollfds(new std::vector<struct pollfd>());
+    if (fds != nullptr) {
+      pollfds->reserve(num_fds);
+      for (int i = 0; i < num_fds; i++) {
+        pollfds->push_back(fds[i]);
+      }
+    }
+    return pollfds;
+  }
+  static Timestamp createTimestamp(double timeout) {
+    if (timeout == R_PosInf) {
+      timeout = 3e10; // "1000 years ought to be enough for anybody" --Bill Gates
+    } else if (timeout < 0) {
+      timeout = 1; // curl_multi_timeout() uses -1 to denote a default we set at 1s
+    }
+    return Timestamp(timeout);
+  }
+
+};
 
 static void later_callback(void *arg) {
 
@@ -37,7 +64,11 @@ static void later_callback(void *arg) {
   std::shared_ptr<ThreadArgs> args = *argsptr;
   const bool flag = args->flag->load();
   args->flag->store(true);
-  if (!flag) {
+  if (flag)
+    return;
+  if (args->func != nullptr) {
+    args->func(args->results->data());
+  } else {
     Rcpp::LogicalVector results = Rcpp::wrap(*args->results);
     (*args->callback)(results);
   }
@@ -48,34 +79,13 @@ static void later_callback(void *arg) {
 // TODO: implement re-usable background thread.
 static int wait_thread(void *arg) {
 
+  tct_thrd_detach(tct_thrd_current());
+
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
   std::shared_ptr<ThreadArgs> args = *argsptr;
 
-  // setup pollfd structs from args->fds
-  std::vector<struct pollfd> pollfds;
-  pollfds.reserve(args->num_fds);
-  struct pollfd pfd;
-
-  for (int i = 0; i < args->rfds; i++) {
-    pfd.fd = (*args->fds)[i];
-    pfd.events = POLLIN;
-    pfd.revents = 0;
-    pollfds.push_back(pfd);
-  }
-  for (int i = args->rfds; i < (args->rfds + args->wfds); i++) {
-    pfd.fd = (*args->fds)[i];
-    pfd.events = POLLOUT;
-    pfd.revents = 0;
-    pollfds.push_back(pfd);
-  }
-  for (int i = args->rfds + args->wfds; i < args->num_fds; i++) {
-    pfd.fd = (*args->fds)[i];
-    pfd.events = 0;
-    pfd.revents = 0;
-    pollfds.push_back(pfd);
-  }
-
   // poll() whilst checking for cancellation at intervals
+
   int ready = -1; // initialized at -1 to ensure it runs at least once
   while (true) {
     double waitFor_ms = args->timeout.diff_secs(Timestamp()) * 1000;
@@ -85,35 +95,57 @@ static int wait_thread(void *arg) {
     } else if (waitFor_ms > LATER_POLL_INTERVAL) {
       waitFor_ms = LATER_POLL_INTERVAL;
     }
-    ready = LATER_POLL_FUNC(pollfds.data(), args->num_fds, static_cast<int>(waitFor_ms));
+    ready = LATER_POLL_FUNC(args->fds->data(), args->num_fds, static_cast<int>(waitFor_ms));
     if (args->flag->load()) return 1;
     if (ready) break;
   }
 
   // store pollfd revents in args->results for use by callback
+
   if (ready > 0) {
-    for (int i = 0; i < args->rfds; i++) {
-      (*args->results)[i] = pollfds[i].revents == 0 ? 0 : pollfds[i].revents & POLLIN ? 1: R_NaInt;
-    }
-    for (int i = args->rfds; i < (args->rfds + args->wfds); i++) {
-      (*args->results)[i] = pollfds[i].revents == 0 ? 0 : pollfds[i].revents & POLLOUT ? 1 : R_NaInt;
-    }
-    for (int i = args->rfds + args->wfds; i < args->num_fds; i++) {
-      (*args->results)[i] = pollfds[i].revents != 0;
-    }
-  } else if (ready == 0) {
     for (int i = 0; i < args->num_fds; i++) {
-      (*args->results)[i] = 0;
+      (*args->results)[i] = (*args->fds)[i].revents == 0 ? 0 : (*args->fds)[i].revents & (POLLIN | POLLOUT) ? 1: NA_INTEGER;
     }
-  } else {
-    for (int i = 0; i < args->num_fds; i++) {
-      (*args->results)[i] = R_NaInt;
-    }
+  } else if (ready < 0) {
+    std::fill(args->results->begin(), args->results->end(), NA_INTEGER);
   }
 
-  execLaterNative2(later_callback, static_cast<void *>(argsptr.release()), 0, args->loop);
+  callbackRegistryTable.scheduleCallback(later_callback, static_cast<void *>(argsptr.release()), 0, args->loop);
 
   return 0;
+
+}
+
+static bool execLater_launch_thread(std::shared_ptr<ThreadArgs> args) {
+
+  std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(new std::shared_ptr<ThreadArgs>(args));
+
+  tct_thrd_t thr;
+
+  return tct_thrd_create(&thr, &wait_thread, static_cast<void *>(argsptr.release())) != tct_thrd_success;
+
+}
+
+static SEXP execLater_fd_impl(Rcpp::Function callback, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
+
+  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(num_fds, fds, timeout, loop_id);
+  args->callback = std::unique_ptr<Rcpp::Function>(new Rcpp::Function(callback));
+
+  if (execLater_launch_thread(args))
+    Rcpp::stop("Thread creation failed");
+
+  Rcpp::XPtr<std::shared_ptr<std::atomic<bool>>> xptr(new std::shared_ptr<std::atomic<bool>>(args->flag), true);
+  return xptr;
+
+}
+
+// native version
+static void execLater_fd_impl(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
+
+  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(num_fds, fds, timeout, loop_id);
+  args->func = std::bind(func, std::placeholders::_1, data);
+
+  execLater_launch_thread(args);
 
 }
 
@@ -128,49 +160,33 @@ Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds,
   if (num_fds == 0)
     Rcpp::stop("No file descriptors supplied");
 
-  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>();
+  double timeout = timeoutSecs[0];
+  const int loop = loop_id[0];
 
-  double timeout;
-  if (timeoutSecs[0] == R_PosInf) {
-    timeout = 3e10; // "1000 years ought to be enough for anybody" --Bill Gates
-  } else if (timeoutSecs[0] < 0) {
-    timeout = 1; // curl_multi_timeout() uses -1 to denote a default we set at 1s
-  } else {
-    timeout = timeoutSecs[0];
-  }
+  std::vector<struct pollfd> pollfds;
+  pollfds.reserve(num_fds);
+  struct pollfd pfd;
 
-  args->timeout = Timestamp(timeout);
-  args->callback = std::unique_ptr<Rcpp::Function>(new Rcpp::Function(callback));
-  args->flag = std::make_shared<std::atomic<bool>>();
-  args->timeout = timeoutSecs[0];
-  args->loop = loop_id[0];
-  args->rfds = rfds;
-  args->wfds = wfds;
-  args->efds = efds;
-  args->num_fds = num_fds;
-  args->fds = std::unique_ptr<std::vector<int>>(new std::vector<int>());
-  args->fds->reserve(num_fds);
   for (int i = 0; i < rfds; i++) {
-    args->fds->push_back(readfds[i]);
+    pfd.fd = readfds[i];
+    pfd.events = POLLIN;
+    pfd.revents = 0;
+    pollfds.push_back(pfd);
   }
   for (int i = 0; i < wfds; i++) {
-    args->fds->push_back(writefds[i]);
+    pfd.fd = writefds[i];
+    pfd.events = POLLOUT;
+    pfd.revents = 0;
+    pollfds.push_back(pfd);
   }
   for (int i = 0; i < efds; i++) {
-    args->fds->push_back(exceptfds[i]);
+    pfd.fd = exceptfds[i];
+    pfd.events = 0;
+    pfd.revents = 0;
+    pollfds.push_back(pfd);
   }
-  args->results = std::unique_ptr<std::vector<int>>(new std::vector<int>(num_fds));
 
-  std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(new std::shared_ptr<ThreadArgs>(args));
-
-  tct_thrd_t thr;
-  if (tct_thrd_create(&thr, &wait_thread, static_cast<void *>(argsptr.release())) != tct_thrd_success)
-    Rcpp::stop("Thread creation failed");
-  tct_thrd_detach(thr);
-
-  Rcpp::XPtr<std::shared_ptr<std::atomic<bool>>> xptr(new std::shared_ptr<std::atomic<bool>>(args->flag), true);
-
-  return Rcpp::RObject(xptr);
+  return execLater_fd_impl(callback, num_fds, pollfds.data(), timeout, loop);
 
 }
 
@@ -188,4 +204,11 @@ Rcpp::LogicalVector fd_cancel(Rcpp::RObject xptr) {
   (*flag)->store(true);
   return true;
 
+}
+
+// Schedules a C function that takes a pointer to an integer vector and a void *
+// argument, to execute on file descriptor readiness. Returns void.
+extern "C" void execLaterFdNative(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double timeoutSecs, int loop_id) {
+  ensureInitialized();
+  execLater_fd_impl(func, data, num_fds, fds, timeoutSecs, loop_id);
 }

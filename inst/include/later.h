@@ -13,6 +13,10 @@
 #endif
 
 #ifdef _WIN32
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0600 // so R <= 4.1 can find WSAPoll() on Windows
+#endif
+#include <winsock2.h>
 #define WIN32_LEAN_AND_MEAN
 // Taken from http://tolstoy.newcastle.edu.au/R/e2/devel/06/11/1242.html
 // Undefine the Realloc macro, which is defined by both R and by Windows stuff
@@ -21,6 +25,7 @@
 #undef Free
 #include <windows.h>
 #else // _WIN32
+#include <poll.h>
 #include <pthread.h>
 #endif // _WIN32
 
@@ -89,6 +94,37 @@ inline void later(void (*func)(void*), void* data, double secs, int loop_id) {
 
 inline void later(void (*func)(void*), void* data, double secs) {
   later(func, data, secs, GLOBAL_LOOP);
+}
+
+inline void later_fd(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double secs, int loop_id) {
+  // See above note for later()
+
+  // The function type for the real execLaterFdNative
+  typedef void (*elfdnfun)(void (*)(int *, void *), void *, int, struct pollfd *, double, int);
+  static elfdnfun elfdn = NULL;
+  if (!elfdn) {
+    // Initialize if necessary
+    if (func) {
+      // We're not initialized but someone's trying to actually schedule
+      // some code to be executed!
+      REprintf(
+        "Warning: later::execLaterFdNative called in uninitialized state. "
+        "If you're using <later.h>, please switch to <later_api.h>.\n"
+      );
+    }
+    elfdn = (elfdnfun) R_GetCCallable("later", "execLaterFdNative");
+  }
+
+  // We didn't want to execute anything, just initialize
+  if (!func) {
+    return;
+  }
+
+  elfdn(func, data, num_fds, fds, secs, loop_id);
+}
+
+inline void later_fd(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double secs) {
+  later_fd(func, data, num_fds, fds, secs, GLOBAL_LOOP);
 }
 
 
