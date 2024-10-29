@@ -116,7 +116,7 @@ static int wait_thread(void *arg) {
 
 }
 
-static bool execLater_launch_thread(std::shared_ptr<ThreadArgs> args) {
+static int execLater_launch_thread(std::shared_ptr<ThreadArgs> args) {
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(new std::shared_ptr<ThreadArgs>(args));
 
@@ -140,12 +140,12 @@ static SEXP execLater_fd_impl(Rcpp::Function callback, int num_fds, struct pollf
 }
 
 // native version
-static void execLater_fd_impl(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
+static int execLater_fd_impl(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
 
   std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(num_fds, fds, timeout, loop_id);
   args->func = std::bind(func, std::placeholders::_1, data);
 
-  execLater_launch_thread(args);
+  return execLater_launch_thread(args);
 
 }
 
@@ -206,9 +206,12 @@ Rcpp::LogicalVector fd_cancel(Rcpp::RObject xptr) {
 
 }
 
-// Schedules a C function that takes a pointer to an integer vector and a void *
-// argument, to execute on file descriptor readiness. Returns void.
-extern "C" void execLaterFdNative(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double timeoutSecs, int loop_id) {
+// Schedules a C function that takes a pointer to an integer array (provided by
+// this function when calling back) and a void * argument, to execute on file
+// descriptor readiness. Returns 0 upon success and 1 if creating the wait
+// thread failed. NOTE: this is different to execLaterNative2() which returns 0
+// on failure.
+extern "C" int execLaterFdNative(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double timeoutSecs, int loop_id) {
   ensureInitialized();
-  execLater_fd_impl(func, data, num_fds, fds, timeoutSecs, loop_id);
+  return execLater_fd_impl(func, data, num_fds, fds, timeoutSecs, loop_id);
 }
