@@ -116,15 +116,13 @@ static int wait_thread(void *arg) {
 
 }
 
-int execLater_launch_thread(std::shared_ptr<ThreadArgs> args) {
+bool execLater_launch_thread(std::shared_ptr<ThreadArgs> args) {
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(new std::shared_ptr<ThreadArgs>(args));
 
   tct_thrd_t thr;
-  if (tct_thrd_create(&thr, &wait_thread, static_cast<void *>(argsptr.release())) != tct_thrd_success)
-    return 1;
 
-  return 0;
+  return tct_thrd_create(&thr, &wait_thread, static_cast<void *>(argsptr.release())) != tct_thrd_success;
 
 }
 
