@@ -48,7 +48,7 @@ private:
     return pollfds;
   }
   static Timestamp createTimestamp(double timeout) {
-    if (timeout == R_PosInf) {
+    if (timeout > 3e10) {
       timeout = 3e10; // "1000 years ought to be enough for anybody" --Bill Gates
     } else if (timeout < 0) {
       timeout = 1; // curl_multi_timeout() uses -1 to denote a default we set at 1s
