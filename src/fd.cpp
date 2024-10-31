@@ -18,35 +18,25 @@ public:
     double timeout = 0,
     int loop = 0
   )
-    : flag(std::make_shared<std::atomic<bool>>(false)),
-      fds(initializeFds(num_fds, fds)),
-      results(std::unique_ptr<std::vector<int>>(new std::vector<int>(num_fds))),
+    : timeout(createTimestamp(timeout)),
+      flag(std::make_shared<std::atomic<bool>>(false)),
       callback(nullptr),
       func(nullptr),
-      timeout(createTimestamp(timeout)),
+      fds(std::vector<struct pollfd>(fds, fds + num_fds)),
+      results(std::vector<int>(num_fds)),
       num_fds(num_fds),
       loop(loop) {}
 
+  Timestamp timeout;
   std::shared_ptr<std::atomic<bool>> flag;
-  std::unique_ptr<std::vector<struct pollfd>> fds;
-  std::unique_ptr<std::vector<int>> results;
   std::unique_ptr<Rcpp::Function> callback;
   std::function<void (int *)> func;
-  Timestamp timeout;
+  std::vector<struct pollfd> fds;
+  std::vector<int> results;
   int num_fds;
   int loop;
 
 private:
-  static std::unique_ptr<std::vector<struct pollfd>> initializeFds(int num_fds, struct pollfd *fds) {
-    std::unique_ptr<std::vector<struct pollfd>> pollfds(new std::vector<struct pollfd>());
-    if (fds != nullptr) {
-      pollfds->reserve(num_fds);
-      for (int i = 0; i < num_fds; i++) {
-        pollfds->push_back(fds[i]);
-      }
-    }
-    return pollfds;
-  }
   static Timestamp createTimestamp(double timeout) {
     if (timeout > 3e10) {
       timeout = 3e10; // "1000 years ought to be enough for anybody" --Bill Gates
@@ -67,10 +57,10 @@ static void later_callback(void *arg) {
   if (flag)
     return;
   if (args->func != nullptr) {
-    args->func(args->results->data());
+    args->func(args->results.data());
   } else {
     Rcpp::LogicalVector results(args->num_fds);
-    std::memcpy(results.begin(), args->results->data(), args->num_fds * sizeof(int));
+    std::memcpy(results.begin(), args->results.data(), args->num_fds * sizeof(int));
     (*args->callback)(results);
   }
 
@@ -88,7 +78,7 @@ static int wait_thread(void *arg) {
   // poll() whilst checking for cancellation at intervals
 
   int ready = -1; // initialized at -1 to ensure it runs at least once
-  while (true) {
+  do {
     double waitFor_ms = args->timeout.diff_secs(Timestamp()) * 1000;
     if (waitFor_ms <= 0) {
       if (!ready) break; // only breaks after the first time
@@ -96,19 +86,18 @@ static int wait_thread(void *arg) {
     } else if (waitFor_ms > LATER_POLL_INTERVAL) {
       waitFor_ms = LATER_POLL_INTERVAL;
     }
-    ready = LATER_POLL_FUNC(args->fds->data(), args->num_fds, static_cast<int>(waitFor_ms));
+    ready = LATER_POLL_FUNC(args->fds.data(), args->num_fds, static_cast<int>(waitFor_ms));
     if (args->flag->load()) return 1;
-    if (ready) break;
-  }
+  } while (!ready);
 
   // store pollfd revents in args->results for use by callback
 
   if (ready > 0) {
     for (int i = 0; i < args->num_fds; i++) {
-      (*args->results)[i] = (*args->fds)[i].revents == 0 ? 0 : (*args->fds)[i].revents & (POLLIN | POLLOUT) ? 1: NA_INTEGER;
+      (args->results)[i] = (args->fds)[i].revents == 0 ? 0 : (args->fds)[i].revents & (POLLIN | POLLOUT) ? 1: NA_INTEGER;
     }
   } else if (ready < 0) {
-    std::fill(args->results->begin(), args->results->end(), NA_INTEGER);
+    std::fill(args->results.begin(), args->results.end(), NA_INTEGER);
   }
 
   callbackRegistryTable.scheduleCallback(later_callback, static_cast<void *>(argsptr.release()), 0, args->loop);
