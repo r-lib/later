@@ -69,7 +69,8 @@ static void later_callback(void *arg) {
   if (args->func != nullptr) {
     args->func(args->results->data());
   } else {
-    Rcpp::LogicalVector results = Rcpp::wrap(*args->results);
+    Rcpp::LogicalVector results(args->num_fds);
+    std::memcpy(results.begin(), args->results->data(), args->num_fds * sizeof(int));
     (*args->callback)(results);
   }
 
