@@ -10,7 +10,6 @@
 #include <poll.h>
 #endif
 
-#define LATER_POLL_INTERVAL 1024
 #ifdef _WIN32
 #define LATER_POLL_FUNC WSAPoll
 #else

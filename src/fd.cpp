@@ -95,18 +95,14 @@ static int wait_thread(void *arg) {
 
   // poll() whilst checking for cancellation at intervals
 
-  int ready = -1; // initialized at -1 to ensure it runs at least once
+  int ready;
+  double waitFor = std::fmax(args->timeout.diff_secs(Timestamp()), 0);
   do {
-    double waitFor_ms = args->timeout.diff_secs(Timestamp()) * 1000;
-    if (waitFor_ms <= 0) {
-      if (!ready) break; // only breaks after the first time
-      waitFor_ms = 0;
-    } else if (waitFor_ms > LATER_POLL_INTERVAL) {
-      waitFor_ms = LATER_POLL_INTERVAL;
-    }
-    ready = LATER_POLL_FUNC(args->fds.data(), args->num_fds, static_cast<int>(waitFor_ms));
+    waitFor = std::fmin(waitFor, 1.024); // set to just over the default 1s
+    ready = LATER_POLL_FUNC(args->fds.data(), args->num_fds, static_cast<int>(waitFor * 1000));
     if (args->flag->load()) return 1;
-  } while (!ready);
+    if (ready) break;
+  } while ((waitFor = args->timeout.diff_secs(Timestamp())) > 0);
 
   // store pollfd revents in args->results for use by callback
 
