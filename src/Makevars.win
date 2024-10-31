@@ -1,4 +1,4 @@
-PKG_CPPFLAGS = -DSTRICT_R_HEADERS
+PKG_CPPFLAGS = -DSTRICT_R_HEADERS -DRCPP_NO_MODULES
 
 #### Debugging flags ####
 # Uncomment to enable thread assertions
