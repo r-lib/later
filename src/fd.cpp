@@ -13,28 +13,47 @@ extern CallbackRegistryTable callbackRegistryTable;
 class ThreadArgs {
 public:
   ThreadArgs(
-    int num_fds = 0,
-    struct pollfd *fds = nullptr,
-    double timeout = 0,
-    int loop = 0
+    int num_fds,
+    struct pollfd *fds,
+    double timeout,
+    int loop
   )
     : timeout(createTimestamp(timeout)),
       flag(std::make_shared<std::atomic<bool>>(false)),
-      callback(nullptr),
-      func(nullptr),
       fds(std::vector<struct pollfd>(fds, fds + num_fds)),
       results(std::vector<int>(num_fds)),
       num_fds(num_fds),
       loop(loop) {}
 
+  ThreadArgs(
+    Rcpp::Function func,
+    int num_fds,
+    struct pollfd *fds,
+    double timeout,
+    int loop
+  ) : ThreadArgs(num_fds, fds, timeout, loop) {
+    callback = std::unique_ptr<Rcpp::Function>(new Rcpp::Function(func));
+  }
+
+  ThreadArgs(
+    void (*func)(int *, void *),
+    void *data,
+    int num_fds,
+    struct pollfd *fds,
+    double timeout,
+    int loop
+  ) : ThreadArgs(num_fds, fds, timeout, loop) {
+    callback_native = std::bind(func, std::placeholders::_1, data);
+  }
+
   Timestamp timeout;
   std::shared_ptr<std::atomic<bool>> flag;
-  std::unique_ptr<Rcpp::Function> callback;
-  std::function<void (int *)> func;
+  std::unique_ptr<Rcpp::Function> callback = nullptr;
+  std::function<void (int *)> callback_native = nullptr;
   std::vector<struct pollfd> fds;
   std::vector<int> results;
-  int num_fds;
-  int loop;
+  const int num_fds;
+  const int loop;
 
 private:
   static Timestamp createTimestamp(double timeout) {
@@ -56,12 +75,12 @@ static void later_callback(void *arg) {
   args->flag->store(true);
   if (flag)
     return;
-  if (args->func != nullptr) {
-    args->func(args->results.data());
-  } else {
+  if (args->callback != nullptr) {
     Rcpp::LogicalVector results(args->num_fds);
     std::memcpy(results.begin(), args->results.data(), args->num_fds * sizeof(int));
     (*args->callback)(results);
+  } else {
+    args->callback_native(args->results.data());
   }
 
 }
@@ -118,8 +137,7 @@ static int execLater_launch_thread(std::shared_ptr<ThreadArgs> args) {
 
 static SEXP execLater_fd_impl(Rcpp::Function callback, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
 
-  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(num_fds, fds, timeout, loop_id);
-  args->callback = std::unique_ptr<Rcpp::Function>(new Rcpp::Function(callback));
+  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(callback, num_fds, fds, timeout, loop_id);
 
   if (execLater_launch_thread(args))
     Rcpp::stop("Thread creation failed");
@@ -132,8 +150,7 @@ static SEXP execLater_fd_impl(Rcpp::Function callback, int num_fds, struct pollf
 // native version
 static int execLater_fd_impl(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
 
-  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(num_fds, fds, timeout, loop_id);
-  args->func = std::bind(func, std::placeholders::_1, data);
+  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(func, data, num_fds, fds, timeout, loop_id);
 
   return execLater_launch_thread(args);
 
