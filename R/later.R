@@ -104,7 +104,7 @@ create_loop <- function(parent = current_loop(), autorun = NULL) {
   lockBinding("id", loop)
 
   # Add a weak reference to the loop object in our registry.
-  .loops[[sprintf("%d", id)]] <- new_weakref(loop)
+  .loops[[as.character(id)]] <- new_weakref(loop)
 
   if (id != 0L) {
     # Inform the C++ layer that there are no more R references when the handle
@@ -126,7 +126,7 @@ notify_r_ref_deleted <- function(loop) {
 
   res <- notifyRRefDeleted(loop$id)
   if (res) {
-    rm(list = sprintf("%d", loop$id), envir = .loops)
+    rm(list = as.character(loop$id), envir = .loops)
   }
   invisible(res)
 }
@@ -140,7 +140,7 @@ destroy_loop <- function(loop) {
 
   res <- deleteCallbackRegistry(loop$id)
   if (res) {
-    rm(list = sprintf("%d", loop$id), envir = .loops)
+    rm(list = as.character(loop$id), envir = .loops)
   }
   invisible(res)
 }
@@ -155,7 +155,7 @@ exists_loop <- function(loop) {
 #' @export
 current_loop <- function() {
   id <- getCurrentRegistryId()
-  loop_weakref <- .loops[[sprintf("%d", id)]]
+  loop_weakref <- .loops[[as.character(id)]]
   if (is.null(loop_weakref)) {
     stop("Current loop with id ", id, " not found.")
   }
