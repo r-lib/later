@@ -26,7 +26,7 @@ public:
       loop(loop) {}
 
   ThreadArgs(
-    Rcpp::Function func,
+    const Rcpp::Function& func,
     int num_fds,
     struct pollfd *fds,
     double timeout,
@@ -76,8 +76,7 @@ static void later_callback(void *arg) {
   if (flag)
     return;
   if (args->callback != nullptr) {
-    Rcpp::LogicalVector results(args->num_fds);
-    std::memcpy(results.begin(), args->results.data(), args->num_fds * sizeof(int));
+    Rcpp::LogicalVector results(args->results.begin(), args->results.end());
     (*args->callback)(results);
   } else {
     args->callback_native(args->results.data());
@@ -135,7 +134,7 @@ static int execLater_launch_thread(std::shared_ptr<ThreadArgs> args) {
 
 }
 
-static SEXP execLater_fd_impl(Rcpp::Function callback, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
+static SEXP execLater_fd_impl(const Rcpp::Function& callback, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
 
   std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(callback, num_fds, fds, timeout, loop_id);
 
@@ -199,9 +198,6 @@ Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds,
 
 // [[Rcpp::export]]
 Rcpp::LogicalVector fd_cancel(Rcpp::RObject xptr) {
-
-  if (TYPEOF(xptr) != EXTPTRSXP || R_ExternalPtrAddr(xptr) == NULL)
-    Rcpp::stop("Invalid external pointer");
 
   Rcpp::XPtr<std::shared_ptr<std::atomic<bool>>> flag(xptr);
 
