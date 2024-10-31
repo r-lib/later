@@ -141,7 +141,7 @@ public:
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
     pthread_t t;
-    pthread_create(&t, NULL, BackgroundTask::task_main, this);
+    pthread_create(&t, &attr, BackgroundTask::task_main, this);
     pthread_attr_destroy(&attr);
 #else
     HANDLE hThread = ::CreateThread(
