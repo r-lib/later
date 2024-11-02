@@ -36,10 +36,10 @@ later::later(~print("Got here!"))
 
 It is also possible to have a function run based on when file descriptors are ready for reading or writing, at some indeterminate time in the future.
 
-Here, the fictitious `read()` function will be called on a logical vector indicating which (if any) of file descriptors 35 or 37 were ready, subject to a timeout of 5s:
+Below, a logical vector is printed indicating which of file descriptors 21 or 22 were ready, subject to a timeout of 1s. Instead of just printing the result, the supplied function can also do something more useful such as reading from the descriptor.
 
 ```r
-later::later_fd(read, c(35, 37), timeout = 5)
+later::later_fd(print, c(21L, 22L), timeout = 1)
 ```
 
 This is useful in particular for asynchronous or streaming data transfer over the network / internet, so that reads can be made from TCP sockets as soon as data is available. `later::later_fd()` pairs well with functions such as `curl::multi_fdset()` that return the relevant file descriptors to be monitored .
