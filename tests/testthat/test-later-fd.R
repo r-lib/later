@@ -80,7 +80,10 @@ test_that("later_fd", {
   run_now()
   expect_equal(result, c(NA, NA, NA, NA))
 
-  # errors
-  expect_error(later_fd(print), "No file descriptors supplied")
+  # no fds supplied
+  later_fd(callback, timeout = -1)
+  Sys.sleep(0.2)
+  run_now()
+  expect_equal(result, logical())
 
 })

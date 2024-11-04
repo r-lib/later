@@ -159,10 +159,7 @@ Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds,
   const int wfds = static_cast<int>(writefds.size());
   const int efds = static_cast<int>(exceptfds.size());
   const int num_fds = rfds + wfds + efds;
-  if (num_fds == 0)
-    Rcpp::stop("No file descriptors supplied");
-
-  double timeout = timeoutSecs[0];
+  const double timeout = num_fds ? timeoutSecs[0] : 0;
   const int loop = loop_id[0];
 
   std::vector<struct pollfd> pollfds;

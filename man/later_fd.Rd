@@ -53,6 +53,9 @@ On the occasion the system-level \code{poll} (on Windows \code{WSAPoll}) returns
 error, the callback will be made on a vector of all \code{NA}s. This is
 indistinguishable from a case where the \code{poll} succeeds but there are error
 conditions pending against each file descriptor.
+
+If no file descriptors are supplied, the callback is scheduled for immediate
+execution and made on the empty logical vector \code{logical(0)}.
 }
 \note{
 To avoid bugs due to reentrancy, by default, scheduled operations only run

@@ -291,6 +291,9 @@ create_canceller <- function(id, loop_id) {
 #' indistinguishable from a case where the `poll` succeeds but there are error
 #' conditions pending against each file descriptor.
 #'
+#' If no file descriptors are supplied, the callback is scheduled for immediate
+#' execution and made on the empty logical vector `logical(0)`.
+#'
 #' @param func A function that takes a single argument, a logical vector that
 #'   indicates which file descriptors are ready (a concatenation of `readfds`,
 #'   `writefds` and `exceptfds`). This may be all `FALSE` if the
