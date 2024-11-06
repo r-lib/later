@@ -144,7 +144,7 @@ static SEXP execLater_fd_impl(const Rcpp::Function& callback, int num_fds, struc
 }
 
 // native version
-static int execLater_fd_impl(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
+static int execLater_fd_native(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
 
   std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(func, data, num_fds, fds, timeout, loop_id);
 
@@ -210,5 +210,5 @@ Rcpp::LogicalVector fd_cancel(Rcpp::RObject xptr) {
 // on failure.
 extern "C" int execLaterFdNative(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double timeoutSecs, int loop_id) {
   ensureInitialized();
-  return execLater_fd_impl(func, data, num_fds, fds, timeoutSecs, loop_id);
+  return execLater_fd_native(func, data, num_fds, fds, timeoutSecs, loop_id);
 }
