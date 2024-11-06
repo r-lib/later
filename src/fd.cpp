@@ -22,7 +22,6 @@ public:
       flag(std::make_shared<std::atomic<bool>>(false)),
       fds(std::vector<struct pollfd>(fds, fds + num_fds)),
       results(std::vector<int>(num_fds)),
-      num_fds(num_fds),
       loop(loop) {}
 
   ThreadArgs(
@@ -52,7 +51,6 @@ public:
   std::function<void (int *)> callback_native = nullptr;
   std::vector<struct pollfd> fds;
   std::vector<int> results;
-  const int num_fds;
   const int loop;
 
 private:
@@ -68,7 +66,7 @@ private:
 };
 
 static void later_callback(void *arg) {
-ASSERT_MAIN_THREAD()
+  ASSERT_MAIN_THREAD()
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
   std::shared_ptr<ThreadArgs> args = *argsptr;
@@ -102,7 +100,7 @@ static int wait_thread(void *arg) {
   do {
     // Never wait for longer than ~1 second so we can check for cancellation
     waitFor = std::fmin(waitFor, 1.024);
-    ready = LATER_POLL_FUNC(args->fds.data(), args->num_fds, static_cast<int>(waitFor * 1000));
+    ready = LATER_POLL_FUNC(args->fds.data(), args->fds.size(), static_cast<int>(waitFor * 1000));
     if (args->flag->load()) return 1;
     if (ready) break;
   } while ((waitFor = args->timeout.diff_secs(Timestamp())) > 0);
@@ -110,7 +108,7 @@ static int wait_thread(void *arg) {
   // store pollfd revents in args->results for use by callback
 
   if (ready > 0) {
-    for (int i = 0; i < args->num_fds; i++) {
+    for (std::size_t i = 0; i < args->fds.size(); i++) {
       (args->results)[i] = (args->fds)[i].revents == 0 ? 0 : (args->fds)[i].revents & (POLLIN | POLLOUT) ? 1: NA_INTEGER;
     }
   } else if (ready < 0) {
