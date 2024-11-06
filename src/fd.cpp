@@ -68,10 +68,12 @@ private:
 };
 
 static void later_callback(void *arg) {
+ASSERT_MAIN_THREAD()
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
   std::shared_ptr<ThreadArgs> args = *argsptr;
   const bool flag = args->flag->load();
+  // Mark the cancellation flag so that future requests to fd_cancel return false
   args->flag->store(true);
   if (flag)
     return;
@@ -98,7 +100,8 @@ static int wait_thread(void *arg) {
   int ready;
   double waitFor = std::fmax(args->timeout.diff_secs(Timestamp()), 0);
   do {
-    waitFor = std::fmin(waitFor, 1.024); // set to just over the default 1s
+    // Never wait for longer than ~1 second so we can check for cancellation
+    waitFor = std::fmin(waitFor, 1.024);
     ready = LATER_POLL_FUNC(args->fds.data(), args->num_fds, static_cast<int>(waitFor * 1000));
     if (args->flag->load()) return 1;
     if (ready) break;
