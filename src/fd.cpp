@@ -19,7 +19,7 @@ public:
     int loop
   )
     : timeout(createTimestamp(timeout)),
-      flag(std::make_shared<std::atomic<bool>>(false)),
+      active(std::make_shared<std::atomic<bool>>(true)),
       fds(std::vector<struct pollfd>(fds, fds + num_fds)),
       results(std::vector<int>(num_fds)),
       loop(loop) {}
@@ -46,7 +46,7 @@ public:
   }
 
   Timestamp timeout;
-  std::shared_ptr<std::atomic<bool>> flag;
+  std::shared_ptr<std::atomic<bool>> active;
   std::unique_ptr<Rcpp::Function> callback = nullptr;
   std::function<void (int *)> callback_native = nullptr;
   std::vector<struct pollfd> fds;
@@ -70,10 +70,12 @@ static void later_callback(void *arg) {
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
   std::shared_ptr<ThreadArgs> args = *argsptr;
-  const bool flag = args->flag->load();
-  // Mark the cancellation flag so that future requests to fd_cancel return false
-  args->flag->store(true);
-  if (flag)
+  bool still_active = true;
+  // atomic compare_exchange_strong:
+  // if args->active is true, it is changed to false (so future requests to fd_cancel return false)
+  // if args->active is false (cancelled), still_active is changed to false
+  args->active->compare_exchange_strong(still_active, false);
+  if (!still_active)
     return;
   if (args->callback != nullptr) {
     Rcpp::LogicalVector results(args->results.begin(), args->results.end());
@@ -101,7 +103,7 @@ static int wait_thread(void *arg) {
     // Never wait for longer than ~1 second so we can check for cancellation
     waitFor = std::fmin(waitFor, 1.024);
     ready = LATER_POLL_FUNC(args->fds.data(), args->fds.size(), static_cast<int>(waitFor * 1000));
-    if (args->flag->load()) return 1;
+    if (!args->active->load()) return 1;
     if (ready) break;
   } while ((waitFor = args->timeout.diff_secs(Timestamp())) > 0);
 
@@ -138,7 +140,7 @@ static SEXP execLater_fd_impl(const Rcpp::Function& callback, int num_fds, struc
   if (execLater_launch_thread(args))
     Rcpp::stop("Thread creation failed");
 
-  Rcpp::XPtr<std::shared_ptr<std::atomic<bool>>> xptr(new std::shared_ptr<std::atomic<bool>>(args->flag), true);
+  Rcpp::XPtr<std::shared_ptr<std::atomic<bool>>> xptr(new std::shared_ptr<std::atomic<bool>>(args->active), true);
   return xptr;
 
 }
@@ -193,13 +195,15 @@ Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds,
 // [[Rcpp::export]]
 Rcpp::LogicalVector fd_cancel(Rcpp::RObject xptr) {
 
-  Rcpp::XPtr<std::shared_ptr<std::atomic<bool>>> flag(xptr);
+  Rcpp::XPtr<std::shared_ptr<std::atomic<bool>>> active(xptr);
 
-  if ((*flag)->load())
-    return false;
+  bool cancelled = true;
+  // atomic compare_exchange_strong:
+  // if *active is true, *active is changed to false (successful cancel)
+  // if *active is false (already run or cancelled), cancelled is changed to false
+  (*active)->compare_exchange_strong(cancelled, false);
 
-  (*flag)->store(true);
-  return true;
+  return cancelled;
 
 }
 
