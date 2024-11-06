@@ -8,8 +8,6 @@
 #include "later.h"
 #include "callback_registry_table.h"
 
-extern CallbackRegistryTable callbackRegistryTable;
-
 class ThreadArgs {
 public:
   ThreadArgs(
