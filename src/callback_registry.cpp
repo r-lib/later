@@ -419,10 +419,10 @@ Rcpp::List CallbackRegistry::list() const {
 
 void CallbackRegistry::fd_waits_incr() {
   Guard guard(mutex);
-  ++this->fd_waits;
+  ++fd_waits;
 }
 
 void CallbackRegistry::fd_waits_decr() {
   Guard guard(mutex);
-  --this->fd_waits;
+  --fd_waits;
 }

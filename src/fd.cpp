@@ -15,10 +15,8 @@ public:
   RefCounter(CallbackRegistryTable& table, int loop)
     : registry(table.getRegistry(loop)) {
 
-    ASSERT_MAIN_THREAD()
-    if (registry == nullptr) {
-      Rf_error("CallbackRegistry does not exist.");
-    }
+    if (registry == nullptr)
+      throw std::runtime_error("CallbackRegistry does not exist.");
 
     registry->fd_waits_incr();
   }
@@ -34,13 +32,14 @@ public:
     int num_fds,
     struct pollfd *fds,
     double timeout,
-    int loop
+    int loop,
+    CallbackRegistryTable& table
   )
     : timeout(createTimestamp(timeout)),
       active(std::make_shared<std::atomic<bool>>(true)),
       fds(std::vector<struct pollfd>(fds, fds + num_fds)),
       results(std::vector<int>(num_fds)),
-      reference(callbackRegistryTable, loop),
+      reference(table, loop),
       loop(loop) {}
 
   ThreadArgs(
@@ -48,8 +47,9 @@ public:
     int num_fds,
     struct pollfd *fds,
     double timeout,
-    int loop
-  ) : ThreadArgs(num_fds, fds, timeout, loop) {
+    int loop,
+    CallbackRegistryTable& table
+  ) : ThreadArgs(num_fds, fds, timeout, loop, table) {
     callback = std::unique_ptr<Rcpp::Function>(new Rcpp::Function(func));
   }
 
@@ -59,8 +59,9 @@ public:
     int num_fds,
     struct pollfd *fds,
     double timeout,
-    int loop
-  ) : ThreadArgs(num_fds, fds, timeout, loop) {
+    int loop,
+    CallbackRegistryTable& table
+  ) : ThreadArgs(num_fds, fds, timeout, loop, table) {
     callback_native = std::bind(func, std::placeholders::_1, data);
   }
 
@@ -156,7 +157,7 @@ static int execLater_launch_thread(std::shared_ptr<ThreadArgs> args) {
 
 static SEXP execLater_fd_impl(const Rcpp::Function& callback, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
 
-  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(callback, num_fds, fds, timeout, loop_id);
+  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(callback, num_fds, fds, timeout, loop_id, callbackRegistryTable);
 
   if (execLater_launch_thread(args))
     Rcpp::stop("Thread creation failed");
@@ -169,7 +170,7 @@ static SEXP execLater_fd_impl(const Rcpp::Function& callback, int num_fds, struc
 // native version
 static int execLater_fd_native(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
 
-  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(func, data, num_fds, fds, timeout, loop_id);
+  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(func, data, num_fds, fds, timeout, loop_id, callbackRegistryTable);
 
   return execLater_launch_thread(args);
 

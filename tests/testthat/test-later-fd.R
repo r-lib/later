@@ -115,3 +115,11 @@ test_that("loop_empty() reflects later_fd callbacks", {
   expect_true(loop_empty())
 
 })
+
+test_that("later_fd() errors when passed detroyed loops", {
+
+  loop <- create_loop()
+  destroy_loop(loop)
+  expect_error(later_fd(identity, loop = loop), "CallbackRegistry does not exist")
+
+})

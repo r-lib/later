@@ -135,7 +135,7 @@ public:
   // Use this to determine the next time we need to pump events.
   Optional<Timestamp> nextTimestamp(bool recursive = true) const;
 
-  // Is the registry completely empty? (with no active later_fd waits)
+  // Is the registry completely empty? (including later_fd waits)
   bool empty() const;
 
   // Is anything ready to execute?
