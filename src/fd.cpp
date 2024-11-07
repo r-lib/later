@@ -8,6 +8,26 @@
 #include "later.h"
 #include "callback_registry_table.h"
 
+class RefCounter {
+  std::shared_ptr<CallbackRegistry> registry;
+
+public:
+  RefCounter(CallbackRegistryTable& table, int loop)
+    : registry(table.getRegistry(loop)) {
+
+    ASSERT_MAIN_THREAD()
+    if (registry == nullptr) {
+      Rf_error("CallbackRegistry does not exist.");
+    }
+
+    registry->fd_waits_incr();
+  }
+  ~RefCounter() {
+    registry->fd_waits_decr();
+  }
+
+};
+
 class ThreadArgs {
 public:
   ThreadArgs(
@@ -20,6 +40,7 @@ public:
       active(std::make_shared<std::atomic<bool>>(true)),
       fds(std::vector<struct pollfd>(fds, fds + num_fds)),
       results(std::vector<int>(num_fds)),
+      reference(callbackRegistryTable, loop),
       loop(loop) {}
 
   ThreadArgs(
@@ -49,6 +70,7 @@ public:
   std::function<void (int *)> callback_native = nullptr;
   std::vector<struct pollfd> fds;
   std::vector<int> results;
+  RefCounter reference;
   const int loop;
 
 private:
@@ -64,6 +86,7 @@ private:
 };
 
 static void later_callback(void *arg) {
+
   ASSERT_MAIN_THREAD()
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));

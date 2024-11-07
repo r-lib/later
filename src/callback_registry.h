@@ -107,6 +107,7 @@ private:
   // objects to be copied on the wrong thread, and even trigger an R GC event
   // on the wrong thread. https://github.com/r-lib/later/issues/39
   cbSet queue;
+  int fd_waits = 0;
   Mutex* mutex;
   ConditionVariable* condvar;
 
@@ -134,7 +135,7 @@ public:
   // Use this to determine the next time we need to pump events.
   Optional<Timestamp> nextTimestamp(bool recursive = true) const;
 
-  // Is the registry completely empty?
+  // Is the registry completely empty? (with no active later_fd waits)
   bool empty() const;
 
   // Is anything ready to execute?
@@ -148,6 +149,10 @@ public:
 
   // Return a List of items in the queue.
   Rcpp::List list() const;
+
+  // Increment and decrement the number of active later_fd waits
+  void fd_waits_incr();
+  void fd_waits_decr();
 
   // References to parent and children registries. These are used for
   // automatically running child loops. They should only be accessed and

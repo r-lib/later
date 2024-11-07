@@ -331,7 +331,7 @@ Optional<Timestamp> CallbackRegistry::nextTimestamp(bool recursive) const {
 
 bool CallbackRegistry::empty() const {
   Guard guard(mutex);
-  return this->queue.empty();
+  return this->queue.empty() && this->fd_waits == 0;
 }
 
 // Returns true if the smallest timestamp exists and is not in the future.
@@ -415,4 +415,14 @@ Rcpp::List CallbackRegistry::list() const {
   }
 
   return results;
+}
+
+void CallbackRegistry::fd_waits_incr() {
+  Guard guard(mutex);
+  ++this->fd_waits;
+}
+
+void CallbackRegistry::fd_waits_decr() {
+  Guard guard(mutex);
+  --this->fd_waits;
 }

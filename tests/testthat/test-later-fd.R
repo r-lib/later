@@ -6,7 +6,9 @@ test_that("later_fd", {
   result <- NULL
   callback <- function(x) result <<- x
   s1 <- nanonext::socket(listen = "inproc://nanonext")
+  on.exit(close(s1))
   s2 <- nanonext::socket(dial = "inproc://nanonext")
+  on.exit(close(s2), add = TRUE)
   fd1 <- nanonext::opt(s1, "recv-fd")
   fd2 <- nanonext::opt(s2, "recv-fd")
 
@@ -85,5 +87,31 @@ test_that("later_fd", {
   Sys.sleep(0.2)
   run_now()
   expect_equal(result, logical())
+
+  on.exit()
+
+})
+
+test_that("loop_empty() reflects later_fd callbacks", {
+
+  s1 <- nanonext::socket(listen = "inproc://nanotest2")
+  on.exit(close(s1))
+  s2 <- nanonext::socket(dial = "inproc://nanotest2")
+  on.exit(close(s2), add = TRUE)
+
+  fd1 <- nanonext::opt(s1, "recv-fd")
+
+  expect_true(loop_empty())
+
+  cancel <- later_fd(~{}, fd1)
+  expect_false(loop_empty())
+  cancel()
+  Sys.sleep(1.2) # check for cancellation happens every ~1 sec
+  expect_true(loop_empty())
+
+  later_fd(~{}, fd1, timeout = 0)
+  expect_false(loop_empty())
+  run_now()
+  expect_true(loop_empty())
 
 })
