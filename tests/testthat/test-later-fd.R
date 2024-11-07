@@ -116,7 +116,7 @@ test_that("loop_empty() reflects later_fd callbacks", {
 
 })
 
-test_that("later_fd() errors when passed detroyed loops", {
+test_that("later_fd() errors when passed destroyed loops", {
 
   loop <- create_loop()
   destroy_loop(loop)
