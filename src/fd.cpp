@@ -133,7 +133,7 @@ static int wait_thread(void *arg) {
     std::fill(args->results.begin(), args->results.end(), NA_INTEGER);
   }
 
-  doExecLater(args->registry, later_callback, static_cast<void *>(argsptr.release()), 0, true);
+  callbackRegistryTable.scheduleCallback(later_callback, static_cast<void *>(argsptr.release()), 0, args->loop);
 
   return 0;
 
