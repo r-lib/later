@@ -1,51 +1,20 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://r-lib.github.io/later/404.html</loc>
-  </url>
-  <url>
-    <loc>https://r-lib.github.io/later/LICENSE-text.html</loc>
-  </url>
-  <url>
-    <loc>https://r-lib.github.io/later/LICENSE.html</loc>
-  </url>
-  <url>
-    <loc>https://r-lib.github.io/later/articles/index.html</loc>
-  </url>
-  <url>
-    <loc>https://r-lib.github.io/later/articles/later-cpp.html</loc>
-  </url>
-  <url>
-    <loc>https://r-lib.github.io/later/authors.html</loc>
-  </url>
-  <url>
-    <loc>https://r-lib.github.io/later/index.html</loc>
-  </url>
-  <url>
-    <loc>https://r-lib.github.io/later/news/index.html</loc>
-  </url>
-  <url>
-    <loc>https://r-lib.github.io/later/reference/create_loop.html</loc>
-  </url>
-  <url>
-    <loc>https://r-lib.github.io/later/reference/index.html</loc>
-  </url>
-  <url>
-    <loc>https://r-lib.github.io/later/reference/later.html</loc>
-  </url>
-  <url>
-    <loc>https://r-lib.github.io/later/reference/list_queue.html</loc>
-  </url>
-  <url>
-    <loc>https://r-lib.github.io/later/reference/logLevel.html</loc>
-  </url>
-  <url>
-    <loc>https://r-lib.github.io/later/reference/loop_empty.html</loc>
-  </url>
-  <url>
-    <loc>https://r-lib.github.io/later/reference/next_op_secs.html</loc>
-  </url>
-  <url>
-    <loc>https://r-lib.github.io/later/reference/run_now.html</loc>
-  </url>
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>https://r-lib.github.io/later/404.html</loc></url>
+<url><loc>https://r-lib.github.io/later/LICENSE-text.html</loc></url>
+<url><loc>https://r-lib.github.io/later/LICENSE.html</loc></url>
+<url><loc>https://r-lib.github.io/later/articles/index.html</loc></url>
+<url><loc>https://r-lib.github.io/later/articles/later-cpp.html</loc></url>
+<url><loc>https://r-lib.github.io/later/authors.html</loc></url>
+<url><loc>https://r-lib.github.io/later/index.html</loc></url>
+<url><loc>https://r-lib.github.io/later/news/index.html</loc></url>
+<url><loc>https://r-lib.github.io/later/reference/create_loop.html</loc></url>
+<url><loc>https://r-lib.github.io/later/reference/index.html</loc></url>
+<url><loc>https://r-lib.github.io/later/reference/later.html</loc></url>
+<url><loc>https://r-lib.github.io/later/reference/later_fd.html</loc></url>
+<url><loc>https://r-lib.github.io/later/reference/list_queue.html</loc></url>
+<url><loc>https://r-lib.github.io/later/reference/logLevel.html</loc></url>
+<url><loc>https://r-lib.github.io/later/reference/loop_empty.html</loc></url>
+<url><loc>https://r-lib.github.io/later/reference/next_op_secs.html</loc></url>
+<url><loc>https://r-lib.github.io/later/reference/run_now.html</loc></url>
 </urlset>
+
