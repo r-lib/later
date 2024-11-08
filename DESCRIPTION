@@ -26,6 +26,7 @@ Suggests:
     knitr,
     nanonext,
     rmarkdown,
-    testthat (>= 2.1.0)
+    testthat (>= 2.1.0),
+    R6
 VignetteBuilder: knitr
 Encoding: UTF-8
