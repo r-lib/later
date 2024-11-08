@@ -93,6 +93,7 @@ test_that("later_fd", {
 })
 
 test_that("loop_empty() reflects later_fd callbacks", {
+  skip_if_not_installed("nanonext")
 
   s1 <- nanonext::socket(listen = "inproc://nanotest2")
   on.exit(close(s1))
