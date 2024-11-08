@@ -19,15 +19,15 @@ public:
   )
     : timeout(createTimestamp(timeout)),
       active(std::make_shared<std::atomic<bool>>(true)),
-      registry(table.getRegistry(loop)),
       fds(std::vector<struct pollfd>(fds, fds + num_fds)),
       results(std::vector<int>(num_fds)),
-      loop(loop) {
+      loop(loop),
+      registry(table.getRegistry(loop)) {
 
     if (registry == nullptr)
       throw std::runtime_error("CallbackRegistry does not exist.");
 
-    // increment fd_waits at registry for loop_empty() reporting
+    // increment fd_waits at registry (paired with decr in destructor) for loop_empty()
     registry->fd_waits_incr();
   }
 
@@ -55,13 +55,12 @@ public:
   }
 
   ~ThreadArgs() {
-    // decrement fd_waits at registry for loop_empty() reporting
+    // decrement fd_waits at registry (paired with incr in constructor) for loop_empty()
     registry->fd_waits_decr();
   }
 
   Timestamp timeout;
   std::shared_ptr<std::atomic<bool>> active;
-  std::shared_ptr<CallbackRegistry> registry;
   std::unique_ptr<Rcpp::Function> callback = nullptr;
   std::function<void (int *)> callback_native = nullptr;
   std::vector<struct pollfd> fds;
@@ -69,6 +68,8 @@ public:
   const int loop;
 
 private:
+  std::shared_ptr<CallbackRegistry> registry;
+
   static Timestamp createTimestamp(double timeout) {
     if (timeout > 3e10) {
       timeout = 3e10; // "1000 years ought to be enough for anybody" --Bill Gates
