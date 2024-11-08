@@ -3,6 +3,7 @@
 #include <stdlib.h> // for NULL
 #include <R_ext/Rdynload.h>
 #include <stdint.h> // for uint64_t
+#include "fd.h" // for struct pollfd
 
 /* FIXME:
 Check these declarations against the C/Fortran source code.
@@ -14,6 +15,8 @@ SEXP _later_execCallbacks(SEXP, SEXP, SEXP);
 SEXP _later_idle(SEXP);
 SEXP _later_execLater(SEXP, SEXP, SEXP);
 SEXP _later_cancel(SEXP, SEXP);
+SEXP _later_execLater_fd(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP _later_fd_cancel(SEXP);
 SEXP _later_nextOpSecs(SEXP);
 SEXP _later_testCallbackOrdering(void);
 SEXP _later_createCallbackRegistry(SEXP, SEXP);
@@ -34,6 +37,8 @@ static const R_CallMethodDef CallEntries[] = {
   {"_later_idle",                   (DL_FUNC) &_later_idle,                   1},
   {"_later_execLater",              (DL_FUNC) &_later_execLater,              3},
   {"_later_cancel",                 (DL_FUNC) &_later_cancel,                 2},
+  {"_later_execLater_fd",           (DL_FUNC) &_later_execLater_fd,           6},
+  {"_later_fd_cancel",              (DL_FUNC) &_later_fd_cancel,              1},
   {"_later_nextOpSecs",             (DL_FUNC) &_later_nextOpSecs,             1},
   {"_later_testCallbackOrdering",   (DL_FUNC) &_later_testCallbackOrdering,   0},
   {"_later_createCallbackRegistry", (DL_FUNC) &_later_createCallbackRegistry, 2},
@@ -52,10 +57,10 @@ static const R_CallMethodDef CallEntries[] = {
 
 uint64_t execLaterNative(void (*func)(void*), void* data, double secs);
 uint64_t execLaterNative2(void (*func)(void*), void* data, double secs, int loop);
+int execLaterFdNative(void (*)(int *, void *), void *, int, struct pollfd *, double, int);
 int apiVersion(void);
 
-void R_init_later(DllInfo *dll)
-{
+void R_init_later(DllInfo *dll) {
   R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
   R_useDynamicSymbols(dll, FALSE);
   R_forceSymbols(dll, TRUE);
@@ -79,5 +84,6 @@ void R_init_later(DllInfo *dll)
   // https://github.com/r-lib/later/issues/97
   R_RegisterCCallable("later", "execLaterNative",  (DL_FUNC)&execLaterNative);
   R_RegisterCCallable("later", "execLaterNative2", (DL_FUNC)&execLaterNative2);
+  R_RegisterCCallable("later", "execLaterFdNative",(DL_FUNC)&execLaterFdNative);
   R_RegisterCCallable("later", "apiVersion",       (DL_FUNC)&apiVersion);
 }

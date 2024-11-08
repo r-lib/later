@@ -11,6 +11,9 @@
 using std::shared_ptr;
 using std::make_shared;
 
+class CallbackRegistryTable;
+extern CallbackRegistryTable callbackRegistryTable;
+
 // ============================================================================
 // Callback registry table
 // ============================================================================

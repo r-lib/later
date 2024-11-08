@@ -16,7 +16,8 @@ using std::shared_ptr;
 
 static size_t exec_callbacks_reentrancy_count = 0;
 
-static CallbackRegistryTable callbackRegistryTable;
+// instance has global scope as declared in callback_registry_table.h
+CallbackRegistryTable callbackRegistryTable;
 
 
 class ProtectCallbacks {

@@ -11,9 +11,10 @@ namespace {
       // See comment in execLaterNative to learn why we need to do this
       // in a statically initialized object
       later::later(NULL, NULL, 0);
+      later::later_fd(NULL, NULL, 0, NULL, 0);
     }
   };
-  
+
   static LaterInitializer init;
 
 } // namespace
