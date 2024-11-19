@@ -55,9 +55,7 @@ void set_fd(bool ready) {
       hot = true;
     } else {
       if (read(pipe_out, buf, BUF_SIZE) < 0) {
-        // TODO: This sets a warning but it doesn't get displayed until
-        // after the next R command is executed. Can we make it sooner?
-        Rf_warning("Failed to read out of pipe for later package");
+        Rf_warningcall_immediate(R_NilValue, "Failed to read out of pipe for later package");
       }
       hot = false;
     }
