@@ -50,14 +50,14 @@ protected:
   uint64_t callbackId;
 };
 
-extern SEXP unwindProtectWrap(void *);
+extern SEXP unwindProtect(std::function<void (void)>);
 
 class StdFunctionCallback : public Callback {
 public:
   StdFunctionCallback(Timestamp when, std::function<void (void)> func);
 
   void invoke() {
-    Rcpp::unwindProtect(unwindProtectWrap, static_cast<void *>(&func));
+    unwindProtect(func);
   }
 
   Rcpp::RObject rRepresentation() const;
@@ -72,7 +72,7 @@ public:
   RcppFunctionCallback(Timestamp when, Rcpp::Function func);
 
   void invoke() {
-    Rcpp::unwindProtect(func);
+    func();
   }
 
   Rcpp::RObject rRepresentation() const;
