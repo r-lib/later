@@ -203,18 +203,12 @@ test_that("interrupt and exception handling", {
           throw std::string();
 
         } else if (value == 3) {
-          // Send an interrupt to the process.
-#ifdef _WIN32
-          GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);
-#else
-          kill(getpid(), SIGINT);
-#endif
-          R_CheckUserInterrupt();
-
+          // Interrupt the interpreter
+          Rf_onintr();
         } else if (value == 4) {
-          // Calls R function via Rcpp, which sends interrupt signal and then
+          // Calls R function via Rcpp, which interrupts.
           // sleeps.
-          Function("r_sleep_interrupt")();
+          Function("r_interrupt")();
 
         } else if (value == 5) {
           // Calls R function via Rcpp which calls stop().
@@ -247,14 +241,13 @@ test_that("interrupt and exception handling", {
 
   # cpp_error() searches in the global environment for these R functions, so we
   # need to define them there.
-  .GlobalEnv$r_sleep_interrupt <- function() {
-    tools::pskill(Sys.getpid(), tools::SIGINT)
-    Sys.sleep(3)
+  .GlobalEnv$r_interrupt <- function() {
+    rlang::interrupt()
   }
   .GlobalEnv$r_error <- function() {
     stop("oopsie")
   }
-  on.exit(rm(r_sleep_interrupt, r_error, envir = .GlobalEnv), add = TRUE)
+  on.exit(rm(r_interrupt, r_error, envir = .GlobalEnv), add = TRUE)
 
   errored <- FALSE
   tryCatch(
@@ -282,15 +275,12 @@ test_that("interrupt and exception handling", {
     # These tests may fail in automated test environments due to the way they
     # handle interrupts. (See #102)
     # jcheng 2024-10-24: Let's find out if this is still true
-    if (Sys.info()[["sysname"]] == "Windows") {
-      skip_on_ci()
-    }
 
     # interrupt
     interrupted <- FALSE
     tryCatch(
       {
-        later(function() { tools::pskill(Sys.getpid(), tools::SIGINT); Sys.sleep(100) })
+        later(function() {rlang::interrupt(); Sys.sleep(100) })
         run_now()
       },
       interrupt = function(e) {

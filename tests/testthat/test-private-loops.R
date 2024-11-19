@@ -369,19 +369,18 @@ test_that("Removing parent loop allows loop to be deleted", {
 })
 
 test_that("Interrupt while running in private loop won't result in stuck loop", {
-  skip_on_ci()
-  skip_on_cran()
-  skip_on_os("mac")
-
   l <- create_loop()
-  later(function() { tools::pskill(Sys.getpid(), tools::SIGINT); Sys.sleep(1) }, loop = l)
-  run_now(loop = l)
+  later(function() { rlang::interrupt() }, loop = l)
+  tryCatch({
+    run_now(loop = l)
+  }, interrupt = function(e) NULL)
   expect_identical(current_loop(), global_loop())
 
-  with_loop(l, {
-    tools::pskill(Sys.getpid(), tools::SIGINT)
-    Sys.sleep(1)
-  })
+  tryCatch({
+    with_loop(l, {
+      rlang::interrupt()
+    })
+  }, interrupt = function(e) NULL)
   expect_identical(current_loop(), global_loop())
 })
 
