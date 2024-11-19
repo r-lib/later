@@ -153,7 +153,7 @@ test_that("Callbacks cannot affect the caller", {
 
 
 
-test_that("interrupt and exception handling", {
+test_that("interrupt and exception handling, R", {
   # =======================================================
   # Errors and interrupts in R callbacks
   # =======================================================
@@ -171,6 +171,25 @@ test_that("interrupt and exception handling", {
   )
   expect_true(grepl("oopsie", error_obj$message))
 
+  # interrupt
+  interrupted <- FALSE
+  tryCatch(
+    {
+      later(function() {rlang::interrupt(); Sys.sleep(100) })
+      run_now()
+    },
+    interrupt = function(e) {
+      interrupted <<- TRUE
+    }
+  )
+  expect_true(interrupted)
+})
+
+test_that("interrupt and exception handling, C++", {
+  # Skip on Windows i386 because of known bad behavior
+  if (R.version$os == "mingw32" && R.version$arch == "i386") {
+    skip("C++ exceptions in later callbacks are known bad on Windows i386")
+  }
 
   # =======================================================
   # Exceptions in C++ callbacks
@@ -271,36 +290,17 @@ test_that("interrupt and exception handling", {
   )
   expect_true(errored)
 
-  test_that("Interrupts work", {
-    # These tests may fail in automated test environments due to the way they
-    # handle interrupts. (See #102)
-    # jcheng 2024-10-24: Let's find out if this is still true
+  interrupted <- FALSE
+  tryCatch(
+    { cpp_error(3); run_now() },
+    interrupt = function(e) interrupted <<- TRUE
+  )
+  expect_true(interrupted)
 
-    # interrupt
-    interrupted <- FALSE
-    tryCatch(
-      {
-        later(function() {rlang::interrupt(); Sys.sleep(100) })
-        run_now()
-      },
-      interrupt = function(e) {
-        interrupted <<- TRUE
-      }
-    )
-    expect_true(interrupted)
-
-    interrupted <- FALSE
-    tryCatch(
-      { cpp_error(3); run_now() },
-      interrupt = function(e) interrupted <<- TRUE
-    )
-    expect_true(interrupted)
-
-    interrupted <- FALSE
-    tryCatch(
-      { cpp_error(4); run_now() },
-      interrupt = function(e) interrupted <<- TRUE
-    )
-    expect_true(interrupted)
-  })
+  interrupted <- FALSE
+  tryCatch(
+    { cpp_error(4); run_now() },
+    interrupt = function(e) interrupted <<- TRUE
+  )
+  expect_true(interrupted)
 })
