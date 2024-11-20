@@ -29,16 +29,6 @@ void checkInterruptFn(void*) {
   R_CheckUserInterrupt();
 }
 
-SEXP unwindProtectWrap(void *data) {
-  std::function<void (void)> *func = (std::function<void (void)> *) data;
-  (*func)();
-  return R_NilValue;
-}
-
-SEXP unwindProtect(std::function<void(void)> callback) {
-  return Rcpp::unwindProtect(&unwindProtectWrap, &callback);
-}
-
 // The purpose of this function is to provide a plain C function to be called
 // by R_ToplevelExec. Because it's called as a C function, it must not throw
 // exceptions. Because this function returns void, the way for it to report
