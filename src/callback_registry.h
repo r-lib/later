@@ -36,7 +36,7 @@ public:
     return callbackId;
   };
 
-  virtual void invoke() = 0;
+  virtual void invoke() const = 0;
 
   void invoke_wrapped() const;
 
@@ -55,7 +55,7 @@ class StdFunctionCallback : public Callback {
 public:
   StdFunctionCallback(Timestamp when, std::function<void (void)> func);
 
-  void invoke() {
+  void invoke() const {
     Rcpp::unwindProtect([this]() {
       BEGIN_RCPP
       func();
@@ -74,7 +74,7 @@ class RcppFunctionCallback : public Callback {
 public:
   RcppFunctionCallback(Timestamp when, Rcpp::Function func);
 
-  void invoke() {
+  void invoke() const {
     func();
   }
 
