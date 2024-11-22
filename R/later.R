@@ -113,7 +113,7 @@ create_loop <- function(parent = current_loop(), autorun = NULL) {
     # However, if the package is unloaded it can get GC'd, and we don't want the
     # destroy_loop() finalizer to give an error message about not being able to
     # destroy the global loop.
-    reg.finalizer(loop, notify_r_ref_deleted)
+    reg.finalizer(loop, notify_r_ref_deleted, onexit = TRUE)
   }
 
   loop
