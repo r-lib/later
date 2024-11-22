@@ -186,6 +186,10 @@ test_that("interrupt and exception handling, R", {
 })
 
 test_that("interrupt and exception handling, C++", {
+  # Skip as cpp_error(4) test seen producing error on some platforms on rhub
+  skip_on_cran()
+  # Skip due to false positives on UBSAN
+  skip_if(using_ubsan())
   # Skip on Windows i386 because of known bad behavior
   if (R.version$os == "mingw32" && R.version$arch == "i386") {
     skip("C++ exceptions in later callbacks are known bad on Windows i386")
