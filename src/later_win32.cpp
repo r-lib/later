@@ -51,6 +51,9 @@ static bool executeHandlers() {
   catch(Rcpp::internal::InterruptedException &e) {
     REprintf("later: interrupt occurred while executing callback.\n");
   }
+  catch(Rcpp::LongjumpException& e){
+    REprintf("later: exception occurred while executing callback.\n");
+  }
   catch(std::exception& e){
     std::string msg = "later: exception occurred while executing callback: \n";
     msg += e.what();
