@@ -126,6 +126,10 @@ static void async_input_handler(void *data) {
     DEBUG_LOG("async_input_handler: caught Rcpp::internal::InterruptedException", LOG_INFO);
     REprintf("later: interrupt occurred while executing callback.\n");
   }
+  catch(Rcpp::LongjumpException& e){
+    DEBUG_LOG("async_input_handler: caught exception", LOG_INFO);
+    REprintf("later: exception occurred while executing callback.\n");
+  }
   catch(std::exception& e){
     DEBUG_LOG("async_input_handler: caught exception", LOG_INFO);
     std::string msg = "later: exception occurred while executing callback: \n";
