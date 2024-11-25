@@ -4,6 +4,8 @@
 
 * Fixed #186: Improvements to package load time as `rlang` is now only loaded when used. This is a notable efficiency for packages with only a 'linking to' dependency on `later`. Also updates to native symbol registration from dynamic lookup. (@shikokuchuo and @wch, #187)
 
+* Fixed #191: Errors raised in later callbacks were being re-thrown as generic C++ std::runtime_error with Rcpp >= 1.0.10 (since 2022!). (@shikokuchuo and @lionel-, #192)
+
 # later 1.3.2
 
 * Fixed `unused variable` compiler warning. (@MichaelChirico, #176)
