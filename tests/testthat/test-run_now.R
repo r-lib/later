@@ -238,6 +238,7 @@ test_that("interrupt and exception handling, C++", {
           Function("r_error")();
 
         } else if (value == 6) {
+          // Calls the `r_error` function via R\'s C API instead of Rcpp.
           SEXP e;
           PROTECT(e = Rf_lang1(Rf_install("r_error")));
 
