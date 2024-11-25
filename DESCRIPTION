@@ -25,8 +25,8 @@ RoxygenNote: 7.3.2
 Suggests:
     knitr,
     nanonext,
+    R6,
     rmarkdown,
-    testthat (>= 2.1.0),
-    R6
+    testthat (>= 2.1.0)
 VignetteBuilder: knitr
 Encoding: UTF-8
