@@ -205,8 +205,15 @@ bool execCallbacksOne(
     if (callbacks.size() == 0) {
       break;
     }
+
+#ifdef RCPP_USING_UNWIND_PROTECT // See https://github.com/r-lib/later/issues/191
+    // This line may throw errors!
+    callbacks[0]->invoke();
+#else
     // This line may throw errors!
     callbacks[0]->invoke_wrapped();
+#endif
+
   } while (runAll);
 
   // I think there's no need to lock this since it's only modified from the

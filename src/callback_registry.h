@@ -56,7 +56,15 @@ public:
   StdFunctionCallback(Timestamp when, std::function<void (void)> func);
 
   void invoke() const {
+#ifdef RCPP_USING_UNWIND_PROTECT // See https://github.com/r-lib/later/issues/191
+    Rcpp::unwindProtect([this]() {
+      BEGIN_RCPP
+      func();
+      END_RCPP
+    });
+#else
     func();
+#endif
   }
 
   Rcpp::RObject rRepresentation() const;
