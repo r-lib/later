@@ -238,13 +238,6 @@ test_that("interrupt and exception handling, C++", {
           Function("r_error")();
 
         } else if (value == 6) {
-          // Calls the `r_error` function via R\'s C API instead of Rcpp.
-          // Note: We don\'t actually use this for testing, because calling
-          //       Rf_eval from an Rcpp function is inherently unsafe. If an
-          //       R error occurs during the Rf_eval, a longjmp over the whole
-          //       C++ stack occurs, and the subsequent code in the function
-          //       never gets run. This function is just here to keep record of
-          //       another way that exceptions can occur.
           SEXP e;
           PROTECT(e = Rf_lang1(Rf_install("r_error")));
 
@@ -286,10 +279,16 @@ test_that("interrupt and exception handling, C++", {
   )
   expect_true(errored)
 
-
   errored <- FALSE
   tryCatch(
     { cpp_error(5); run_now() },
+    error = function(e) errored <<- TRUE
+  )
+  expect_true(errored)
+
+  errored <- FALSE
+  tryCatch(
+    { cpp_error(6); run_now() },
     error = function(e) errored <<- TRUE
   )
   expect_true(errored)
