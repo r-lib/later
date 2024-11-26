@@ -3,8 +3,9 @@ context("test-later-fd.R")
 test_that("later_fd", {
   skip_if_not_installed("nanonext")
 
-  result <- NULL
+  result2 <- result <- NULL
   callback <- function(x) result <<- x
+  callback2 <- function(x) result2 <<- x
   s1 <- nanonext::socket(listen = "inproc://nanonext")
   on.exit(close(s1))
   s2 <- nanonext::socket(dial = "inproc://nanonext")
@@ -17,8 +18,15 @@ test_that("later_fd", {
   Sys.sleep(0.2)
   run_now()
   expect_equal(result, c(FALSE, FALSE))
-  later_fd(callback, c(fd1, fd2), exceptfds = c(fd1, fd2), timeout = 0)
+
+  # concurrent waits
+  later_fd(callback, c(fd1, fd2), exceptfds = c(fd1, fd2), timeout = 0.4)
+  later_fd(callback2, c(fd1, fd2), exceptfds = c(fd1, fd2), timeout = 0)
   Sys.sleep(0.2)
+  run_now()
+  expect_equal(result2, c(FALSE, FALSE, FALSE, FALSE))
+  expect_equal(result, c(FALSE, FALSE))
+  Sys.sleep(0.4)
   run_now()
   expect_equal(result, c(FALSE, FALSE, FALSE, FALSE))
 

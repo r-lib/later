@@ -4,8 +4,8 @@
 #include <cstdlib>
 #include <atomic>
 #include <memory>
-#include "tinycthread.h"
 #include "later.h"
+#include "threadutils.h"
 #include "callback_registry_table.h"
 
 class ThreadArgs {
@@ -81,6 +81,57 @@ private:
 
 };
 
+static Mutex mtx(tct_mtx_plain);
+static ConditionVariable cv(mtx);
+static int busy = 0;
+static std::unique_ptr<std::shared_ptr<ThreadArgs>> threadargs = nullptr;
+
+static int wait_thread_persistent(void *arg);
+
+class PersistentThread {
+  tct_thrd_t thr = 0;
+
+public:
+  PersistentThread() {
+    if (tct_thrd_create(&thr, &wait_thread_persistent, NULL) != tct_thrd_success)
+      throw std::runtime_error("Thread creation failed.");
+  }
+  ~PersistentThread() {
+    Guard guard(&mtx);
+    if (threadargs != nullptr) {
+      (*threadargs)->active->store(false);
+    }
+    busy = -1;
+    cv.broadcast();
+  }
+
+};
+
+static int wait_for_signal() {
+  Guard guard(&mtx);
+  while (!busy)
+    cv.wait();
+  return busy;
+}
+
+static int submit_wait(std::shared_ptr<ThreadArgs> args) {
+  Guard guard(&mtx);
+  if (busy)
+    return busy;
+  threadargs.reset(new std::shared_ptr<ThreadArgs>(args));
+  busy = 1;
+  cv.broadcast();
+  return 0;
+}
+
+static int wait_done() {
+  Guard guard(&mtx);
+  threadargs.reset();
+  int ret = busy;
+  busy = 0;
+  return ret;
+}
+
 static void later_callback(void *arg) {
 
   ASSERT_MAIN_THREAD()
@@ -104,15 +155,7 @@ static void later_callback(void *arg) {
 }
 
 // CONSIDER: if necessary to add method for HANDLES on Windows. Would be different code to SOCKETs.
-// TODO: implement re-usable background thread.
-static int wait_thread(void *arg) {
-
-  tct_thrd_detach(tct_thrd_current());
-
-  std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
-  std::shared_ptr<ThreadArgs> args = *argsptr;
-
-  // poll() whilst checking for cancellation at intervals
+static int wait_on_fds(std::shared_ptr<ThreadArgs> args) {
 
   int ready;
   double waitFor = std::fmax(args->timeout.diff_secs(Timestamp()), 0);
@@ -124,8 +167,6 @@ static int wait_thread(void *arg) {
     if (ready) break;
   } while ((waitFor = args->timeout.diff_secs(Timestamp())) > 0);
 
-  // store pollfd revents in args->results for use by callback
-
   if (ready > 0) {
     for (std::size_t i = 0; i < args->fds.size(); i++) {
       (args->results)[i] = (args->fds)[i].revents == 0 ? 0 : (args->fds)[i].revents & (POLLIN | POLLOUT) ? 1: NA_INTEGER;
@@ -134,7 +175,43 @@ static int wait_thread(void *arg) {
     std::fill(args->results.begin(), args->results.end(), NA_INTEGER);
   }
 
-  callbackRegistryTable.scheduleCallback(later_callback, static_cast<void *>(argsptr.release()), 0, args->loop);
+  return 0;
+
+}
+
+static int wait_thread_single(void *arg) {
+
+  tct_thrd_detach(tct_thrd_current());
+
+  std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
+  std::shared_ptr<ThreadArgs> args = *argsptr;
+
+  if (wait_on_fds(args) == 0) {
+    callbackRegistryTable.scheduleCallback(later_callback, static_cast<void *>(argsptr.release()), 0, args->loop);
+  }
+
+  return 0;
+
+}
+
+static int wait_thread_persistent(void *arg) {
+
+  tct_thrd_detach(tct_thrd_current());
+
+  while (1) {
+
+    if (wait_for_signal() < 0)
+      break;
+
+    const int loop = (*threadargs)->loop;
+    if (wait_on_fds(*threadargs) == 0) {
+      callbackRegistryTable.scheduleCallback(later_callback, static_cast<void *>(threadargs.release()), 0, loop);
+    }
+
+    if (wait_done() < 0)
+      break;
+
+  }
 
   return 0;
 
@@ -144,9 +221,17 @@ static int execLater_launch_thread(std::shared_ptr<ThreadArgs> args) {
 
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(new std::shared_ptr<ThreadArgs>(args));
 
-  tct_thrd_t thr;
+  // static initialization ensures finalizer runs before those for the condition variable / mutex
+  static PersistentThread persistentthread;
 
-  return tct_thrd_create(&thr, &wait_thread, static_cast<void *>(argsptr.release())) != tct_thrd_success;
+  int ret;
+  if ((ret = submit_wait(args))) {
+    // create single wait thread if persistent thread is busy
+    tct_thrd_t thr;
+    ret = tct_thrd_create(&thr, &wait_thread_single, static_cast<void *>(argsptr.release())) != tct_thrd_success;
+  }
+
+  return ret;
 
 }
 
