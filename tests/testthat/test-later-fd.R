@@ -50,7 +50,7 @@ test_that("later_fd", {
   res <- nanonext::send(s1, "msg")
   Sys.sleep(0.1)
   later_fd(callback, c(fd1, fd2), timeout = 1)
-  Sys.sleep(0.1)
+  Sys.sleep(0.2)
   run_now()
   expect_equal(result, c(TRUE, TRUE))
 
@@ -107,11 +107,12 @@ test_that("loop_empty() reflects later_fd callbacks", {
   cancel <- later_fd(~{}, fd1)
   expect_false(loop_empty())
   cancel()
-  Sys.sleep(1.2) # check for cancellation happens every ~1 sec
+  Sys.sleep(1.25) # check for cancellation happens every ~1 sec
   expect_true(loop_empty())
 
   later_fd(~{}, fd1, timeout = 0)
   expect_false(loop_empty())
+  Sys.sleep(0.2)
   run_now()
   expect_true(loop_empty())
 
