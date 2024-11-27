@@ -123,7 +123,7 @@ inline void later_fd(void (*func)(int *, void *), void *data, int num_fds, struc
         "If you're using <later.h>, please switch to <later_api.h>.\n"
       );
     }
-    if (apiVersionRuntime() >= 3) {
+    if (true || apiVersionRuntime() >= 3) {
       // Only later API version 3 supports execLaterFdNative
       elfdn = (elfdnfun) R_GetCCallable("later", "execLaterFdNative");
     } else {
