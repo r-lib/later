@@ -96,11 +96,18 @@ inline void later(void (*func)(void*), void* data, double secs) {
   later(func, data, secs, GLOBAL_LOOP);
 }
 
+typedef void (*elfdnfun)(void (*)(int *, void *), void *, int, struct pollfd *, double, int);
+
+static elfdnfun eval_res = NULL;
+
+void eval_safe(void *data) {
+  eval_res = (elfdnfun) R_GetCCallable("later", "execLaterFdNative");
+}
+
 inline void later_fd(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double secs, int loop_id) {
   // See above note for later()
 
   // The function type for the real execLaterFdNative
-  typedef void (*elfdnfun)(void (*)(int *, void *), void *, int, struct pollfd *, double, int);
   static elfdnfun elfdn = NULL;
   if (!elfdn) {
     // Initialize if necessary
@@ -112,7 +119,10 @@ inline void later_fd(void (*func)(int *, void *), void *data, int num_fds, struc
         "If you're using <later.h>, please switch to <later_api.h>.\n"
       );
     }
-    elfdn = (elfdnfun) R_GetCCallable("later", "execLaterFdNative");
+    if (R_ToplevelExec(eval_safe, (void *) NULL)) {
+      elfdn = eval_res;
+    }
+
   }
 
   // We didn't want to execute anything, just initialize
