@@ -1,5 +1,7 @@
 # later 1.4.0.9000 (development)
 
+* Fixed #203: Resolves an issue where packages that have `LinkingTo: later` (including `promises` and `httpuv`) and were built against `later` 1.4.0, would fail to load on systems that actually had older versions of `later` installed, erroring out with the message "function 'execLaterFdNative' not provided by package 'later'". With this fix, such dependent packages should gracefully deal with older versions at load time, and complain with helpful error messages if newer C interfaces (than are available on the installed `later`) are accessed. (#204)
+
 # later 1.4.0
 
 * Adds `later_fd()` which executes a function when a file descriptor is ready for reading or writing, at some indeterminate time in the future (subject to an optional timeout). This facilitates an event-driven approach to asynchronous or streaming downloads. (@shikokuchuo and @jcheng5, #190)
