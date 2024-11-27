@@ -19,3 +19,32 @@ jobs:
     uses: rstudio/shiny-workflows/.github/workflows/routine.yaml@v1
   R-CMD-check:
     uses: rstudio/shiny-workflows/.github/workflows/R-CMD-check.yaml@v1
+  cpp-version-mismatch:
+    name: cpp-version-mismatch
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout GitHub repo
+        uses: rstudio/shiny-workflows/.github/internal/checkout@v1
+
+      - name: Install R, system dependencies, and package dependencies
+        uses: rstudio/shiny-workflows/setup-r-package@v1
+        with:
+          needs: check
+          extra-packages: |
+            any::remotes
+      - name: Compile promises against the newest later
+        run: |
+          print(packageVersion("later"))
+          remotes::install_github("rstudio/promises", force = TRUE)
+        shell: Rscript {0}
+      - name: Downgrade later
+        run: |
+          remotes::install_version('later', '1.3.1')
+        shell: Rscript {0}
+      - name: See if dependent package (built against newer later ver) can still load
+        run: |
+          print(packageVersion("later"))
+          library(promises)
+        shell: Rscript {0}

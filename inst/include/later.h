@@ -48,9 +48,16 @@ namespace later {
 //
 // int (*dll_api_version)() = (int (*)()) R_GetCCallable("later", "apiVersion");
 // if (LATER_H_API_VERSION != (*dll_api_version)()) { ... }
-#define LATER_H_API_VERSION 2
+#define LATER_H_API_VERSION 3
 #define GLOBAL_LOOP 0
 
+
+// Gets the version of the later API that's provided by the _actually installed_
+// version of later.
+static int apiVersionRuntime() {
+  int (*dll_api_version)(void) = (int (*)(void)) R_GetCCallable("later", "apiVersion");
+  return (*dll_api_version)();
+}
 
 inline void later(void (*func)(void*), void* data, double secs, int loop_id) {
   // This function works by retrieving the later::execLaterNative2 function
@@ -96,6 +103,11 @@ inline void later(void (*func)(void*), void* data, double secs) {
   later(func, data, secs, GLOBAL_LOOP);
 }
 
+static void later_fd_version_error(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double secs, int loop_id) {
+  (void) func; (void) data; (void) num_fds; (void) fds; (void) secs; (void) loop_id;
+  Rf_error("later_fd called, but installed version of the 'later' package is too old; please upgrade 'later' to 1.4.1 or above");
+}
+
 inline void later_fd(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double secs, int loop_id) {
   // See above note for later()
 
@@ -112,7 +124,13 @@ inline void later_fd(void (*func)(int *, void *), void *data, int num_fds, struc
         "If you're using <later.h>, please switch to <later_api.h>.\n"
       );
     }
-    elfdn = (elfdnfun) R_GetCCallable("later", "execLaterFdNative");
+    if (apiVersionRuntime() >= 3) {
+      // Only later API version 3 supports execLaterFdNative
+      elfdn = (elfdnfun) R_GetCCallable("later", "execLaterFdNative");
+    } else {
+      // The installed version is too old and doesn't offer execLaterFdNative.
+      elfdn = later_fd_version_error;
+    }
   }
 
   // We didn't want to execute anything, just initialize
