@@ -54,12 +54,13 @@
   <div class="col-md-9 contents">
     <div class="page-header">
       <h1 data-toc-skip>Changelog <small></small></h1>
-      <small>Source: <a href="https://github.com/r-lib/later/blob/fix-later-api/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/r-lib/later/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
     <div class="section level2">
 <h2 class="page-header" data-toc-text="1.4.0.9000" id="later-1409000-development">later 1.4.0.9000 (development)<a class="anchor" aria-label="anchor" href="#later-1409000-development"></a></h2>
-</div>
+<ul><li>Fixed <a href="https://github.com/r-lib/later/issues/203" class="external-link">#203</a>: Resolves an issue where packages that have <code>LinkingTo: later</code> (including <code>promises</code> and <code>httpuv</code>) and were built against <code>later</code> 1.4.0, would fail to load on systems that actually had older versions of <code>later</code> installed, erroring out with the message “function ‘execLaterFdNative’ not provided by package ‘later’”. With this fix, such dependent packages should gracefully deal with older versions at load time, and complain with helpful error messages if newer C interfaces (than are available on the installed <code>later</code>) are accessed. (<a href="https://github.com/r-lib/later/issues/204" class="external-link">#204</a>)</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="1.4.0" id="later-140">later 1.4.0<small>2024-11-26</small><a class="anchor" aria-label="anchor" href="#later-140"></a></h2>
 <ul><li><p>Adds <code><a href="../reference/later_fd.html">later_fd()</a></code> which executes a function when a file descriptor is ready for reading or writing, at some indeterminate time in the future (subject to an optional timeout). This facilitates an event-driven approach to asynchronous or streaming downloads. (<a href="https://github.com/shikokuchuo" class="external-link">@shikokuchuo</a> and <a href="https://github.com/jcheng5" class="external-link">@jcheng5</a>, <a href="https://github.com/r-lib/later/issues/190" class="external-link">#190</a>)</p></li>
