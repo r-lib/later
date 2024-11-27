@@ -37,7 +37,7 @@ jobs:
       - name: Compile promises against the newest later
         run: |
           print(packageVersion("later"))
-          remotes::install_github("rstudio/promises")
+          remotes::install_github("rstudio/promises", force = TRUE)
         shell: Rscript {0}
       - name: Downgrade later
         run: |
