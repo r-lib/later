@@ -1,3 +1,5 @@
+# later 1.4.0.9000 (development)
+
 # later 1.4.0
 
 * Adds `later_fd()` which executes a function when a file descriptor is ready for reading or writing, at some indeterminate time in the future (subject to an optional timeout). This facilitates an event-driven approach to asynchronous or streaming downloads. (@shikokuchuo and @jcheng5, #190)
