@@ -103,7 +103,7 @@ inline void later(void (*func)(void*), void* data, double secs) {
   later(func, data, secs, GLOBAL_LOOP);
 }
 
-static void later_fd_stub(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double secs, int loop_id) {
+static void later_fd_version_error(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double secs, int loop_id) {
   Rf_error("later_fd called, but installed version of the 'later' package is too old; please upgrade 'later' to 1.4.1 or above");
 }
 
@@ -124,9 +124,11 @@ inline void later_fd(void (*func)(int *, void *), void *data, int num_fds, struc
       );
     }
     if (apiVersionRuntime() >= 3) {
+      // Only later API version 3 supports execLaterFdNative
       elfdn = (elfdnfun) R_GetCCallable("later", "execLaterFdNative");
     } else {
-      elfdn = later_fd_stub;
+      // The installed version is too old and doesn't offer execLaterFdNative.
+      elfdn = later_fd_version_error;
     }
   }
 
