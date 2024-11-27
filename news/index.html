@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">later</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.0.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.1</span>
       </span>
     </div>
 
@@ -54,11 +54,11 @@
   <div class="col-md-9 contents">
     <div class="page-header">
       <h1 data-toc-skip>Changelog <small></small></h1>
-      <small>Source: <a href="https://github.com/r-lib/later/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/r-lib/later/blob/rc-v1.4.1/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
     <div class="section level2">
-<h2 class="page-header" data-toc-text="1.4.0.9000" id="later-1409000-development">later 1.4.0.9000 (development)<a class="anchor" aria-label="anchor" href="#later-1409000-development"></a></h2>
+<h2 class="page-header" data-toc-text="1.4.1" id="later-141">later 1.4.1<a class="anchor" aria-label="anchor" href="#later-141"></a></h2>
 <ul><li>Fixed <a href="https://github.com/r-lib/later/issues/203" class="external-link">#203</a>: Resolves an issue where packages that have <code>LinkingTo: later</code> (including <code>promises</code> and <code>httpuv</code>) and were built against <code>later</code> 1.4.0, would fail to load on systems that actually had older versions of <code>later</code> installed, erroring out with the message “function ‘execLaterFdNative’ not provided by package ‘later’”. With this fix, such dependent packages should gracefully deal with older versions at load time, and complain with helpful error messages if newer C interfaces (than are available on the installed <code>later</code>) are accessed. (<a href="https://github.com/r-lib/later/issues/204" class="external-link">#204</a>)</li>
 </ul></div>
     <div class="section level2">
