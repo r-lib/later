@@ -38,6 +38,7 @@ jobs:
         run: |
           print(packageVersion("later"))
           remotes::install_github("rstudio/promises")
+        shell: Rscript {0}
       - name: Downgrade later
         run: |
           remotes::install_version('later', '1.3.1')
