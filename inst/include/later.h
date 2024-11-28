@@ -96,11 +96,17 @@ inline void later(void (*func)(void*), void* data, double secs) {
   later(func, data, secs, GLOBAL_LOOP);
 }
 
+static void later_fd_version_error(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double secs, int loop_id) {
+  (void) func; (void) data; (void) num_fds; (void) fds; (void) secs; (void) loop_id;
+  Rf_error("later_fd called, but installed version of the 'later' package is too old; please upgrade 'later' to 1.4.1 or above");
+}
+
 typedef void (*elfdnfun)(void (*)(int *, void *), void *, int, struct pollfd *, double, int);
 
 static elfdnfun eval_res = NULL;
 
-void eval_safe(void *data) {
+static void eval_safe(void *data) {
+  (void) data;
   eval_res = (elfdnfun) R_GetCCallable("later", "execLaterFdNative");
 }
 
@@ -119,9 +125,7 @@ inline void later_fd(void (*func)(int *, void *), void *data, int num_fds, struc
         "If you're using <later.h>, please switch to <later_api.h>.\n"
       );
     }
-    if (R_ToplevelExec(eval_safe, (void *) NULL)) {
-      elfdn = eval_res;
-    }
+    elfdn = R_ToplevelExec(eval_safe, (void *) NULL) ? eval_res : later_fd_version_error;
 
   }
 
