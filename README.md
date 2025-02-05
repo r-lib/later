@@ -14,7 +14,7 @@ The mechanism used by this package is inspired by Simon Urbanek's [background](h
 ## Installation
 
 ```r
-remotes::install_github("r-lib/later")
+pak::pak("r-lib/later")
 ```
 
 ## Usage from R
