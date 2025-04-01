@@ -8,20 +8,6 @@
 // anyone who uses these functions.
 #include "tinycthread.h"
 
-inline timespec timevalToTimespec(const timeval& tv) {
-  timespec ts;
-  ts.tv_sec = tv.tv_sec;
-  ts.tv_nsec = tv.tv_usec * 1000;
-  return ts;
-}
-
-inline timeval timespecToTimeval(const timespec& ts) {
-  timeval tv;
-  tv.tv_sec = ts.tv_sec;
-  tv.tv_usec = (suseconds_t) (ts.tv_nsec / 1000);
-  return tv;
-}
-
 inline timespec addSeconds(const timespec& time, double secs) {
   timespec ts = time;
   ts.tv_sec += (time_t)secs;
