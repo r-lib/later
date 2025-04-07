@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">later</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.0.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.1.9000</span>
       </span>
     </div>
 
@@ -89,7 +89,7 @@
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"r-lib/later"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"r-lib/later"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="usage-from-r">Usage from R<a class="anchor" aria-label="anchor" href="#usage-from-r"></a>
@@ -109,7 +109,7 @@
 <p>Below, a logical vector is printed indicating which of file descriptors 21 or 22 were ready, subject to a timeout of 1s. Instead of just printing the result, the supplied function can also do something more useful such as reading from the descriptor.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">later</span><span class="fu">::</span><span class="fu"><a href="reference/later_fd.html">later_fd</a></span><span class="op">(</span><span class="va">print</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">21L</span>, <span class="fl">22L</span><span class="op">)</span>, timeout <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
-<p>This is useful in particular for asynchronous or streaming data transfer over the network / internet, so that reads can be made from TCP sockets as soon as data is available. <code><a href="reference/later_fd.html">later::later_fd()</a></code> pairs well with functions such as <code><a href="https://rdrr.io/pkg/curl/man/multi.html" class="external-link">curl::multi_fdset()</a></code> that return the relevant file descriptors to be monitored .</p>
+<p>This is useful in particular for asynchronous or streaming data transfer over the network / internet, so that reads can be made from TCP sockets as soon as data is available. <code><a href="reference/later_fd.html">later::later_fd()</a></code> pairs well with functions such as <code><a href="https://jeroen.r-universe.dev/curl/reference/multi.html" class="external-link">curl::multi_fdset()</a></code> that return the relevant file descriptors to be monitored .</p>
 </div>
 </div>
 <div class="section level2">

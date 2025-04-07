@@ -19,7 +19,7 @@ optional timeout."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/aja
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">later</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.0.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.4.1.9000</span>
       </span>
     </div>
 
@@ -56,7 +56,7 @@ optional timeout."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/aja
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Executes a function when a file descriptor is ready</h1>
-    <small class="dont-index">Source: <a href="https://github.com/r-lib/later/blob/fix-later-api/R/later.R" class="external-link"><code>R/later.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/r-lib/later/blob/main/R/later.R" class="external-link"><code>R/later.R</code></a></small>
     <div class="hidden name"><code>later_fd.Rd</code></div>
     </div>
 
@@ -148,10 +148,10 @@ handling logic inside of <code>func</code>.</p>
     <div id="ref-examples">
     <h2>Examples</h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># create nanonext sockets</span></span></span>
-<span class="r-in"><span><span class="va">s1</span> <span class="op">&lt;-</span> <span class="fu">nanonext</span><span class="fu">::</span><span class="fu"><a href="https://shikokuchuo.net/nanonext/reference/socket.html" class="external-link">socket</a></span><span class="op">(</span>listen <span class="op">=</span> <span class="st">"inproc://nano"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">s2</span> <span class="op">&lt;-</span> <span class="fu">nanonext</span><span class="fu">::</span><span class="fu"><a href="https://shikokuchuo.net/nanonext/reference/socket.html" class="external-link">socket</a></span><span class="op">(</span>dial <span class="op">=</span> <span class="st">"inproc://nano"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">fd1</span> <span class="op">&lt;-</span> <span class="fu">nanonext</span><span class="fu">::</span><span class="fu"><a href="https://shikokuchuo.net/nanonext/reference/opt.html" class="external-link">opt</a></span><span class="op">(</span><span class="va">s1</span>, <span class="st">"recv-fd"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">fd2</span> <span class="op">&lt;-</span> <span class="fu">nanonext</span><span class="fu">::</span><span class="fu"><a href="https://shikokuchuo.net/nanonext/reference/opt.html" class="external-link">opt</a></span><span class="op">(</span><span class="va">s2</span>, <span class="st">"recv-fd"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">s1</span> <span class="op">&lt;-</span> <span class="fu">nanonext</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/nanonext/man/socket.html" class="external-link">socket</a></span><span class="op">(</span>listen <span class="op">=</span> <span class="st">"inproc://nano"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">s2</span> <span class="op">&lt;-</span> <span class="fu">nanonext</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/nanonext/man/socket.html" class="external-link">socket</a></span><span class="op">(</span>dial <span class="op">=</span> <span class="st">"inproc://nano"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">fd1</span> <span class="op">&lt;-</span> <span class="fu">nanonext</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/nanonext/man/opt.html" class="external-link">opt</a></span><span class="op">(</span><span class="va">s1</span>, <span class="st">"recv-fd"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">fd2</span> <span class="op">&lt;-</span> <span class="fu">nanonext</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/nanonext/man/opt.html" class="external-link">opt</a></span><span class="op">(</span><span class="va">s2</span>, <span class="st">"recv-fd"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># 1. timeout: prints FALSE, FALSE</span></span></span>
 <span class="r-in"><span><span class="fu">later_fd</span><span class="op">(</span><span class="va">print</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">fd1</span>, <span class="va">fd2</span><span class="op">)</span>, timeout <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span></span></span>
@@ -161,20 +161,20 @@ handling logic inside of <code>func</code>.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># 2. fd1 ready: prints TRUE, FALSE</span></span></span>
 <span class="r-in"><span><span class="fu">later_fd</span><span class="op">(</span><span class="va">print</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">fd1</span>, <span class="va">fd2</span><span class="op">)</span>, timeout <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu">nanonext</span><span class="fu">::</span><span class="fu"><a href="https://shikokuchuo.net/nanonext/reference/send.html" class="external-link">send</a></span><span class="op">(</span><span class="va">s2</span>, <span class="st">"msg"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu">nanonext</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/nanonext/man/send.html" class="external-link">send</a></span><span class="op">(</span><span class="va">s2</span>, <span class="st">"msg"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.sleep.html" class="external-link">Sys.sleep</a></span><span class="op">(</span><span class="fl">0.1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="run_now.html">run_now</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1]  TRUE FALSE</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># 3. both ready: prints TRUE, TRUE</span></span></span>
-<span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu">nanonext</span><span class="fu">::</span><span class="fu"><a href="https://shikokuchuo.net/nanonext/reference/send.html" class="external-link">send</a></span><span class="op">(</span><span class="va">s1</span>, <span class="st">"msg"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu">nanonext</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/nanonext/man/send.html" class="external-link">send</a></span><span class="op">(</span><span class="va">s1</span>, <span class="st">"msg"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">later_fd</span><span class="op">(</span><span class="va">print</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">fd1</span>, <span class="va">fd2</span><span class="op">)</span>, timeout <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.sleep.html" class="external-link">Sys.sleep</a></span><span class="op">(</span><span class="fl">0.1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="run_now.html">run_now</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE TRUE</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># 4. fd2 ready: prints FALSE, TRUE</span></span></span>
-<span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu">nanonext</span><span class="fu">::</span><span class="fu"><a href="https://shikokuchuo.net/nanonext/reference/recv.html" class="external-link">recv</a></span><span class="op">(</span><span class="va">s1</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu">nanonext</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/nanonext/man/recv.html" class="external-link">recv</a></span><span class="op">(</span><span class="va">s1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">later_fd</span><span class="op">(</span><span class="va">print</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">fd1</span>, <span class="va">fd2</span><span class="op">)</span>, timeout <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.sleep.html" class="external-link">Sys.sleep</a></span><span class="op">(</span><span class="fl">0.1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="run_now.html">run_now</a></span><span class="op">(</span><span class="op">)</span></span></span>
