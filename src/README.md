@@ -10,7 +10,7 @@ The tinycthread library is from https://github.com/tinycthread/tinycthread, and 
 
 To work around the problem of linking to (incorrect) system functions with the same name, our version of tinycthread has modified names for all externally-visible functions and values: they all begin with `tct_`.
 
-We also added a dummry header file called `badthreads.h`. For all of the names from C11 threads.h, it `#define`s them to a value that will cause an error at compile time. This is to make sure that we don't accidentally use anything from threads.h.
+We also added a dummy header file called `badthreads.h`. For all of the names from C11 threads.h, it `#define`s them to a value that will cause an error at compile time. This is to make sure that we don't accidentally use anything from threads.h. Note: `thread_local` is no longer redefined as it has become a keyword in C23 - it is not used in our code base and we should take care not to use it.
 
 There is another change that we have made to tinycthread is in `tinycthread.h`. It is a workaround for building on CRAN's Solaris build machine which was needed at some point in the past. Note that when we tested on a Solaris VM, it didn't seem to be necessary, but we kept it there just to be safe, because we can't actually test on the CRAN Solaris build machine.
 
