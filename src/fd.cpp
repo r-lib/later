@@ -119,7 +119,7 @@ static int wait_thread(void *arg) {
   do {
     // Never wait for longer than ~1 second so we can check for cancellation
     waitFor = std::fmin(waitFor, 1.024);
-    ready = LATER_POLL_FUNC(args->fds.data(), args->fds.size(), static_cast<int>(waitFor * 1000));
+    ready = LATER_POLL_FUNC(args->fds.data(), static_cast<LATER_NFDS_T>(args->fds.size()), static_cast<int>(waitFor * 1000));
     if (!args->active->load()) return 1;
     if (ready) break;
   } while ((waitFor = args->timeout.diff_secs(Timestamp())) > 0);

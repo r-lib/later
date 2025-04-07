@@ -45,7 +45,7 @@
 #define cnd_wait            THREADS_H_ERROR
 #define cnd_timedwait       THREADS_H_ERROR
 #define cnd_destroy         THREADS_H_ERROR
-#define thread_local        THREADS_H_ERROR
+// #define thread_local        THREADS_H_ERROR /* Don't redefine thread_local as it is a keyword in C23 */
 #define tss_t               THREADS_H_ERROR
 #define TSS_DTOR_ITERATIONS THREADS_H_ERROR
 #define tss_dtor_t          THREADS_H_ERROR
