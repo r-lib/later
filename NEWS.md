@@ -1,4 +1,4 @@
-# later (development version)
+# later 1.4.2
 
 * Fixed #208: Fixed `keyword is hidden by macro definition` compiler warning when using a C23 compiler. (@shikokuchuo, #209)
 

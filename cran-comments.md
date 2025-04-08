@@ -1,18 +1,11 @@
 ## R CMD check results
 
-0 errors | 0 warnings | 1 note
+0 errors | 0 warnings | 0 notes
 
-I'm so sorry to be re-submitting this so soon after my previous submission.
-That version (1.4.0) has started causing problems for deployed projects
-that use packages that link to {later}, like {httpuv} and {promises},
-because their CRAN binaries are built against the latest CRAN {later} but
-they may have pinned their locally installed {later} to an older version.
-This causes R_GetCCallable calls in those dependent packages to fail on
-package startup.
+## revdepcheck results
 
-This submission is intended to fix this problem by gracefully detecting the
-version mismatch, and simply not performing R_GetCCallable calls that will
-not succeed.
+We checked 31 reverse dependencies (26 from CRAN + 5 from Bioconductor), comparing R CMD check results across CRAN and dev versions of this package.
 
-More details here:
-https://github.com/r-lib/later/issues/203
+ * We saw 0 new problems
+ * We failed to check 0 packages
+
