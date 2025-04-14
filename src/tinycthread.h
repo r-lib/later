@@ -117,6 +117,10 @@ extern "C" {
   #define TTHREAD_NORETURN
 #endif
 
+#ifdef __ANDROID__
+#undef TIME_UTC
+#endif
+
 /* If TIME_UTC is missing, provide it and provide a wrapper for
    timespec_get. */
 #ifndef TIME_UTC
