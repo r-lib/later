@@ -29,12 +29,13 @@ Suggests:
     nanonext,
     R6,
     rmarkdown,
-    testthat (>= 2.1.0)
+    testthat (>= 3.0.0)
 LinkingTo: 
     Rcpp
 VignetteBuilder: 
     knitr
 Config/Needs/website: tidyverse/tidytemplate
+Config/testthat/edition: 3
 Config/usethis/last-upkeep: 2025-07-18
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

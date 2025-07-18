@@ -1,5 +1,3 @@
-context("test-private-loops.R")
-
 describe("Private event loop", {
   it("changes current_loop()", {
     expect_identical(current_loop(), global_loop())

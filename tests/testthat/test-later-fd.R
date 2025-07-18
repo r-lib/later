@@ -1,5 +1,3 @@
-context("test-later-fd.R")
-
 test_that("later_fd", {
   skip_if_not_installed("nanonext")
 

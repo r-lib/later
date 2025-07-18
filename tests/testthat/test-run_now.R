@@ -1,5 +1,3 @@
-context("test-run_now.R")
-
 jitter <- 0.017*2 # Compensate for imprecision in system timer
 
 test_that("run_now waits and returns FALSE if no tasks", {

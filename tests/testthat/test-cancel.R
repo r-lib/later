@@ -1,5 +1,3 @@
-context("test-cancel.R")
-
 test_that("Cancelling callbacks", {
   # Cancel with zero delay
   x <- 0
