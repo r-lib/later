@@ -8,7 +8,7 @@ Authors@R: c(
     person("Joe", "Cheng", , "joe@posit.co", role = "aut"),
     person("Charlie", "Gao", , "charlie.gao@shikokuchuo.net", role = "aut",
            comment = c(ORCID = "0000-0002-0750-061X")),
-    person(, "Posit Software, PBC", role = "cph"),
+    person("Posit Software, PBC", role = c("cph", "fnd"), comment = c(ROR = "03wc8by49")),
     person("Marcus", "Geelnard", role = c("ctb", "cph"),
            comment = "TinyCThread library, https://tinycthread.github.io/"),
     person("Evan", "Nemerson", role = c("ctb", "cph"),
