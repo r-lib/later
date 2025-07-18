@@ -1,2 +1,4 @@
-url: https://r-lib.github.io/later
+url: https://r-lib.github.io/later/
+template:
+  bootstrap: 5
 
