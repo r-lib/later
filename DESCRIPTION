@@ -1,33 +1,39 @@
-Package: later
 Type: Package
-Title: Utilities for Scheduling Functions to Execute Later with Event Loops
+Package: later
+Title: Utilities for Scheduling Functions to Execute Later with Event
+    Loops
 Version: 1.4.2.9000
 Authors@R: c(
-    person("Winston", "Chang", role = c("aut", "cre"), email = "winston@posit.co"),
-    person("Joe", "Cheng", role = c("aut"), email = "joe@posit.co"),
-    person("Charlie", "Gao", role = c("aut"), email = "charlie.gao@shikokuchuo.net", comment = c(ORCID = "0000-0002-0750-061X")),
-    person(family = "Posit Software, PBC", role = "cph"),
-    person("Marcus", "Geelnard", role = c("ctb", "cph"), comment = "TinyCThread library, https://tinycthread.github.io/"),
-    person("Evan", "Nemerson", role = c("ctb", "cph"), comment = "TinyCThread library, https://tinycthread.github.io/")
-    )
-Description: Executes arbitrary R or C functions some time after the current
-    time, after the R execution stack has emptied. The functions are scheduled
-    in an event loop.
+    person("Winston", "Chang", , "winston@posit.co", role = c("aut", "cre")),
+    person("Joe", "Cheng", , "joe@posit.co", role = "aut"),
+    person("Charlie", "Gao", , "charlie.gao@shikokuchuo.net", role = "aut",
+           comment = c(ORCID = "0000-0002-0750-061X")),
+    person(, "Posit Software, PBC", role = "cph"),
+    person("Marcus", "Geelnard", role = c("ctb", "cph"),
+           comment = "TinyCThread library, https://tinycthread.github.io/"),
+    person("Evan", "Nemerson", role = c("ctb", "cph"),
+           comment = "TinyCThread library, https://tinycthread.github.io/")
+  )
+Description: Executes arbitrary R or C functions some time after the
+    current time, after the R execution stack has emptied. The functions
+    are scheduled in an event loop.
+License: MIT + file LICENSE
 URL: https://r-lib.github.io/later/, https://github.com/r-lib/later
 BugReports: https://github.com/r-lib/later/issues
-License: MIT + file LICENSE
 Imports:
     Rcpp (>= 0.12.9),
     rlang
-LinkingTo: Rcpp
-Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
 Suggests:
     knitr,
     nanonext,
     R6,
     rmarkdown,
     testthat (>= 2.1.0)
-VignetteBuilder: knitr
-Encoding: UTF-8
+LinkingTo: 
+    Rcpp
+VignetteBuilder: 
+    knitr
 Config/usethis/last-upkeep: 2025-07-18
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
