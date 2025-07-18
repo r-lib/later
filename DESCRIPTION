@@ -30,3 +30,4 @@ Suggests:
     testthat (>= 2.1.0)
 VignetteBuilder: knitr
 Encoding: UTF-8
+Config/usethis/last-upkeep: 2025-07-18
