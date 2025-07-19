@@ -7,6 +7,8 @@
 
 [![R build
 status](https://github.com/r-lib/later/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/r-lib/later/actions)
+[![Codecov test
+coverage](https://codecov.io/gh/r-lib/later/graph/badge.svg)](https://app.codecov.io/gh/r-lib/later)
 <!-- badges: end -->
 
 Schedule an R function or formula to run after a specified period of
