@@ -109,6 +109,6 @@ test_that("later_fd() errors when passed destroyed loops", {
 
   loop <- create_loop()
   destroy_loop(loop)
-  expect_error(later_fd(identity, loop = loop), "CallbackRegistry does not exist")
+  expect_snapshot(error = TRUE, later_fd(identity, loop = loop))
 
 })

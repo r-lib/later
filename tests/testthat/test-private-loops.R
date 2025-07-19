@@ -54,8 +54,8 @@ test_that("Private event loops", {
   expect_false(exists_loop(l))
 
   # Can't run later-y things with destroyed loop
-  expect_error(with_loop(l, later(function() message("foo"))))
-  expect_error(with_loop(l, run_now()))
+  expect_snapshot(error = TRUE, with_loop(l, later(function() message("foo"))))
+  expect_snapshot(error = TRUE, with_loop(l, run_now()))
 
   # GC with functions in destroyed loops, even if callback isn't executed.
   l <- create_loop(parent = NULL)
@@ -106,7 +106,7 @@ test_that("Private event loops", {
 
 
   # Can't destroy global loop
-  expect_error(destroy_loop(global_loop()))
+  expect_snapshot(error = TRUE, destroy_loop(global_loop()))
 })
 
 
@@ -120,7 +120,7 @@ test_that("Temporary event loops", {
   })
 
   expect_false(exists_loop(l))
-  expect_error(with_loop(l, {
+  expect_snapshot(error = TRUE, with_loop(l, {
     later(function() x <<- x + 1 )
     run_now()
   }))

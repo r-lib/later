@@ -52,7 +52,7 @@ test_that("run_now executes just one scheduled task, if requested", {
 test_that("run_now doesn't go past a failed task", {
   later::later(~stop("boom"), 0)
   later::later(~{}, 0)
-  expect_error(later::run_now())
+  expect_snapshot(error = TRUE, later::run_now())
   expect_true(later::run_now())
 })
 
@@ -77,7 +77,7 @@ test_that("When callbacks have tied timestamps, they respect order of creation",
   # Skip due to false positives on UBSAN
   skip_if(using_ubsan())
 
-  expect_error(testCallbackOrdering(), NA)
+  expect_snapshot(testCallbackOrdering())
 
   Rcpp::sourceCpp(code = '
     #include <Rcpp.h>
@@ -146,7 +146,7 @@ test_that("Callbacks cannot affect the caller", {
     run_now(1)
   }
   expect_equal(f(), 200)
-  expect_error(g())
+  expect_snapshot(error = TRUE, g())
 })
 
 
