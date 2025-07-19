@@ -9,6 +9,7 @@ on:
     branches: [main]
   schedule:
     - cron:  '0 5 * * 1' # every monday
+  workflow_dispatch:
 
 name: Package checks
 
