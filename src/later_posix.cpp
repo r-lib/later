@@ -38,12 +38,12 @@ static int dummy_pipe_out = -1;
 static bool hot = false;
 // This mutex protects reading/writing of `hot` and of reading from/writing to
 // the pipe.
-Mutex m(tct_mtx_plain);
+static Mutex m(tct_mtx_plain);
 
 // The buffer we're using for the pipe. This doesn't have to be large,
 // in theory it only ever holds zero or one byte.
-size_t BUF_SIZE = 256;
-void *buf;
+static size_t BUF_SIZE = 256;
+static void *buf;
 
 void set_fd(bool ready) {
   Guard g(&m);
@@ -142,8 +142,8 @@ static void async_input_handler(void *data) {
   }
 }
 
-InputHandler* inputHandlerHandle;
-InputHandler* dummyInputHandlerHandle;
+static InputHandler* inputHandlerHandle;
+static InputHandler* dummyInputHandlerHandle;
 
 // If the real input handler has been removed, the dummy input handler removes
 // itself. The real input handler cannot remove both; otherwise a segfault
