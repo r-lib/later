@@ -1,4 +1,4 @@
-jitter <- 0.017*2 # Compensate for imprecision in system timer
+jitter <- 0.017 * 2 # Compensate for imprecision in system timer
 
 test_that("run_now waits and returns FALSE if no tasks", {
   x <- system.time({
@@ -16,7 +16,7 @@ test_that("run_now waits and returns FALSE if no tasks", {
 
 test_that("run_now returns immediately after executing a task", {
   x <- system.time({
-    later::later(~{}, 0)
+    later::later(~ {}, 0)
     result <- later::run_now(2)
   })
   expect_lt(as.numeric(x[["elapsed"]]), 0.25)
@@ -24,8 +24,8 @@ test_that("run_now returns immediately after executing a task", {
 })
 
 test_that("run_now executes all scheduled tasks, not just one", {
-  later::later(~{}, 0)
-  later::later(~{}, 0)
+  later::later(~ {}, 0)
+  later::later(~ {}, 0)
   result1 <- later::run_now()
   result2 <- later::run_now()
   expect_identical(result1, TRUE)
@@ -36,8 +36,8 @@ test_that("run_now executes just one scheduled task, if requested", {
   result1 <- later::run_now()
   expect_identical(result1, FALSE)
 
-  later::later(~{}, 0)
-  later::later(~{}, 0)
+  later::later(~ {}, 0)
+  later::later(~ {}, 0)
 
   result2 <- later::run_now(all = FALSE)
   expect_identical(result2, TRUE)
@@ -50,8 +50,8 @@ test_that("run_now executes just one scheduled task, if requested", {
 })
 
 test_that("run_now doesn't go past a failed task", {
-  later::later(~stop("boom"), 0)
-  later::later(~{}, 0)
+  later::later(~ stop("boom"), 0)
+  later::later(~ {}, 0)
   expect_snapshot(error = TRUE, later::run_now())
   expect_true(later::run_now())
 })
@@ -79,7 +79,8 @@ test_that("When callbacks have tied timestamps, they respect order of creation",
 
   expect_snapshot(testCallbackOrdering())
 
-  Rcpp::sourceCpp(code = '
+  Rcpp::sourceCpp(
+    code = '
     #include <Rcpp.h>
     #include <later_api.h>
 
@@ -100,8 +101,12 @@ test_that("When callbacks have tied timestamps, they respect order of creation",
         later::later(callback, (void*)i, 0);
       }
     }
-    ')
-  checkLaterOrdering(); while (!later::loop_empty()) later::run_now()
+    '
+  )
+  checkLaterOrdering()
+  while (!later::loop_empty()) {
+    later::run_now()
+  }
 })
 
 
@@ -111,18 +116,21 @@ test_that("Callbacks cannot affect the caller", {
   # early. (This test does not involve later.)
   f <- function() {
     delayedAssign("throw", return(100))
-    g <- function() { throw }
+    g <- function() {
+      throw
+    }
     g()
     return(200)
   }
   expect_equal(f(), 100)
 
-
   # When later runs callbacks, it wraps the call in R_ToplevelExec(), which
   # creates a boundary on the call stack that the early return can't cross.
   f <- function() {
     delayedAssign("throw", return(100))
-    later(function() { throw })
+    later(function() {
+      throw
+    })
 
     run_now(1)
     return(200)
@@ -133,13 +141,17 @@ test_that("Callbacks cannot affect the caller", {
   # expect_error(f())
   expect_identical(f(), 100)
 
-
   # In this case, f() should return normally, and then when g() causes later to
   # run the callback with `throw`, it should be an error -- there's no function
   # to return from because it (f()) already returned.
   f <- function() {
     delayedAssign("throw", return(100))
-    later(function() { throw }, 0.5)
+    later(
+      function() {
+        throw
+      },
+      0.5
+    )
     return(200)
   }
   g <- function() {
@@ -148,7 +160,6 @@ test_that("Callbacks cannot affect the caller", {
   expect_equal(f(), 200)
   expect_snapshot(error = TRUE, g())
 })
-
 
 
 test_that("interrupt and exception handling, R", {
@@ -160,7 +171,9 @@ test_that("interrupt and exception handling, R", {
   error_obj <- FALSE
   tryCatch(
     {
-      later(function() { stop("oopsie") })
+      later(function() {
+        stop("oopsie")
+      })
       run_now()
     },
     error = function(e) {
@@ -173,7 +186,10 @@ test_that("interrupt and exception handling, R", {
   interrupted <- FALSE
   tryCatch(
     {
-      later(function() {rlang::interrupt(); Sys.sleep(100) })
+      later(function() {
+        rlang::interrupt()
+        Sys.sleep(100)
+      })
       run_now()
     },
     interrupt = function(e) {
@@ -266,42 +282,60 @@ test_that("interrupt and exception handling, C++", {
 
   errored <- FALSE
   tryCatch(
-    { cpp_error(1); run_now() },
+    {
+      cpp_error(1)
+      run_now()
+    },
     error = function(e) errored <<- TRUE
   )
   expect_true(errored)
 
   errored <- FALSE
   tryCatch(
-    { cpp_error(2); run_now() },
+    {
+      cpp_error(2)
+      run_now()
+    },
     error = function(e) errored <<- TRUE
   )
   expect_true(errored)
 
   errored <- FALSE
   tryCatch(
-    { cpp_error(5); run_now() },
+    {
+      cpp_error(5)
+      run_now()
+    },
     error = function(e) errored <<- TRUE
   )
   expect_true(errored)
 
   errored <- FALSE
   tryCatch(
-    { cpp_error(6); run_now() },
+    {
+      cpp_error(6)
+      run_now()
+    },
     error = function(e) errored <<- TRUE
   )
   expect_true(errored)
 
   interrupted <- FALSE
   tryCatch(
-    { cpp_error(3); run_now() },
+    {
+      cpp_error(3)
+      run_now()
+    },
     interrupt = function(e) interrupted <<- TRUE
   )
   expect_true(interrupted)
 
   interrupted <- FALSE
   tryCatch(
-    { cpp_error(4); run_now() },
+    {
+      cpp_error(4)
+      run_now()
+    },
     interrupt = function(e) interrupted <<- TRUE
   )
   expect_true(interrupted)

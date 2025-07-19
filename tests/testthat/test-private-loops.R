@@ -9,11 +9,20 @@ describe("Private event loop", {
 
   it("runs only its own tasks", {
     x <- 0
-    later(~{x <<- 1}, 0)
+    later(
+      ~ {
+        x <<- 1
+      },
+      0
+    )
     with_temp_loop({
       expect_true(loop_empty())
 
-      later(~{x <<- 2})
+      later(
+        ~ {
+          x <<- 2
+        }
+      )
       run_now()
 
       expect_identical(x, 2)
@@ -25,7 +34,6 @@ describe("Private event loop", {
 })
 
 
-
 test_that("Private event loops", {
   l <- create_loop(parent = NULL)
   x <- 0
@@ -33,17 +41,17 @@ test_that("Private event loops", {
   expect_true(exists_loop(l))
 
   with_loop(l, {
-    later(function() x <<- x + 1 )
+    later(function() x <<- x + 1)
     run_now()
   })
   expect_equal(x, 1)
 
   with_loop(l, {
-    later(function() x <<- x + 1 )
+    later(function() x <<- x + 1)
     run_now()
 
-    later(function() x <<- x + 1 )
-    later(function() x <<- x + 1 )
+    later(function() x <<- x + 1)
+    later(function() x <<- x + 1)
   })
   expect_equal(x, 2)
 
@@ -64,7 +72,7 @@ test_that("Private event loops", {
   with_loop(l, {
     later(
       local({
-        reg.finalizer(environment(), function(e) x <<-x + 1)
+        reg.finalizer(environment(), function(e) x <<- x + 1)
         function() message("foo")
       })
     )
@@ -76,7 +84,6 @@ test_that("Private event loops", {
   gc()
   expect_identical(x, 1)
 
-
   # A GC'd loop object will cause its queue to be deleted, which will allow GC
   # of any resources
   l <- create_loop(parent = NULL)
@@ -85,7 +92,7 @@ test_that("Private event loops", {
   with_loop(l, {
     later(
       local({
-        reg.finalizer(environment(), function(e) x <<-x + 1)
+        reg.finalizer(environment(), function(e) x <<- x + 1)
         function() message("foo")
       })
     )
@@ -104,7 +111,6 @@ test_that("Private event loops", {
   gc()
   expect_identical(x, 1)
 
-
   # Can't destroy global loop
   expect_snapshot(error = TRUE, destroy_loop(global_loop()))
 })
@@ -115,15 +121,18 @@ test_that("Temporary event loops", {
   x <- 0
   with_temp_loop({
     l <- current_loop()
-    later(function() x <<- x + 1 )
+    later(function() x <<- x + 1)
     run_now()
   })
 
   expect_false(exists_loop(l))
-  expect_snapshot(error = TRUE, with_loop(l, {
-    later(function() x <<- x + 1 )
-    run_now()
-  }))
+  expect_snapshot(
+    error = TRUE,
+    with_loop(l, {
+      later(function() x <<- x + 1)
+      run_now()
+    })
+  )
 
   # Test GC
   # Make sure that items captured in later callbacks are GC'd after the callback
@@ -132,7 +141,7 @@ test_that("Temporary event loops", {
   with_temp_loop({
     later(
       local({
-        reg.finalizer(environment(), function(e) x <<-x + 1)
+        reg.finalizer(environment(), function(e) x <<- x + 1)
         function() 1
       })
     )
@@ -149,7 +158,7 @@ test_that("Temporary event loops", {
   with_temp_loop({
     later(
       local({
-        reg.finalizer(environment(), function(e) x <<-x + 1)
+        reg.finalizer(environment(), function(e) x <<- x + 1)
         function() 1
       })
     )
@@ -158,7 +167,7 @@ test_that("Temporary event loops", {
     later(
       local({
         e <- environment()
-        reg.finalizer(environment(), function(e) x <<-x + 1)
+        reg.finalizer(environment(), function(e) x <<- x + 1)
         function() 1
       })
     )
@@ -189,7 +198,9 @@ test_that("Can't destroy current loop", {
       # instead to check that an error occurs.
       tryCatch(
         destroy_loop(current_loop()),
-        error = function(e) { errored <<- TRUE }
+        error = function(e) {
+          errored <<- TRUE
+        }
       )
     })
     run_now()
@@ -201,7 +212,9 @@ test_that("Can't destroy current loop", {
 test_that("Can't GC current loop", {
   collected <- FALSE
   l <- create_loop()
-  reg.finalizer(l, function(x) { collected <<- TRUE })
+  reg.finalizer(l, function(x) {
+    collected <<- TRUE
+  })
   with_loop(l, {
     rm(l, inherits = TRUE)
     gc()
@@ -216,7 +229,12 @@ test_that("Can't GC current loop", {
 test_that("When auto-running a child loop, it will be reported as current_loop()", {
   l <- create_loop(parent = global_loop())
   x <- NULL
-  later(function() { x <<- current_loop() }, loop = l)
+  later(
+    function() {
+      x <<- current_loop()
+    },
+    loop = l
+  )
   run_now(loop = global_loop())
   expect_identical(x, l)
 })
@@ -228,7 +246,9 @@ test_that("CallbackRegistry exists until its callbacks are run", {
   # when the R loop handle is GC'd AND the CallbackRegistry contains no more
   # callbacks.
   x <- 0
-  callback <- function() { x <<- x + 1 }
+  callback <- function() {
+    x <<- x + 1
+  }
   local({
     l <- create_loop()
     later(callback, loop = l)
@@ -239,11 +259,11 @@ test_that("CallbackRegistry exists until its callbacks are run", {
 })
 
 test_that("Auto-running grandchildren loops", {
-  l1_ran  <- FALSE
+  l1_ran <- FALSE
   l11_ran <- FALSE
   l12_ran <- FALSE
   l13_ran <- FALSE
-  l2_ran  <- FALSE
+  l2_ran <- FALSE
   l21_ran <- FALSE
   l22_ran <- FALSE
   l23_ran <- FALSE
@@ -286,7 +306,7 @@ test_that("Auto-running grandchildren loops", {
 })
 
 test_that("Grandchildren loops whose parent is destroyed should not autorun", {
-  l_ran  <- 0
+  l_ran <- 0
   l1_ran <- 0
   l <- create_loop()
 
@@ -309,7 +329,8 @@ test_that("Grandchildren loops whose parent is destroyed should not autorun", {
   # Schedule another function that we don't expect to actually run.
   # Use finalizer to keep
   l1_finalized <- FALSE
-  later(local({
+  later(
+    local({
       reg.finalizer(environment(), function(e) l1_finalized <<- TRUE)
       function() l1_ran <<- l1_ran + 1
     }),
@@ -339,7 +360,7 @@ test_that("Removing parent loop allows loop to be deleted", {
   with_loop(l1, {
     later(
       local({
-        reg.finalizer(environment(), function(e) x <<-x + 1)
+        reg.finalizer(environment(), function(e) x <<- x + 1)
         function() NULL
       })
     )
@@ -368,17 +389,28 @@ test_that("Removing parent loop allows loop to be deleted", {
 
 test_that("Interrupt while running in private loop won't result in stuck loop", {
   l <- create_loop()
-  later(function() { rlang::interrupt() }, loop = l)
-  tryCatch({
-    run_now(loop = l)
-  }, interrupt = function(e) NULL)
+  later(
+    function() {
+      rlang::interrupt()
+    },
+    loop = l
+  )
+  tryCatch(
+    {
+      run_now(loop = l)
+    },
+    interrupt = function(e) NULL
+  )
   expect_identical(current_loop(), global_loop())
 
-  tryCatch({
-    with_loop(l, {
-      rlang::interrupt()
-    })
-  }, interrupt = function(e) NULL)
+  tryCatch(
+    {
+      with_loop(l, {
+        rlang::interrupt()
+      })
+    },
+    interrupt = function(e) NULL
+  )
   expect_identical(current_loop(), global_loop())
 })
 
@@ -386,7 +418,7 @@ test_that("Interrupt while running in private loop won't result in stuck loop", 
 test_that("list_queue", {
   l <- create_loop(parent = NULL)
   q <- NULL
-  f <- function() 1  # A dummy function
+  f <- function() 1 # A dummy function
 
   with_loop(l, {
     later(f)

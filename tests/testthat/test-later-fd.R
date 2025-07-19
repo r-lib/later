@@ -77,7 +77,6 @@ test_that("later_fd", {
   expect_equal(result, logical())
 
   on.exit()
-
 })
 
 test_that("loop_empty() reflects later_fd callbacks", {
@@ -92,23 +91,20 @@ test_that("loop_empty() reflects later_fd callbacks", {
 
   expect_true(loop_empty())
 
-  cancel <- later_fd(~{}, fd1)
+  cancel <- later_fd(~ {}, fd1)
   expect_false(loop_empty())
   cancel()
   Sys.sleep(1.25) # check for cancellation happens every ~1 sec
   expect_true(loop_empty())
 
-  later_fd(~{}, fd1, timeout = 0)
+  later_fd(~ {}, fd1, timeout = 0)
   expect_false(loop_empty())
   run_now(1)
   expect_true(loop_empty())
-
 })
 
 test_that("later_fd() errors when passed destroyed loops", {
-
   loop <- create_loop()
   destroy_loop(loop)
   expect_snapshot(error = TRUE, later_fd(identity, loop = loop))
-
 })
