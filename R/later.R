@@ -84,7 +84,9 @@ create_loop <- function(parent = current_loop(), autorun = NULL) {
     # This is for backward compatibility, if `create_loop(FALSE)` is called.
     # (Previously the first and only parameter was `autorun`.)
     parent <- NULL
-    warning("create_loop(FALSE) is deprecated. Please use create_loop(parent=NULL) from now on.")
+    warning(
+      "create_loop(FALSE) is deprecated. Please use create_loop(parent=NULL) from now on."
+    )
   }
   if (!is.null(parent) && !inherits(parent, "event_loop")) {
     stop("`parent` must be NULL or an event_loop object.")
@@ -352,8 +354,14 @@ create_canceller <- function(id, loop_id) {
 #' run_now()
 #'
 #' @export
-later_fd <- function(func, readfds = integer(), writefds = integer(), exceptfds = integer(),
-                     timeout = Inf, loop = current_loop()) {
+later_fd <- function(
+  func,
+  readfds = integer(),
+  writefds = integer(),
+  exceptfds = integer(),
+  timeout = Inf,
+  loop = current_loop()
+) {
   if (!is.function(func)) {
     func <- rlang::as_function(func)
   }
@@ -402,8 +410,9 @@ run_now <- function(timeoutSecs = 0L, all = TRUE, loop = current_loop()) {
     timeoutSecs <- -1
   }
 
-  if (!is.numeric(timeoutSecs))
+  if (!is.numeric(timeoutSecs)) {
     stop("timeoutSecs must be numeric")
+  }
 
   invisible(execCallbacks(timeoutSecs, all, loop$id))
 }

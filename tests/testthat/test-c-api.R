@@ -1,5 +1,3 @@
-context("C++ API")
-
 test_that("header and DLL API versions match", {
   Rcpp::cppFunction(
     code = '
