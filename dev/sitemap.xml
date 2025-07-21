@@ -1,0 +1,21 @@
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>https://r-lib.github.io/later/dev/CODE_OF_CONDUCT.html</loc></url>
+<url><loc>https://r-lib.github.io/later/dev/LICENSE-text.html</loc></url>
+<url><loc>https://r-lib.github.io/later/dev/LICENSE.html</loc></url>
+<url><loc>https://r-lib.github.io/later/dev/articles/index.html</loc></url>
+<url><loc>https://r-lib.github.io/later/dev/articles/later-cpp.html</loc></url>
+<url><loc>https://r-lib.github.io/later/dev/authors.html</loc></url>
+<url><loc>https://r-lib.github.io/later/dev/index.html</loc></url>
+<url><loc>https://r-lib.github.io/later/dev/news/index.html</loc></url>
+<url><loc>https://r-lib.github.io/later/dev/reference/create_loop.html</loc></url>
+<url><loc>https://r-lib.github.io/later/dev/reference/index.html</loc></url>
+<url><loc>https://r-lib.github.io/later/dev/reference/later-package.html</loc></url>
+<url><loc>https://r-lib.github.io/later/dev/reference/later.html</loc></url>
+<url><loc>https://r-lib.github.io/later/dev/reference/later_fd.html</loc></url>
+<url><loc>https://r-lib.github.io/later/dev/reference/list_queue.html</loc></url>
+<url><loc>https://r-lib.github.io/later/dev/reference/logLevel.html</loc></url>
+<url><loc>https://r-lib.github.io/later/dev/reference/loop_empty.html</loc></url>
+<url><loc>https://r-lib.github.io/later/dev/reference/next_op_secs.html</loc></url>
+<url><loc>https://r-lib.github.io/later/dev/reference/run_now.html</loc></url>
+</urlset>
+
