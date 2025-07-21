@@ -6,7 +6,7 @@
 #include "callback_registry.h"
 #include "debug.h"
 
-std::atomic<uint64_t> nextCallbackId(1);
+static std::atomic<uint64_t> nextCallbackId(1);
 
 // ============================================================================
 // Invoke functions
@@ -21,8 +21,8 @@ enum InvokeResult {
 };
 
 // This is set by invoke_c(). I
-InvokeResult last_invoke_result;
-std::string last_invoke_message;
+static InvokeResult last_invoke_result;
+static std::string last_invoke_message;
 
 // A wrapper for calling R_CheckUserInterrupt via R_ToplevelExec.
 void checkInterruptFn(void*) {

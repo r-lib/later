@@ -12,16 +12,16 @@
 using namespace Rcpp;
 
 // Whether we have initialized the message-only window.
-int initialized = 0;
+static int initialized = 0;
 
 // The handle to the message-only window
-HWND hwnd;
+static HWND hwnd;
 
 // The ID of the timer
-UINT_PTR TIMER_ID = 1;
+static UINT_PTR TIMER_ID = 1;
 
 // The window message we use to run SetTimer on the main thread
-const UINT WM_SETUPTIMER = WM_USER + 101;
+static const UINT WM_SETUPTIMER = WM_USER + 101;
 
 static void setupTimer() {
   if (!SetTimer(hwnd, TIMER_ID, USER_TIMER_MINIMUM, NULL)) {
