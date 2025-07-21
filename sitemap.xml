@@ -1,5 +1,6 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://r-lib.github.io/later/404.html</loc></url>
+<url><loc>https://r-lib.github.io/later/CODE_OF_CONDUCT.html</loc></url>
 <url><loc>https://r-lib.github.io/later/LICENSE-text.html</loc></url>
 <url><loc>https://r-lib.github.io/later/LICENSE.html</loc></url>
 <url><loc>https://r-lib.github.io/later/articles/index.html</loc></url>
@@ -9,6 +10,7 @@
 <url><loc>https://r-lib.github.io/later/news/index.html</loc></url>
 <url><loc>https://r-lib.github.io/later/reference/create_loop.html</loc></url>
 <url><loc>https://r-lib.github.io/later/reference/index.html</loc></url>
+<url><loc>https://r-lib.github.io/later/reference/later-package.html</loc></url>
 <url><loc>https://r-lib.github.io/later/reference/later.html</loc></url>
 <url><loc>https://r-lib.github.io/later/reference/later_fd.html</loc></url>
 <url><loc>https://r-lib.github.io/later/reference/list_queue.html</loc></url>
