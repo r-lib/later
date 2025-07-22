@@ -19,7 +19,7 @@ Description: Executes arbitrary R or C functions some time after the
     current time, after the R execution stack has emptied. The functions
     are scheduled in an event loop.
 License: MIT + file LICENSE
-URL: https://r-lib.github.io/later/, https://github.com/r-lib/later
+URL: https://later.r-lib.org, https://github.com/r-lib/later
 BugReports: https://github.com/r-lib/later/issues
 Imports:
     Rcpp (>= 0.12.9),
