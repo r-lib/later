@@ -10,7 +10,7 @@ Executes arbitrary R or C functions some time after the current time, after the 
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://r-lib.github.io/later/}
+  \item \url{https://later.r-lib.org}
   \item \url{https://github.com/r-lib/later}
   \item Report bugs at \url{https://github.com/r-lib/later/issues}
 }

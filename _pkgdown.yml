@@ -1,4 +1,4 @@
-url: https://r-lib.github.io/later/
+url: https://later.r-lib.org/
 template:
   package: tidytemplate
   bootstrap: 5
