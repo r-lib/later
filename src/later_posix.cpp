@@ -99,7 +99,7 @@ static void async_input_handler(void *data) {
     // Instead, we set the file descriptor to cold, and tell the timer to fire
     // again in a few milliseconds. This should give enough breathing room that
     // we don't interfere with the sockets too much.
-    timer.set(Timestamp(0.032));
+    timer.set(Timestamp(0.0));
     return;
   }
 
