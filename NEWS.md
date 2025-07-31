@@ -1,6 +1,8 @@
 # later (development version)
 
-* Set file-level variables as `static` to avoid triggering `-Wmissing-variable-declarations` (@michaelchirico)
+* Fixed #167: `.Random.seed` is no longer affected when the package is loaded (#220).
+
+* Set file-level variables as `static` to avoid triggering `-Wmissing-variable-declarations` (@michaelchirico, #163).
 
 # later 1.4.2
 

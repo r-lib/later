@@ -15,7 +15,6 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 void testCallbackOrdering();
 RcppExport SEXP _later_testCallbackOrdering() {
 BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
     testCallbackOrdering();
     return R_NilValue;
 END_RCPP
@@ -25,7 +24,6 @@ std::string log_level(std::string level);
 RcppExport SEXP _later_log_level(SEXP levelSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type level(levelSEXP);
     rcpp_result_gen = Rcpp::wrap(log_level(level));
     return rcpp_result_gen;
@@ -36,7 +34,6 @@ bool using_ubsan();
 RcppExport SEXP _later_using_ubsan() {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     rcpp_result_gen = Rcpp::wrap(using_ubsan());
     return rcpp_result_gen;
 END_RCPP
@@ -46,7 +43,6 @@ Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds,
 RcppExport SEXP _later_execLater_fd(SEXP callbackSEXP, SEXP readfdsSEXP, SEXP writefdsSEXP, SEXP exceptfdsSEXP, SEXP timeoutSecsSEXP, SEXP loop_idSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::Function >::type callback(callbackSEXP);
     Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type readfds(readfdsSEXP);
     Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type writefds(writefdsSEXP);
@@ -62,7 +58,6 @@ Rcpp::LogicalVector fd_cancel(Rcpp::RObject xptr);
 RcppExport SEXP _later_fd_cancel(SEXP xptrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::RObject >::type xptr(xptrSEXP);
     rcpp_result_gen = Rcpp::wrap(fd_cancel(xptr));
     return rcpp_result_gen;
@@ -72,7 +67,6 @@ END_RCPP
 void setCurrentRegistryId(int id);
 RcppExport SEXP _later_setCurrentRegistryId(SEXP idSEXP) {
 BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type id(idSEXP);
     setCurrentRegistryId(id);
     return R_NilValue;
@@ -83,7 +77,6 @@ int getCurrentRegistryId();
 RcppExport SEXP _later_getCurrentRegistryId() {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     rcpp_result_gen = Rcpp::wrap(getCurrentRegistryId());
     return rcpp_result_gen;
 END_RCPP
@@ -93,7 +86,6 @@ bool deleteCallbackRegistry(int loop_id);
 RcppExport SEXP _later_deleteCallbackRegistry(SEXP loop_idSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type loop_id(loop_idSEXP);
     rcpp_result_gen = Rcpp::wrap(deleteCallbackRegistry(loop_id));
     return rcpp_result_gen;
@@ -104,7 +96,6 @@ bool notifyRRefDeleted(int loop_id);
 RcppExport SEXP _later_notifyRRefDeleted(SEXP loop_idSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type loop_id(loop_idSEXP);
     rcpp_result_gen = Rcpp::wrap(notifyRRefDeleted(loop_id));
     return rcpp_result_gen;
@@ -114,7 +105,6 @@ END_RCPP
 void createCallbackRegistry(int id, int parent_id);
 RcppExport SEXP _later_createCallbackRegistry(SEXP idSEXP, SEXP parent_idSEXP) {
 BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type id(idSEXP);
     Rcpp::traits::input_parameter< int >::type parent_id(parent_idSEXP);
     createCallbackRegistry(id, parent_id);
@@ -126,7 +116,6 @@ bool existsCallbackRegistry(int id);
 RcppExport SEXP _later_existsCallbackRegistry(SEXP idSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type id(idSEXP);
     rcpp_result_gen = Rcpp::wrap(existsCallbackRegistry(id));
     return rcpp_result_gen;
@@ -137,7 +126,6 @@ Rcpp::List list_queue_(int id);
 RcppExport SEXP _later_list_queue_(SEXP idSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type id(idSEXP);
     rcpp_result_gen = Rcpp::wrap(list_queue_(id));
     return rcpp_result_gen;
@@ -148,7 +136,6 @@ bool execCallbacks(double timeoutSecs, bool runAll, int loop_id);
 RcppExport SEXP _later_execCallbacks(SEXP timeoutSecsSEXP, SEXP runAllSEXP, SEXP loop_idSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< double >::type timeoutSecs(timeoutSecsSEXP);
     Rcpp::traits::input_parameter< bool >::type runAll(runAllSEXP);
     Rcpp::traits::input_parameter< int >::type loop_id(loop_idSEXP);
@@ -161,7 +148,6 @@ bool idle(int loop_id);
 RcppExport SEXP _later_idle(SEXP loop_idSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type loop_id(loop_idSEXP);
     rcpp_result_gen = Rcpp::wrap(idle(loop_id));
     return rcpp_result_gen;
@@ -171,7 +157,6 @@ END_RCPP
 void ensureInitialized();
 RcppExport SEXP _later_ensureInitialized() {
 BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
     ensureInitialized();
     return R_NilValue;
 END_RCPP
@@ -181,7 +166,6 @@ std::string execLater(Rcpp::Function callback, double delaySecs, int loop_id);
 RcppExport SEXP _later_execLater(SEXP callbackSEXP, SEXP delaySecsSEXP, SEXP loop_idSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::Function >::type callback(callbackSEXP);
     Rcpp::traits::input_parameter< double >::type delaySecs(delaySecsSEXP);
     Rcpp::traits::input_parameter< int >::type loop_id(loop_idSEXP);
@@ -194,7 +178,6 @@ bool cancel(std::string callback_id_s, int loop_id);
 RcppExport SEXP _later_cancel(SEXP callback_id_sSEXP, SEXP loop_idSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type callback_id_s(callback_id_sSEXP);
     Rcpp::traits::input_parameter< int >::type loop_id(loop_idSEXP);
     rcpp_result_gen = Rcpp::wrap(cancel(callback_id_s, loop_id));
@@ -206,7 +189,6 @@ double nextOpSecs(int loop_id);
 RcppExport SEXP _later_nextOpSecs(SEXP loop_idSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type loop_id(loop_idSEXP);
     rcpp_result_gen = Rcpp::wrap(nextOpSecs(loop_id));
     return rcpp_result_gen;

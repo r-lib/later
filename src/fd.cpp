@@ -171,7 +171,7 @@ static int execLater_fd_native(void (*func)(int *, void *), void *data, int num_
 
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds, Rcpp::IntegerVector writefds,
                            Rcpp::IntegerVector exceptfds, Rcpp::NumericVector timeoutSecs, Rcpp::IntegerVector loop_id) {
 
@@ -209,7 +209,7 @@ Rcpp::RObject execLater_fd(Rcpp::Function callback, Rcpp::IntegerVector readfds,
 
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 Rcpp::LogicalVector fd_cancel(Rcpp::RObject xptr) {
 
   Rcpp::XPtr<std::shared_ptr<std::atomic<bool>>> active(xptr);

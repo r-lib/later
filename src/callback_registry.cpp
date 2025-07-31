@@ -215,7 +215,7 @@ Rcpp::RObject RcppFunctionCallback::rRepresentation() const {
 // CallbackRegistry
 // ============================================================================
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 void testCallbackOrdering() {
   std::vector<StdFunctionCallback> callbacks;
   Timestamp ts;

@@ -38,7 +38,7 @@ LogLevel log_level_ = LOG_ERROR;
 
 
 // Sets the current log level and returns previous value.
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 std::string log_level(std::string level) {
   LogLevel old_level = log_level_;
 
@@ -69,7 +69,7 @@ std::string log_level(std::string level) {
 }
 
 // Reports whether package was compiled with UBSAN
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 bool using_ubsan() {
 #ifdef USING_UBSAN
   return true;

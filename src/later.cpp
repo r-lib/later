@@ -86,13 +86,13 @@ bool at_top_level() {
 
 static int current_registry;
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 void setCurrentRegistryId(int id) {
   ASSERT_MAIN_THREAD()
   current_registry = id;
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 int getCurrentRegistryId() {
   ASSERT_MAIN_THREAD()
   return current_registry;
@@ -131,7 +131,7 @@ shared_ptr<CallbackRegistry> getGlobalRegistry() {
 // parent. Any children of this registry are orphaned -- they no longer have a
 // parent. (Maybe this should be an option?)
 //
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 bool deleteCallbackRegistry(int loop_id) {
   ASSERT_MAIN_THREAD()
   if (loop_id == GLOBAL_LOOP) {
@@ -146,7 +146,7 @@ bool deleteCallbackRegistry(int loop_id) {
 
 
 // This is called when the R loop handle is GC'd.
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 bool notifyRRefDeleted(int loop_id) {
   ASSERT_MAIN_THREAD()
   if (loop_id == GLOBAL_LOOP) {
@@ -160,19 +160,19 @@ bool notifyRRefDeleted(int loop_id) {
 }
 
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 void createCallbackRegistry(int id, int parent_id) {
   ASSERT_MAIN_THREAD()
   callbackRegistryTable.create(id, parent_id);
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 bool existsCallbackRegistry(int id) {
   ASSERT_MAIN_THREAD()
   return callbackRegistryTable.exists(id);
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 Rcpp::List list_queue_(int id) {
   ASSERT_MAIN_THREAD()
   shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(id);
@@ -230,7 +230,7 @@ bool execCallbacksOne(
 }
 
 // Execute callbacks for an event loop and its children.
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 bool execCallbacks(double timeoutSecs, bool runAll, int loop_id) {
   ASSERT_MAIN_THREAD()
   shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(loop_id);
@@ -275,7 +275,7 @@ bool execCallbacksForTopLevel() {
   return any;
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 bool idle(int loop_id) {
   ASSERT_MAIN_THREAD()
   shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(loop_id);
@@ -287,7 +287,7 @@ bool idle(int loop_id) {
 
 
 static bool initialized = false;
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 void ensureInitialized() {
   if (initialized) {
     return;
@@ -304,7 +304,7 @@ void ensureInitialized() {
   initialized = true;
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 std::string execLater(Rcpp::Function callback, double delaySecs, int loop_id) {
   ASSERT_MAIN_THREAD()
   ensureInitialized();
@@ -330,7 +330,7 @@ bool cancel(uint64_t callback_id, int loop_id) {
   return registry->cancel(callback_id);
 }
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 bool cancel(std::string callback_id_s, int loop_id) {
   ASSERT_MAIN_THREAD()
   uint64_t callback_id;
@@ -348,7 +348,7 @@ bool cancel(std::string callback_id_s, int loop_id) {
 
 
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 double nextOpSecs(int loop_id) {
   ASSERT_MAIN_THREAD()
   shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(loop_id);
