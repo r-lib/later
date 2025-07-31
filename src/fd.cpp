@@ -27,7 +27,6 @@ public:
     if (registry == nullptr)
       throw std::runtime_error("CallbackRegistry does not exist.");
 
-    // increment fd_waits at registry (paired with decr in destructor) for loop_empty()
     registry->fd_waits_incr();
   }
 
@@ -55,7 +54,6 @@ public:
   }
 
   ~ThreadArgs() {
-    // decrement fd_waits at registry (paired with incr in constructor) for loop_empty()
     registry->fd_waits_decr();
   }
 
@@ -112,8 +110,6 @@ static int wait_thread(void *arg) {
   std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
   std::shared_ptr<ThreadArgs> args = *argsptr;
 
-  // poll() whilst checking for cancellation at intervals
-
   int ready;
   double waitFor = std::fmax(args->timeout.diff_secs(Timestamp()), 0);
   do {
@@ -123,8 +119,6 @@ static int wait_thread(void *arg) {
     if (!args->active->load()) return 1;
     if (ready) break;
   } while ((waitFor = args->timeout.diff_secs(Timestamp())) > 0);
-
-  // store pollfd revents in args->results for use by callback
 
   if (ready > 0) {
     for (std::size_t i = 0; i < args->fds.size(); i++) {
