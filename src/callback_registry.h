@@ -3,6 +3,7 @@
 
 #include <Rcpp.h>
 #include <queue>
+#include <atomic>
 #include <functional>
 #include <memory>
 #include "timestamp.h"
@@ -115,7 +116,7 @@ private:
   // objects to be copied on the wrong thread, and even trigger an R GC event
   // on the wrong thread. https://github.com/r-lib/later/issues/39
   cbSet queue;
-  int fd_waits = 0;
+  std::atomic<int> fd_waits{};
   Mutex* mutex;
   ConditionVariable* condvar;
 
