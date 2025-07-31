@@ -61,8 +61,6 @@ wref_key <- function(w) {
 #'
 #' @param loop A handle to an event loop.
 #' @param expr An expression to evaluate.
-#' @param autorun This exists only for backward compatibility. If set to
-#'   \code{FALSE}, it is equivalent to using \code{parent=NULL}.
 #' @param parent The parent event loop for the one being created. Whenever the
 #'   parent loop runs, this loop will also automatically run, without having to
 #'   manually call \code{\link{run_now}()} on this loop. If \code{NULL}, then
@@ -72,22 +70,10 @@ wref_key <- function(w) {
 #' @rdname create_loop
 #'
 #' @export
-create_loop <- function(parent = current_loop(), autorun = NULL) {
+create_loop <- function(parent = current_loop()) {
   id <- .globals$next_id
   .globals$next_id <- id + 1L
 
-  if (!is.null(autorun)) {
-    # This is for backward compatibility, if `create_loop(autorun=FALSE)` is called.
-    parent <- NULL
-  }
-  if (identical(parent, FALSE)) {
-    # This is for backward compatibility, if `create_loop(FALSE)` is called.
-    # (Previously the first and only parameter was `autorun`.)
-    parent <- NULL
-    warning(
-      "create_loop(FALSE) is deprecated. Please use create_loop(parent=NULL) from now on."
-    )
-  }
   if (!is.null(parent) && !inherits(parent, "event_loop")) {
     stop("`parent` must be NULL or an event_loop object.")
   }
