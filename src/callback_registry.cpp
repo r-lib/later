@@ -191,7 +191,7 @@ Rcpp::RObject StdFunctionCallback::rRepresentation() const {
 // RcppFunctionCallback
 // ============================================================================
 
-RcppFunctionCallback::RcppFunctionCallback(Timestamp when, Rcpp::Function func) :
+RcppFunctionCallback::RcppFunctionCallback(Timestamp when, const Rcpp::Function& func) :
   Callback(when),
   func(func)
 {
@@ -258,7 +258,7 @@ int CallbackRegistry::getId() const {
   return id;
 }
 
-uint64_t CallbackRegistry::add(Rcpp::Function func, double secs) {
+uint64_t CallbackRegistry::add(const Rcpp::Function& func, double secs) {
   // Copies of the Rcpp::Function should only be made on the main thread.
   ASSERT_MAIN_THREAD()
   Timestamp when(secs);

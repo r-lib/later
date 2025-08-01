@@ -76,7 +76,7 @@ private:
 
 class RcppFunctionCallback : public Callback {
 public:
-  RcppFunctionCallback(Timestamp when, Rcpp::Function func);
+  RcppFunctionCallback(Timestamp when, const Rcpp::Function& func);
 
   void invoke() const {
     func();
@@ -131,7 +131,7 @@ public:
 
   // Add a function to the registry, to be executed at `secs` seconds in
   // the future (i.e. relative to the current time).
-  uint64_t add(Rcpp::Function func, double secs);
+  uint64_t add(const Rcpp::Function& func, double secs);
 
   // Add a C function to the registry, to be executed at `secs` seconds in
   // the future (i.e. relative to the current time).
