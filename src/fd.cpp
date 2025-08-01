@@ -136,9 +136,9 @@ static int wait_thread(void *arg) {
 static SEXP execLater_fd_impl(const Rcpp::Function& callback, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
 
   std::unique_ptr<ThreadArgs> args(new ThreadArgs(callback, num_fds, fds, timeout, loop_id, callbackRegistryTable));
-
   std::shared_ptr<std::atomic<bool>> active = args->active;
   tct_thrd_t thr;
+
   if (tct_thrd_create(&thr, &wait_thread, static_cast<void *>(args.release())) != tct_thrd_success)
     Rcpp::stop("Thread creation failed");
 
@@ -151,8 +151,8 @@ static SEXP execLater_fd_impl(const Rcpp::Function& callback, int num_fds, struc
 static int execLater_fd_native(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
 
   std::unique_ptr<ThreadArgs> args(new ThreadArgs(func, data, num_fds, fds, timeout, loop_id, callbackRegistryTable));
-
   tct_thrd_t thr;
+
   return tct_thrd_create(&thr, &wait_thread, static_cast<void *>(args.release())) != tct_thrd_success;
 
 }
