@@ -10,7 +10,7 @@
 \alias{global_loop}
 \title{Private event loops}
 \usage{
-create_loop(parent = current_loop(), autorun = NULL)
+create_loop(parent = current_loop())
 
 destroy_loop(loop)
 
@@ -31,9 +31,6 @@ manually call \code{\link{run_now}()} on this loop. If \code{NULL}, then
 this loop will not have a parent event loop that automatically runs it; the
 only way to run this loop will be by calling \code{\link{run_now}()} on this
 loop.}
-
-\item{autorun}{This exists only for backward compatibility. If set to
-\code{FALSE}, it is equivalent to using \code{parent=NULL}.}
 
 \item{loop}{A handle to an event loop.}
 

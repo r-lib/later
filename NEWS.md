@@ -1,5 +1,7 @@
 # later (development version)
 
+* Fixed #215: The `autorun` argument of `create_loop()`, long deprecated, is removed (#222).
+
 * Fixed #167: `.Random.seed` is no longer affected when the package is loaded (#220).
 
 * Set file-level variables as `static` to avoid triggering `-Wmissing-variable-declarations` (@michaelchirico, #163).
