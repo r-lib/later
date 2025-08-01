@@ -83,8 +83,7 @@ static void later_callback(void *arg) {
 
   ASSERT_MAIN_THREAD()
 
-  std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
-  std::shared_ptr<ThreadArgs> args = *argsptr;
+  std::unique_ptr<ThreadArgs> args(static_cast<ThreadArgs *>(arg));
   bool still_active = true;
   // atomic compare_exchange_strong:
   // if args->active is true, it is changed to false (so future requests to fd_cancel return false)
@@ -107,8 +106,7 @@ static int wait_thread(void *arg) {
 
   tct_thrd_detach(tct_thrd_current());
 
-  std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(static_cast<std::shared_ptr<ThreadArgs>*>(arg));
-  std::shared_ptr<ThreadArgs> args = *argsptr;
+  std::unique_ptr<ThreadArgs> args(static_cast<ThreadArgs *>(arg));
 
   int ready;
   double waitFor = std::fmax(args->timeout.diff_secs(Timestamp()), 0);
@@ -128,30 +126,23 @@ static int wait_thread(void *arg) {
     std::fill(args->results.begin(), args->results.end(), NA_INTEGER);
   }
 
-  callbackRegistryTable.scheduleCallback(later_callback, static_cast<void *>(argsptr.release()), 0, args->loop);
+  int loop_id = args->loop;
+  callbackRegistryTable.scheduleCallback(later_callback, static_cast<void *>(args.release()), 0, loop_id);
 
   return 0;
 
 }
 
-static int execLater_launch_thread(std::shared_ptr<ThreadArgs> args) {
-
-  std::unique_ptr<std::shared_ptr<ThreadArgs>> argsptr(new std::shared_ptr<ThreadArgs>(args));
-
-  tct_thrd_t thr;
-
-  return tct_thrd_create(&thr, &wait_thread, static_cast<void *>(argsptr.release())) != tct_thrd_success;
-
-}
-
 static SEXP execLater_fd_impl(const Rcpp::Function& callback, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
 
-  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(callback, num_fds, fds, timeout, loop_id, callbackRegistryTable);
+  std::unique_ptr<ThreadArgs> args(new ThreadArgs(callback, num_fds, fds, timeout, loop_id, callbackRegistryTable));
 
-  if (execLater_launch_thread(args))
+  std::shared_ptr<std::atomic<bool>> active = args->active;
+  tct_thrd_t thr;
+  if (tct_thrd_create(&thr, &wait_thread, static_cast<void *>(args.release())) != tct_thrd_success)
     Rcpp::stop("Thread creation failed");
 
-  Rcpp::XPtr<std::shared_ptr<std::atomic<bool>>> xptr(new std::shared_ptr<std::atomic<bool>>(args->active), true);
+  Rcpp::XPtr<std::shared_ptr<std::atomic<bool>>> xptr(new std::shared_ptr<std::atomic<bool>>(active), true);
   return xptr;
 
 }
@@ -159,9 +150,10 @@ static SEXP execLater_fd_impl(const Rcpp::Function& callback, int num_fds, struc
 // native version
 static int execLater_fd_native(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double timeout, int loop_id) {
 
-  std::shared_ptr<ThreadArgs> args = std::make_shared<ThreadArgs>(func, data, num_fds, fds, timeout, loop_id, callbackRegistryTable);
+  std::unique_ptr<ThreadArgs> args(new ThreadArgs(func, data, num_fds, fds, timeout, loop_id, callbackRegistryTable));
 
-  return execLater_launch_thread(args);
+  tct_thrd_t thr;
+  return tct_thrd_create(&thr, &wait_thread, static_cast<void *>(args.release())) != tct_thrd_success;
 
 }
 
