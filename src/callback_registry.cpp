@@ -330,7 +330,7 @@ Optional<Timestamp> CallbackRegistry::nextTimestamp(bool recursive) const {
 }
 
 bool CallbackRegistry::empty() const {
-  if (fd_waits > 0) {
+  if (fd_waits.load() > 0) {
     return false;
   }
   Guard guard(mutex);
