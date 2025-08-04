@@ -144,9 +144,6 @@ exists_loop <- function(loop) {
 current_loop <- function() {
   id <- getCurrentRegistryId()
   loop_weakref <- .loops[[as.character(id)]]
-  if (is.null(loop_weakref)) {
-    stop("Current loop with id ", id, " not found.")
-  }
 
   loop <- wref_key(loop_weakref)
   if (is.null(loop)) {
