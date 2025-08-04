@@ -447,3 +447,37 @@ test_that("list_queue", {
   q <- list_queue(l)
   expect_equal(length(q), 0)
 })
+
+test_that("next_op_secs works", {
+  with_temp_loop({
+    expect_identical(next_op_secs(), Inf)
+
+    later(function() {}, 0)
+    expect_true(next_op_secs() <= 0)
+    run_now()
+
+    later(function() {}, 0.1)
+    expect_true(next_op_secs() <= 0.1)
+  })
+})
+
+test_that("parameter validation works", {
+  expect_snapshot(error = TRUE, create_loop(parent = "invalid"))
+  expect_snapshot(error = TRUE, destroy_loop(global_loop()))
+  expect_snapshot(error = TRUE, {
+    loop <- create_loop(parent = NULL)
+    destroy_loop(loop)
+    with_loop(loop, {})
+  })
+})
+
+test_that("print.event_loop works correctly", {
+  loop <- create_loop(parent = NULL)
+
+  output <- capture.output(print(loop))
+  expect_match(output, "<event loop> ID: [0-9]+")
+
+  destroy_loop(loop)
+  output_destroyed <- capture.output(print(loop))
+  expect_match(output_destroyed, "\\(destroyed\\)")
+})

@@ -1,7 +1,7 @@
 # run_now doesn't go past a failed task
 
     Code
-      later::run_now()
+      run_now()
     Condition
       Error:
       ! boom
