@@ -170,7 +170,7 @@ with_loop <- function(loop, expr) {
   }
   old_loop <- current_loop()
   if (!identical(loop, old_loop)) {
-    on.exit(setCurrentRegistryId(old_loop$id), add = TRUE)
+    on.exit(setCurrentRegistryId(old_loop$id))
     setCurrentRegistryId(loop$id)
   }
 
@@ -182,7 +182,6 @@ with_loop <- function(loop, expr) {
 global_loop <- function() {
   .globals$global_loop
 }
-
 
 #' @export
 format.event_loop <- function(x, ...) {
