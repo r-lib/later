@@ -389,10 +389,6 @@ create_fd_canceller <- function(xptr) {
 #'
 #' @export
 run_now <- function(timeoutSecs = 0L, all = TRUE, loop = current_loop()) {
-  if (!is.numeric(timeoutSecs)) {
-    stop("timeoutSecs must be numeric")
-  }
-
   invisible(execCallbacks(timeoutSecs, all, loop$id))
 }
 
