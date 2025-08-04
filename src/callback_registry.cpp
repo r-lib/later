@@ -375,7 +375,7 @@ std::vector<Callback_sp> CallbackRegistry::take(size_t max, const Timestamp& tim
 
 bool CallbackRegistry::wait(double timeoutSecs, bool recursive) const {
   ASSERT_MAIN_THREAD()
-  if (timeoutSecs < 0) {
+  if (timeoutSecs == R_PosInf || timeoutSecs < 0) {
     // "1000 years ought to be enough for anybody" --Bill Gates
     timeoutSecs = 3e10;
   }

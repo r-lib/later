@@ -389,10 +389,6 @@ create_fd_canceller <- function(xptr) {
 #'
 #' @export
 run_now <- function(timeoutSecs = 0L, all = TRUE, loop = current_loop()) {
-  if (timeoutSecs == Inf) {
-    timeoutSecs <- -1
-  }
-
   if (!is.numeric(timeoutSecs)) {
     stop("timeoutSecs must be numeric")
   }
@@ -423,7 +419,6 @@ loop_empty <- function(loop = current_loop()) {
 next_op_secs <- function(loop = current_loop()) {
   nextOpSecs(loop$id)
 }
-
 
 #' Get the contents of an event loop, as a list
 #'
