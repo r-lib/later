@@ -27,7 +27,6 @@ Imports:
 Suggests:
     knitr,
     nanonext,
-    R6,
     rmarkdown,
     testthat (>= 3.0.0)
 LinkingTo: 
