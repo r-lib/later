@@ -9,6 +9,6 @@ SEXP _later_new_weakref(SEXP x){
 
 SEXP _later_wref_key(SEXP x){
 
-  return R_WeakRefKey(x);
+  return x != R_NilValue ? R_WeakRefKey(x) : R_NilValue;
 
 }

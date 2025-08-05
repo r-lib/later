@@ -144,9 +144,6 @@ exists_loop <- function(loop) {
 current_loop <- function() {
   id <- getCurrentRegistryId()
   loop_weakref <- .loops[[as.character(id)]]
-  if (is.null(loop_weakref)) {
-    stop("Current loop with id ", id, " not found.")
-  }
 
   loop <- wref_key(loop_weakref)
   if (is.null(loop)) {
@@ -173,7 +170,7 @@ with_loop <- function(loop, expr) {
   }
   old_loop <- current_loop()
   if (!identical(loop, old_loop)) {
-    on.exit(setCurrentRegistryId(old_loop$id), add = TRUE)
+    on.exit(setCurrentRegistryId(old_loop$id))
     setCurrentRegistryId(loop$id)
   }
 
@@ -185,7 +182,6 @@ with_loop <- function(loop, expr) {
 global_loop <- function() {
   .globals$global_loop
 }
-
 
 #' @export
 format.event_loop <- function(x, ...) {
@@ -392,14 +388,6 @@ create_fd_canceller <- function(xptr) {
 #'
 #' @export
 run_now <- function(timeoutSecs = 0L, all = TRUE, loop = current_loop()) {
-  if (timeoutSecs == Inf) {
-    timeoutSecs <- -1
-  }
-
-  if (!is.numeric(timeoutSecs)) {
-    stop("timeoutSecs must be numeric")
-  }
-
   invisible(execCallbacks(timeoutSecs, all, loop$id))
 }
 
@@ -426,7 +414,6 @@ loop_empty <- function(loop = current_loop()) {
 next_op_secs <- function(loop = current_loop()) {
   nextOpSecs(loop$id)
 }
-
 
 #' Get the contents of an event loop, as a list
 #'

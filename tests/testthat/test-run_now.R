@@ -2,13 +2,13 @@ jitter <- 0.017 * 2 # Compensate for imprecision in system timer
 
 test_that("run_now waits and returns FALSE if no tasks", {
   x <- system.time({
-    result <- later::run_now(0.5)
+    result <- run_now(0.5)
   })
   expect_gte(as.numeric(x[["elapsed"]]), 0.5 - jitter)
   expect_identical(result, FALSE)
 
   x <- system.time({
-    result <- later::run_now(3)
+    result <- run_now(3)
   })
   expect_gte(as.numeric(x[["elapsed"]]), 3 - jitter)
   expect_identical(result, FALSE)
@@ -16,44 +16,44 @@ test_that("run_now waits and returns FALSE if no tasks", {
 
 test_that("run_now returns immediately after executing a task", {
   x <- system.time({
-    later::later(~ {}, 0)
-    result <- later::run_now(2)
+    later(~ {}, 0)
+    result <- run_now(2)
   })
   expect_lt(as.numeric(x[["elapsed"]]), 0.25)
   expect_identical(result, TRUE)
 })
 
 test_that("run_now executes all scheduled tasks, not just one", {
-  later::later(~ {}, 0)
-  later::later(~ {}, 0)
-  result1 <- later::run_now()
-  result2 <- later::run_now()
+  later(~ {}, 0)
+  later(~ {}, 0)
+  result1 <- run_now()
+  result2 <- run_now()
   expect_identical(result1, TRUE)
   expect_identical(result2, FALSE)
 })
 
 test_that("run_now executes just one scheduled task, if requested", {
-  result1 <- later::run_now()
+  result1 <- run_now()
   expect_identical(result1, FALSE)
 
-  later::later(~ {}, 0)
-  later::later(~ {}, 0)
+  later(~ {}, 0)
+  later(~ {}, 0)
 
-  result2 <- later::run_now(all = FALSE)
+  result2 <- run_now(all = FALSE)
   expect_identical(result2, TRUE)
 
-  result3 <- later::run_now(all = FALSE)
+  result3 <- run_now(all = FALSE)
   expect_identical(result3, TRUE)
 
-  result4 <- later::run_now()
+  result4 <- run_now()
   expect_identical(result4, FALSE)
 })
 
 test_that("run_now doesn't go past a failed task", {
-  later::later(~ stop("boom"), 0)
-  later::later(~ {}, 0)
-  expect_snapshot(error = TRUE, later::run_now())
-  expect_true(later::run_now())
+  later(~ stop("boom"), 0)
+  later(~ {}, 0)
+  expect_snapshot(error = TRUE, run_now())
+  expect_true(run_now())
 })
 
 test_that("run_now wakes up when a background thread calls later()", {
@@ -66,7 +66,7 @@ test_that("run_now wakes up when a background thread calls later()", {
   env$launchBgTask(1)
 
   x <- system.time({
-    result <- later::run_now(3)
+    result <- run_now(3)
   })
   # Wait for up to 1.5 seconds (for slow systems)
   expect_lt(as.numeric(x[["elapsed"]]), 1.5)
@@ -104,8 +104,8 @@ test_that("When callbacks have tied timestamps, they respect order of creation",
     '
   )
   checkLaterOrdering()
-  while (!later::loop_empty()) {
-    later::run_now()
+  while (!loop_empty()) {
+    run_now()
   }
 })
 
