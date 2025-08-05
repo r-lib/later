@@ -39,9 +39,7 @@ pak::pak("r-lib/later")
 Pass a function (in this case, delayed by 5 seconds):
 
 ``` r
-later::later(function() {
-  print("Got here!")
-}, 5)
+later::later(\() print("Got here!"), 5)
 ```
 
 Or a formula (in this case, run as soon as control returns to the
@@ -58,19 +56,17 @@ descriptors are ready for reading or writing, at some indeterminate time
 in the future.
 
 Below, a logical vector is printed indicating which of file descriptors
-21 or 22 were ready, subject to a timeout of 1s. Instead of just
-printing the result, the supplied function can also do something more
-useful such as reading from the descriptor.
+21 or 22 were ready, subject to a timeout of 1s.
 
 ``` r
-later::later_fd(print, c(21L, 22L), timeout = 1)
+later::later_fd(\(x) print(x), c(21L, 22L), timeout = 1)
 ```
 
-This is useful in particular for asynchronous or streaming data transfer
-over the network / internet, so that reads can be made from TCP sockets
-as soon as data is available. `later::later_fd()` pairs well with
-functions such as `curl::multi_fdset()` that return the relevant file
-descriptors to be monitored .
+This is useful in particular for asynchronous data transfers, allowing
+reads to be made from TCP sockets as soon as data becomes available.
+`later::later_fd()` pairs well with functions such as
+`curl::multi_fdset()`, which returns the file descriptors to be
+monitored.
 
 ## Usage from C++
 
@@ -104,10 +100,10 @@ back, and the second being a `void*`. The `int*` array will be the
 length of `num_fds` and contain the values `0`, `1` or `NA_INTEGER` to
 indicate the readiness of each file descriptor, or an error condition
 respectively. The second argument `data` is passed to the `void*`
-argument of the function when it’s called back. The third is the total
-number of file descriptors being passed, the fourth a pointer to an
-array of `stuct pollfds`, and the fifth the number of seconds to wait
-until timing out.
+argument of the function when it’s called back. The other required
+arguments are the total number of file descriptors, a pointer to an
+array of `stuct pollfd`, and the number of seconds to wait until timing
+out.
 
 To use the C++ interface, you’ll need to add `later` to your
 `DESCRIPTION` file under both `LinkingTo` and `Imports`, and also make
