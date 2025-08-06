@@ -62,10 +62,9 @@ Below, a logical vector is printed indicating which of file descriptors
 later::later_fd(\(x) print(x), c(21L, 22L), timeout = 1)
 ```
 
-This is useful in particular for asynchronous data transfers, allowing
-reads to be made from TCP sockets as soon as data becomes available.
-`later::later_fd()` pairs well with functions such as
-`curl::multi_fdset()`, which returns the file descriptors to be
+This is useful in particular for asynchronous I/O, allowing reads to be
+made from TCP sockets as soon as data becomes available. Functions such
+as `curl::multi_fdset()` return the relevant file descriptors to be
 monitored.
 
 ## Usage from C++
