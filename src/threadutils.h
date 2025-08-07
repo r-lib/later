@@ -2,7 +2,6 @@
 #define _THREADUTILS_H_
 
 #include <stdexcept>
-#include <sys/time.h>
 #include <type_traits>
 
 #include "tinycthread.h"

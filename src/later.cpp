@@ -1,6 +1,5 @@
 #include "later.h"
 #include <Rcpp.h>
-#include <map>
 #include <queue>
 #include <memory>
 #include "debug.h"
