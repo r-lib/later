@@ -1,8 +1,5 @@
 #ifndef _WIN32
 
-#include <errno.h>
-#include <sys/time.h>
-
 #include "timer_posix.h"
 
 int Timer::bg_main_func(void* data) {
