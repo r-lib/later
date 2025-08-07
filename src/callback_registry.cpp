@@ -361,16 +361,16 @@ bool CallbackRegistry::due(const Timestamp& time, bool recursive) const {
   return false;
 }
 
-std::vector<Callback_sp> CallbackRegistry::take(size_t max, const Timestamp& time) {
+Callback_sp CallbackRegistry::pop(const Timestamp& time) {
   ASSERT_MAIN_THREAD()
   Guard guard(mutex);
-  std::vector<Callback_sp> results;
-  while (this->due(time, false) && (max <= 0 || results.size() < max)) {
+  Callback_sp result;
+  if (this->due(time, false)) {
     cbSet::iterator it = queue.begin();
-    results.push_back(*it);
+    result = *it;
     this->queue.erase(it);
   }
-  return results;
+  return result;
 }
 
 bool CallbackRegistry::wait(double timeoutSecs, bool recursive) const {

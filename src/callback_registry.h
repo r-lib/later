@@ -150,8 +150,8 @@ public:
   // Is anything ready to execute?
   bool due(const Timestamp& time = Timestamp(), bool recursive = true) const;
 
-  // Pop and return an ordered list of functions to execute now.
-  std::vector<Callback_sp> take(size_t max = -1, const Timestamp& time = Timestamp());
+  // Pop and return a function to execute now.
+  Callback_sp pop(const Timestamp& time = Timestamp());
 
   // Wait until the next available callback is ready to execute.
   bool wait(double timeoutSecs, bool recursive) const;

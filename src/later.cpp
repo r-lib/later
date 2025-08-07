@@ -201,17 +201,17 @@ bool execCallbacksOne(
   do {
     // We only take one at a time, because we don't want to lose callbacks if
     // one of the callbacks throws an error
-    std::vector<Callback_sp> callbacks = callback_registry->take(1, now);
-    if (callbacks.size() == 0) {
+    Callback_sp callback = callback_registry->pop(now);
+    if (callback == nullptr) {
       break;
     }
 
 #ifdef RCPP_USING_UNWIND_PROTECT // See https://github.com/r-lib/later/issues/191
     // This line may throw errors!
-    callbacks[0]->invoke();
+    callback->invoke();
 #else
     // This line may throw errors!
-    callbacks[0]->invoke_wrapped();
+    callback->invoke_wrapped();
 #endif
 
   } while (runAll);
