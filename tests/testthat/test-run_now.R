@@ -284,7 +284,7 @@ test_that("interrupt and exception handling, C++", {
   tryCatch(
     {
       cpp_error(1)
-      run_now()
+      run_now(Inf)
     },
     error = function(e) errored <<- TRUE
   )
@@ -294,7 +294,7 @@ test_that("interrupt and exception handling, C++", {
   tryCatch(
     {
       cpp_error(2)
-      run_now()
+      run_now(-1)
     },
     error = function(e) errored <<- TRUE
   )
