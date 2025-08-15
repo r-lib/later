@@ -411,7 +411,6 @@ test_that("Interrupt while running in private loop won't result in stuck loop", 
   expect_identical(current_loop(), global_loop())
 })
 
-
 test_that("list_queue", {
   l <- create_loop(parent = NULL)
   q <- NULL
@@ -480,4 +479,17 @@ test_that("print.event_loop works correctly", {
   destroy_loop(loop)
   output_destroyed <- capture.output(print(loop))
   expect_match(output_destroyed, "\\(destroyed\\)")
+})
+
+test_that("esoteric error handlers", {
+  loop <- create_loop(parent = NULL)
+  expect_snapshot(error = TRUE, {
+    with_loop(loop, {
+      .loops[[as.character(loop$id)]] <- NULL
+      current_loop()
+    })
+  })
+  expect_snapshot(error = TRUE, {
+    notify_r_ref_deleted(global_loop())
+  })
 })

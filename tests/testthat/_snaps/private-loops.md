@@ -59,3 +59,22 @@
       Error in `with_loop()`:
       ! loop has been destroyed!
 
+# esoteric error handlers
+
+    Code
+      with_loop(loop, {
+        .loops[[as.character(loop$id)]] <- NULL
+        current_loop()
+      })
+    Condition
+      Error in `current_loop()`:
+      ! Current loop with id 43 not found.
+
+---
+
+    Code
+      notify_r_ref_deleted(global_loop())
+    Condition
+      Error in `notify_r_ref_deleted()`:
+      ! Can't notify that reference to global loop is deleted.
+
