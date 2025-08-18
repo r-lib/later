@@ -490,6 +490,7 @@ test_that("esoteric error handlers", {
   expect_snapshot(error = TRUE, {
     with_loop(loop, deleteCallbackRegistry(current_loop()$id))
   })
+  expect_snapshot(error = TRUE, with_loop(loop, notify_r_ref_deleted(loop)))
   expect_snapshot(error = TRUE, {
     with_loop(loop, {
       .loops[[as.character(loop$id)]] <- NULL

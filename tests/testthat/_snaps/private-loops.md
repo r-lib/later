@@ -84,6 +84,14 @@
 ---
 
     Code
+      with_loop(loop, notify_r_ref_deleted(loop))
+    Condition
+      Error in `notifyRRefDeleted()`:
+      ! Can't notify that reference to current loop is deleted.
+
+---
+
+    Code
       with_loop(loop, {
         .loops[[as.character(loop$id)]] <- NULL
         current_loop()
@@ -97,7 +105,7 @@
     Code
       notify_r_ref_deleted(global_loop())
     Condition
-      Error in `notify_r_ref_deleted()`:
+      Error in `notifyRRefDeleted()`:
       ! Can't notify that reference to global loop is deleted.
 
 ---

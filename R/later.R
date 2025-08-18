@@ -108,10 +108,6 @@ create_loop <- function(parent = current_loop()) {
 }
 
 notify_r_ref_deleted <- function(loop) {
-  if (identical(loop, global_loop())) {
-    stop("Can't notify that reference to global loop is deleted.")
-  }
-
   res <- notifyRRefDeleted(loop$id)
   if (res) {
     rm(list = as.character(loop$id), envir = .loops)
