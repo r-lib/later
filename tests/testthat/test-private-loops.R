@@ -445,6 +445,9 @@ test_that("list_queue", {
   with_loop(l, run_now())
   q <- list_queue(l)
   expect_equal(length(q), 0)
+
+  destroy_loop(l)
+  expect_snapshot(error = TRUE, list_queue(l))
 })
 
 test_that("next_op_secs works", {

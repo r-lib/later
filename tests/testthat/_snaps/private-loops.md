@@ -33,6 +33,14 @@
       Error in `with_loop()`:
       ! loop has been destroyed!
 
+# list_queue
+
+    Code
+      list_queue(l)
+    Condition
+      Error in `list_queue_()`:
+      ! CallbackRegistry does not exist.
+
 # next_op_secs works
 
     Code
