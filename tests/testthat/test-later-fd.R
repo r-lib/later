@@ -110,20 +110,18 @@ test_that("later_fd() errors when passed destroyed loops", {
 })
 
 test_that("later_fd C API works", {
+  skip_if(using_ubsan())
   env <- new.env()
   Rcpp::cppFunction(
     depends = 'later',
     includes = '
       #include <later_api.h>
-      void func(int *value, void *data) {
-        return;
-      }
-      int data = 0;
+      void func(int *value, void *data) {}
       struct pollfd pfd = {};
     ',
     code = '
       int testfd() {
-        later::later_fd(func, &data, 0, &pfd, 0.0, 0);
+        later::later_fd(func, nullptr, 0, &pfd, 0.0, 0);
         return 0;
       }
     ',
