@@ -60,7 +60,7 @@ test_that("Private event loops", {
 
   # Can't run later-y things with destroyed loop
   expect_snapshot(error = TRUE, with_loop(l, later(function() message("foo"))))
-  expect_snapshot(error = TRUE, with_loop(l, run_now()))
+  expect_snapshot(error = TRUE, run_now(loop = l))
 
   # GC with functions in destroyed loops, even if callback isn't executed.
   l <- create_loop(parent = NULL)

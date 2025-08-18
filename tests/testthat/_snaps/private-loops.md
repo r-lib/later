@@ -9,10 +9,10 @@
 ---
 
     Code
-      with_loop(l, run_now())
+      run_now(loop = l)
     Condition
-      Error in `with_loop()`:
-      ! loop has been destroyed!
+      Error in `execCallbacks()`:
+      ! CallbackRegistry does not exist.
 
 ---
 
