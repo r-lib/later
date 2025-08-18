@@ -117,11 +117,10 @@ test_that("later_fd C API works", {
     includes = '
       #include <later_api.h>
       void func(int *value, void *data) {}
-      struct pollfd pfd = {};
     ',
     code = '
       int testfd() {
-        later::later_fd(func, nullptr, 0, &pfd, 0.0, 0);
+        later::later_fd(func, nullptr, 0, nullptr, 0.0, 0);
         return 0;
       }
     ',
