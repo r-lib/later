@@ -115,10 +115,15 @@ test_that("later_fd C API works", {
     depends = 'later',
     includes = '
       #include <later_api.h>
+      void func(int *value, void *data) {
+        return;
+      }
+      int data = 0;
+      struct pollfd pfd = {};
     ',
     code = '
       int testfd() {
-        later::later_fd([](int *, void *){}, NULL, 0, NULL, 0, 0);
+        later::later_fd(func, &data, 0, &pfd, 0.0, 0);
         return 0;
       }
     ',
