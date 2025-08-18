@@ -134,10 +134,10 @@ shared_ptr<CallbackRegistry> getGlobalRegistry() {
 bool deleteCallbackRegistry(int loop_id) {
   ASSERT_MAIN_THREAD()
   if (loop_id == GLOBAL_LOOP) {
-    Rf_error("Can't delete global loop.");
+    Rf_error("Can't destroy global loop.");
   }
   if (loop_id == getCurrentRegistryId()) {
-    Rf_error("Can't delete current loop.");
+    Rf_error("Can't destroy current loop.");
   }
 
   return callbackRegistryTable.remove(loop_id);

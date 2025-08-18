@@ -469,12 +469,12 @@ test_that("next_op_secs works", {
 
 test_that("parameter validation works", {
   loop <- create_loop(parent = NULL)
+  expect_snapshot(error = TRUE, with_loop(loop, destroy_loop(loop)))
   expect_true(destroy_loop(loop))
   expect_false(destroy_loop(loop))
   expect_snapshot(error = TRUE, with_loop(loop, {}))
   expect_snapshot(error = TRUE, loop_empty(loop))
   expect_snapshot(error = TRUE, create_loop(parent = "invalid"))
-  expect_snapshot(error = TRUE, destroy_loop(global_loop()))
 })
 
 test_that("print.event_loop works correctly", {
@@ -490,9 +490,7 @@ test_that("print.event_loop works correctly", {
 
 test_that("esoteric error handlers", {
   loop <- create_loop(parent = NULL)
-  expect_snapshot(error = TRUE, {
-    with_loop(loop, deleteCallbackRegistry(current_loop()$id))
-  })
+  expect_snapshot(error = TRUE, notify_r_ref_deleted(global_loop()))
   expect_snapshot(error = TRUE, with_loop(loop, notify_r_ref_deleted(loop)))
   expect_snapshot(error = TRUE, {
     with_loop(loop, {
@@ -500,6 +498,4 @@ test_that("esoteric error handlers", {
       current_loop()
     })
   })
-  expect_snapshot(error = TRUE, notify_r_ref_deleted(global_loop()))
-  expect_snapshot(error = TRUE, deleteCallbackRegistry(global_loop()$id))
 })

@@ -74,14 +74,12 @@ create_loop <- function(parent = current_loop()) {
   id <- .globals$next_id
   .globals$next_id <- id + 1L
 
-  if (!is.null(parent) && !inherits(parent, "event_loop")) {
-    stop("`parent` must be NULL or an event_loop object.")
-  }
-
   if (is.null(parent)) {
     parent_id <- -1L
-  } else {
+  } else if (inherits(parent, "event_loop")) {
     parent_id <- parent$id
+  } else {
+    stop("`parent` must be NULL or an event_loop object.")
   }
   createCallbackRegistry(id, parent_id)
 
@@ -118,10 +116,6 @@ notify_r_ref_deleted <- function(loop) {
 #' @rdname create_loop
 #' @export
 destroy_loop <- function(loop) {
-  if (identical(loop, global_loop())) {
-    stop("Can't destroy global loop.")
-  }
-
   res <- deleteCallbackRegistry(loop$id)
   if (res) {
     rm(list = as.character(loop$id), envir = .loops)
