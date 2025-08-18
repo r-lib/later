@@ -465,13 +465,13 @@ test_that("next_op_secs works", {
 })
 
 test_that("parameter validation works", {
+  loop <- create_loop(parent = NULL)
+  expect_true(destroy_loop(loop))
+  expect_false(destroy_loop(loop))
+  expect_snapshot(error = TRUE, with_loop(loop, {}))
+  expect_snapshot(error = TRUE, loop_empty(loop))
   expect_snapshot(error = TRUE, create_loop(parent = "invalid"))
   expect_snapshot(error = TRUE, destroy_loop(global_loop()))
-  expect_snapshot(error = TRUE, {
-    loop <- create_loop(parent = NULL)
-    destroy_loop(loop)
-    with_loop(loop, {})
-  })
 })
 
 test_that("print.event_loop works correctly", {

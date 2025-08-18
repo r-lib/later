@@ -44,6 +44,22 @@
 # parameter validation works
 
     Code
+      with_loop(loop, { })
+    Condition
+      Error in `with_loop()`:
+      ! loop has been destroyed!
+
+---
+
+    Code
+      loop_empty(loop)
+    Condition
+      Error in `idle()`:
+      ! CallbackRegistry does not exist.
+
+---
+
+    Code
       create_loop(parent = "invalid")
     Condition
       Error in `create_loop()`:
@@ -56,16 +72,6 @@
     Condition
       Error in `destroy_loop()`:
       ! Can't destroy global loop.
-
----
-
-    Code
-      loop <- create_loop(parent = NULL)
-      destroy_loop(loop)
-      with_loop(loop, { })
-    Condition
-      Error in `with_loop()`:
-      ! loop has been destroyed!
 
 # esoteric error handlers
 
