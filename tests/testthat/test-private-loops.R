@@ -60,7 +60,7 @@ test_that("Private event loops", {
 
   # Can't run later-y things with destroyed loop
   expect_snapshot(error = TRUE, with_loop(l, later(function() message("foo"))))
-  expect_snapshot(error = TRUE, with_loop(l, run_now()))
+  expect_snapshot(error = TRUE, run_now(loop = l))
 
   # GC with functions in destroyed loops, even if callback isn't executed.
   l <- create_loop(parent = NULL)
@@ -445,6 +445,9 @@ test_that("list_queue", {
   with_loop(l, run_now())
   q <- list_queue(l)
   expect_equal(length(q), 0)
+
+  destroy_loop(l)
+  expect_snapshot(error = TRUE, list_queue(l))
 })
 
 test_that("next_op_secs works", {
@@ -465,13 +468,13 @@ test_that("next_op_secs works", {
 })
 
 test_that("parameter validation works", {
+  loop <- create_loop(parent = NULL)
+  expect_snapshot(error = TRUE, with_loop(loop, destroy_loop(loop)))
+  expect_true(destroy_loop(loop))
+  expect_false(destroy_loop(loop))
+  expect_snapshot(error = TRUE, with_loop(loop, {}))
+  expect_snapshot(error = TRUE, loop_empty(loop))
   expect_snapshot(error = TRUE, create_loop(parent = "invalid"))
-  expect_snapshot(error = TRUE, destroy_loop(global_loop()))
-  expect_snapshot(error = TRUE, {
-    loop <- create_loop(parent = NULL)
-    destroy_loop(loop)
-    with_loop(loop, {})
-  })
 })
 
 test_that("print.event_loop works correctly", {
@@ -487,15 +490,12 @@ test_that("print.event_loop works correctly", {
 
 test_that("esoteric error handlers", {
   loop <- create_loop(parent = NULL)
-  expect_snapshot(error = TRUE, {
-    with_loop(loop, deleteCallbackRegistry(current_loop()$id))
-  })
+  expect_snapshot(error = TRUE, notify_r_ref_deleted(global_loop()))
+  expect_snapshot(error = TRUE, with_loop(loop, notify_r_ref_deleted(loop)))
   expect_snapshot(error = TRUE, {
     with_loop(loop, {
       .loops[[as.character(loop$id)]] <- NULL
       current_loop()
     })
   })
-  expect_snapshot(error = TRUE, notify_r_ref_deleted(global_loop()))
-  expect_snapshot(error = TRUE, deleteCallbackRegistry(global_loop()$id))
 })

@@ -9,17 +9,17 @@
 ---
 
     Code
-      with_loop(l, run_now())
+      run_now(loop = l)
     Condition
-      Error in `with_loop()`:
-      ! loop has been destroyed!
+      Error in `execCallbacks()`:
+      ! CallbackRegistry does not exist.
 
 ---
 
     Code
       destroy_loop(global_loop())
     Condition
-      Error in `destroy_loop()`:
+      Error in `deleteCallbackRegistry()`:
       ! Can't destroy global loop.
 
 # Temporary event loops
@@ -33,6 +33,14 @@
       Error in `with_loop()`:
       ! loop has been destroyed!
 
+# list_queue
+
+    Code
+      list_queue(l)
+    Condition
+      Error in `list_queue_()`:
+      ! CallbackRegistry does not exist.
+
 # next_op_secs works
 
     Code
@@ -44,36 +52,50 @@
 # parameter validation works
 
     Code
-      create_loop(parent = "invalid")
+      with_loop(loop, destroy_loop(loop))
     Condition
-      Error in `create_loop()`:
-      ! `parent` must be NULL or an event_loop object.
+      Error in `deleteCallbackRegistry()`:
+      ! Can't destroy current loop.
 
 ---
 
     Code
-      destroy_loop(global_loop())
-    Condition
-      Error in `destroy_loop()`:
-      ! Can't destroy global loop.
-
----
-
-    Code
-      loop <- create_loop(parent = NULL)
-      destroy_loop(loop)
       with_loop(loop, { })
     Condition
       Error in `with_loop()`:
       ! loop has been destroyed!
 
+---
+
+    Code
+      loop_empty(loop)
+    Condition
+      Error in `idle()`:
+      ! CallbackRegistry does not exist.
+
+---
+
+    Code
+      create_loop(parent = "invalid")
+    Condition
+      Error in `create_loop()`:
+      ! `parent` must be NULL or an event_loop object.
+
 # esoteric error handlers
 
     Code
-      with_loop(loop, deleteCallbackRegistry(current_loop()$id))
+      notify_r_ref_deleted(global_loop())
     Condition
-      Error in `deleteCallbackRegistry()`:
-      ! Can't delete current loop.
+      Error in `notifyRRefDeleted()`:
+      ! Can't notify that reference to global loop is deleted.
+
+---
+
+    Code
+      with_loop(loop, notify_r_ref_deleted(loop))
+    Condition
+      Error in `notifyRRefDeleted()`:
+      ! Can't notify that reference to current loop is deleted.
 
 ---
 
@@ -85,20 +107,4 @@
     Condition
       Error in `current_loop()`:
       ! Current loop with id 43 not found.
-
----
-
-    Code
-      notify_r_ref_deleted(global_loop())
-    Condition
-      Error in `notify_r_ref_deleted()`:
-      ! Can't notify that reference to global loop is deleted.
-
----
-
-    Code
-      deleteCallbackRegistry(global_loop()$id)
-    Condition
-      Error in `deleteCallbackRegistry()`:
-      ! Can't delete global loop.
 
