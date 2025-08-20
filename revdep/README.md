@@ -1,37 +1,31 @@
 # Platform
 
-|field    |value                                 |
-|:--------|:-------------------------------------|
-|version  |R version 4.4.3 (2025-02-28)          |
-|os       |Ubuntu 24.04.2 LTS                    |
-|system   |x86_64, linux-gnu                     |
-|ui       |RStudio                               |
-|language |en_GB:en                              |
-|collate  |en_GB.UTF-8                           |
-|ctype    |en_GB.UTF-8                           |
-|tz       |Europe/London                         |
-|date     |2025-04-07                            |
-|rstudio  |2024.12.1+563 Kousa Dogwood (desktop) |
-|pandoc   |3.1.3 @ /usr/bin/pandoc               |
-|quarto   |1.6.40 @ /usr/local/bin/quarto        |
+|field    |value                                                                       |
+|:--------|:---------------------------------------------------------------------------|
+|version  |R version 4.5.1 Patched (2025-06-14 r88315)                                 |
+|os       |macOS Sequoia 15.6                                                          |
+|system   |aarch64, darwin20                                                           |
+|ui       |RStudio                                                                     |
+|language |(EN)                                                                        |
+|collate  |en_US.UTF-8                                                                 |
+|ctype    |en_US.UTF-8                                                                 |
+|tz       |Europe/London                                                               |
+|date     |2025-08-19                                                                  |
+|rstudio  |2025.05.0+496 Mariposa Orchid (desktop)                                     |
+|pandoc   |3.7.0.2 @ /usr/local/bin/ (via rmarkdown)                                   |
+|quarto   |1.6.42 @ /Applications/RStudio.app/Contents/Resources/app/quarto/bin/quarto |
 
 # Dependencies
 
-|package |old    |new        |Δ  |
-|:-------|:------|:----------|:--|
-|later   |1.4.1  |1.4.1.9000 |*  |
-|Rcpp    |1.0.14 |1.0.14     |   |
-|rlang   |1.1.5  |1.1.5      |   |
+|package |old   |new        |Δ  |
+|:-------|:-----|:----------|:--|
+|later   |1.4.2 |1.4.2.9000 |*  |
 
 # Revdeps
 
-## Failed to check (5)
+## Failed to check (1)
 
-|package   |version |error |warning |note |
-|:---------|:-------|:-----|:-------|:----|
-|mapview   |?       |      |        |     |
-|OmnipathR |?       |      |        |     |
-|plumber   |?       |      |        |     |
-|Prostar   |?       |      |        |     |
-|tall      |?       |      |        |     |
+|package    |version |error |warning |note |
+|:----------|:-------|:-----|:-------|:----|
+|shinylight |1.2     |1     |        |     |
 
