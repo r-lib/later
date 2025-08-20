@@ -2,7 +2,7 @@ Type: Package
 Package: later
 Title: Utilities for Scheduling Functions to Execute Later with Event
     Loops
-Version: 1.4.3
+Version: 1.4.3.9000
 Authors@R: c(
     person("Winston", "Chang", , "winston@posit.co", role = "aut"),
     person("Joe", "Cheng", , "joe@posit.co", role = "aut"),
