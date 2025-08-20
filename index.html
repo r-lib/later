@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="index.html">later</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.4.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.4.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -75,9 +75,7 @@
 </h2>
 <p>Pass a function (in this case, delayed by 5 seconds):</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">later</span><span class="fu">::</span><span class="fu"><a href="reference/later.html">later</a></span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="st">"Got here!"</span><span class="op">)</span></span>
-<span><span class="op">}</span>, <span class="fl">5</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu">later</span><span class="fu">::</span><span class="fu"><a href="reference/later.html">later</a></span><span class="op">(</span>\<span class="op">(</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="st">"Got here!"</span><span class="op">)</span>, <span class="fl">5</span><span class="op">)</span></span></code></pre></div>
 <p>Or a formula (in this case, run as soon as control returns to the top-level):</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">later</span><span class="fu">::</span><span class="fu"><a href="reference/later.html">later</a></span><span class="op">(</span><span class="op">~</span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="st">"Got here!"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -85,10 +83,10 @@
 <h3 id="file-descriptor-readiness">File Descriptor Readiness<a class="anchor" aria-label="anchor" href="#file-descriptor-readiness"></a>
 </h3>
 <p>It is also possible to have a function run based on when file descriptors are ready for reading or writing, at some indeterminate time in the future.</p>
-<p>Below, a logical vector is printed indicating which of file descriptors 21 or 22 were ready, subject to a timeout of 1s. Instead of just printing the result, the supplied function can also do something more useful such as reading from the descriptor.</p>
+<p>Below, a logical vector is printed indicating which of file descriptors 21 or 22 were ready, subject to a timeout of 1s.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">later</span><span class="fu">::</span><span class="fu"><a href="reference/later_fd.html">later_fd</a></span><span class="op">(</span><span class="va">print</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">21L</span>, <span class="fl">22L</span><span class="op">)</span>, timeout <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
-<p>This is useful in particular for asynchronous or streaming data transfer over the network / internet, so that reads can be made from TCP sockets as soon as data is available. <code><a href="reference/later_fd.html">later::later_fd()</a></code> pairs well with functions such as <code><a href="https://jeroen.r-universe.dev/curl/reference/multi.html" class="external-link">curl::multi_fdset()</a></code> that return the relevant file descriptors to be monitored .</p>
+<code class="sourceCode R"><span><span class="fu">later</span><span class="fu">::</span><span class="fu"><a href="reference/later_fd.html">later_fd</a></span><span class="op">(</span>\<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">21L</span>, <span class="fl">22L</span><span class="op">)</span>, timeout <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
+<p>This is useful in particular for asynchronous I/O, allowing reads to be made from TCP sockets as soon as data becomes available. Functions such as <code><a href="https://jeroen.r-universe.dev/curl/reference/multi.html" class="external-link">curl::multi_fdset()</a></code> return the relevant file descriptors to be monitored.</p>
 </div>
 </div>
 <div class="section level2">
@@ -100,7 +98,7 @@
 <p>The first argument is a pointer to a function that takes one <code>void*</code> argument and returns void. The second argument is a <code>void*</code> that will be passed to the function when it’s called back. And the third argument is the number of seconds to wait (at a minimum) before invoking.</p>
 <p><code><a href="reference/later_fd.html">later::later_fd</a></code> is also accessible from <code>later_api.h</code> and its prototype looks like this:</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="dt">void</span> later_fd<span class="op">(</span><span class="dt">void</span> <span class="op">(*</span>func<span class="op">)(</span><span class="dt">int</span> <span class="op">*,</span> <span class="dt">void</span> <span class="op">*),</span> <span class="dt">void</span> <span class="op">*</span>data<span class="op">,</span> <span class="dt">int</span> num_fds<span class="op">,</span> <span class="kw">struct</span> pollfd <span class="op">*</span>fds<span class="op">,</span> <span class="dt">double</span> secs<span class="op">)</span></span></code></pre></div>
-<p>The first argument is a pointer to a function that takes two arguments: the first being an <code>int*</code> array provided by <code><a href="reference/later_fd.html">later_fd()</a></code> when called back, and the second being a <code>void*</code>. The <code>int*</code> array will be the length of <code>num_fds</code> and contain the values <code>0</code>, <code>1</code> or <code>NA_INTEGER</code> to indicate the readiness of each file descriptor, or an error condition respectively. The second argument <code>data</code> is passed to the <code>void*</code> argument of the function when it’s called back. The third is the total number of file descriptors being passed, the fourth a pointer to an array of <code>stuct pollfds</code>, and the fifth the number of seconds to wait until timing out.</p>
+<p>The first argument is a pointer to a function that takes two arguments: the first being an <code>int*</code> array provided by <code><a href="reference/later_fd.html">later_fd()</a></code> when called back, and the second being a <code>void*</code>. The <code>int*</code> array will be the length of <code>num_fds</code> and contain the values <code>0</code>, <code>1</code> or <code>NA_INTEGER</code> to indicate the readiness of each file descriptor, or an error condition respectively. The second argument <code>data</code> is passed to the <code>void*</code> argument of the function when it’s called back. The other required arguments are the total number of file descriptors, a pointer to an array of <code>stuct pollfd</code>, and the number of seconds to wait until timing out.</p>
 <p>To use the C++ interface, you’ll need to add <code>later</code> to your <code>DESCRIPTION</code> file under both <code>LinkingTo</code> and <code>Imports</code>, and also make sure that your <code>NAMESPACE</code> file has an <code>import(later)</code> entry.</p>
 <div class="section level3">
 <h3 id="background-tasks">Background tasks<a class="anchor" aria-label="anchor" href="#background-tasks"></a>

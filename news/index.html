@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">later</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.4.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.4.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,9 +33,15 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/r-lib/later/blob/release/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/r-lib/later/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.4.3" id="later-143">later 1.4.3<a class="anchor" aria-label="anchor" href="#later-143"></a></h2><p class="text-muted">CRAN release: 2025-08-20</p>
+<ul><li><p>Fixed <a href="https://github.com/r-lib/later/issues/215" class="external-link">#215</a>: The <code>autorun</code> argument of <code><a href="../reference/create_loop.html">create_loop()</a></code>, long deprecated, is removed (<a href="https://github.com/r-lib/later/issues/222" class="external-link">#222</a>).</p></li>
+<li><p>Fixed <a href="https://github.com/r-lib/later/issues/167" class="external-link">#167</a>: <code>.Random.seed</code> is no longer affected when the package is loaded (<a href="https://github.com/r-lib/later/issues/220" class="external-link">#220</a>).</p></li>
+<li><p>Set file-level variables as <code>static</code> to avoid triggering <code>-Wmissing-variable-declarations</code> (<a href="https://github.com/michaelchirico" class="external-link">@michaelchirico</a>, <a href="https://github.com/r-lib/later/issues/163" class="external-link">#163</a>).</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.4.2" id="later-142">later 1.4.2<a class="anchor" aria-label="anchor" href="#later-142"></a></h2><p class="text-muted">CRAN release: 2025-04-08</p>
 <ul><li>Fixed <a href="https://github.com/r-lib/later/issues/208" class="external-link">#208</a>: Fixed <code>keyword is hidden by macro definition</code> compiler warning when using a C23 compiler. (<a href="https://github.com/shikokuchuo" class="external-link">@shikokuchuo</a>, <a href="https://github.com/r-lib/later/issues/209" class="external-link">#209</a>)</li>
