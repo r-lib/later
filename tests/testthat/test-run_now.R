@@ -149,13 +149,12 @@ test_that("Callbacks cannot affect the caller", {
     later(
       function() {
         throw
-      },
-      0.5
+      }
     )
     return(200)
   }
   g <- function() {
-    run_now(1)
+    run_now(2)
   }
   expect_equal(f(), 200)
   expect_snapshot(error = TRUE, g())
