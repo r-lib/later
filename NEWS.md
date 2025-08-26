@@ -1,5 +1,7 @@
 # later (development version)
 
+* Fixed timings in a test (#237). No user-facing changes.
+
 # later 1.4.3
 
 * Fixed #215: The `autorun` argument of `create_loop()`, long deprecated, is removed (#222).
