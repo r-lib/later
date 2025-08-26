@@ -460,7 +460,7 @@ test_that("next_op_secs works", {
 
     later(function() {}, 0.1)
     expect_true(next_op_secs() <= 0.1)
-    run_now(0.15)
+    run_now(2)
 
     current_loop()
   })

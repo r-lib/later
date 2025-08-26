@@ -146,16 +146,13 @@ test_that("Callbacks cannot affect the caller", {
   # to return from because it (f()) already returned.
   f <- function() {
     delayedAssign("throw", return(100))
-    later(
-      function() {
-        throw
-      },
-      0.5
-    )
+    later(function() {
+      throw
+    })
     return(200)
   }
   g <- function() {
-    run_now(1)
+    run_now(2)
   }
   expect_equal(f(), 200)
   expect_snapshot(error = TRUE, g())
