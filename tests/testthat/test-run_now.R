@@ -146,11 +146,9 @@ test_that("Callbacks cannot affect the caller", {
   # to return from because it (f()) already returned.
   f <- function() {
     delayedAssign("throw", return(100))
-    later(
-      function() {
-        throw
-      }
-    )
+    later(function() {
+      throw
+    })
     return(200)
   }
   g <- function() {
