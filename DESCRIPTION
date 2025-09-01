@@ -4,7 +4,8 @@ Title: Utilities for Scheduling Functions to Execute Later with Event
     Loops
 Version: 1.4.4.9000
 Authors@R: c(
-    person("Winston", "Chang", , "winston@posit.co", role = "aut"),
+    person("Winston", "Chang", , "winston@posit.co", role = "aut",
+           comment = c(ORCID = "0000-0002-1576-2126")),
     person("Joe", "Cheng", , "joe@posit.co", role = "aut"),
     person("Charlie", "Gao", , "charlie.gao@posit.co", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-0750-061X")),
