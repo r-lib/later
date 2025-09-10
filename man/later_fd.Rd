@@ -70,7 +70,7 @@ If you must have specific behavior occur in the face of errors, put error
 handling logic inside of \code{func}.
 }
 \examples{
-\dontshow{if (requireNamespace("nanonext", quietly = TRUE)) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (requireNamespace("nanonext", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 # create nanonext sockets
 s1 <- nanonext::socket(listen = "inproc://nano")
 s2 <- nanonext::socket(dial = "inproc://nano")
