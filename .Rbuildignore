@@ -18,3 +18,8 @@
 ^pkgdown$
 ^README\.Rmd$
 ^codecov\.yml$
+^[.]?air[.]toml$
+^\.vscode$
+^\.claude$
+^CLAUDE.md$
+^compile_commands\.json$
