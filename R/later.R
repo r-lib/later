@@ -1,12 +1,17 @@
 #' @useDynLib later, .registration=TRUE
 #' @importFrom Rcpp evalCpp
 
-.onLoad <- function(...) {
+# nocov start
+# tested implicitly
+
+.onLoad <- function(libname, pkgname) {
   ensureInitialized()
   .globals$next_id <- 0L
   # Store a ref to the global loop so it doesn't get GC'd.
   .globals$global_loop <- create_loop(parent = NULL)
 }
+
+# nocov end
 
 .globals <- new.env(parent = emptyenv())
 # A registry of weak refs to loop handle objects. Given an ID number, we can
