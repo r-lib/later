@@ -18,3 +18,5 @@
 ^pkgdown$
 ^README\.Rmd$
 ^codecov\.yml$
+^[.]?air[.]toml$
+^\.vscode$
