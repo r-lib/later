@@ -36,6 +36,7 @@ LinkingTo:
     Rcpp
 VignetteBuilder: 
     knitr
+Config/build/compilation-database: true
 Config/Needs/website: tidyverse/tidytemplate
 Config/testthat/edition: 3
 Config/usethis/last-upkeep: 2025-07-18

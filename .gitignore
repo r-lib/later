@@ -9,3 +9,7 @@ inst/doc
 src/Makevars
 CRAN-RELEASE
 docs
+.cache
+.claude
+CLAUDE.md
+compile_commands.json
