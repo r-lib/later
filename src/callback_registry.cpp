@@ -225,21 +225,21 @@ void testCallbackOrdering() {
   }
   for (size_t i = 1; i < 100; i++) {
     if (callbacks[i] < callbacks[i-1]) {
-      ::Rf_error("Callback ordering is broken [1]");
+      ::Rcpp::stop("Callback ordering is broken [1]");
     }
     if (!(callbacks[i] > callbacks[i-1])) {
-      ::Rf_error("Callback ordering is broken [2]");
+      ::Rcpp::stop("Callback ordering is broken [2]");
     }
     if (callbacks[i-1] > callbacks[i]) {
-      ::Rf_error("Callback ordering is broken [3]");
+      ::Rcpp::stop("Callback ordering is broken [3]");
     }
     if (!(callbacks[i-1] < callbacks[i])) {
-      ::Rf_error("Callback ordering is broken [4]");
+      ::Rcpp::stop("Callback ordering is broken [4]");
     }
   }
   for (size_t i = 100; i > 1; i--) {
     if (callbacks[i-1] < callbacks[i-2]) {
-      ::Rf_error("Callback ordering is broken [2]");
+      ::Rcpp::stop("Callback ordering is broken [2]");
     }
   }
 }

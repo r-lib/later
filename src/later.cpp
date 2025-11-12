@@ -121,7 +121,7 @@ private:
 shared_ptr<CallbackRegistry> getGlobalRegistry() {
   shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(GLOBAL_LOOP);
   if (registry == nullptr) {
-    Rf_error("Global registry does not exist.");
+    Rcpp::stop("Global registry does not exist.");
   }
   return registry;
 }
@@ -134,10 +134,10 @@ shared_ptr<CallbackRegistry> getGlobalRegistry() {
 bool deleteCallbackRegistry(int loop_id) {
   ASSERT_MAIN_THREAD()
   if (loop_id == GLOBAL_LOOP) {
-    Rf_error("Can't destroy global loop.");
+    Rcpp::stop("Can't destroy global loop.");
   }
   if (loop_id == getCurrentRegistryId()) {
-    Rf_error("Can't destroy current loop.");
+    Rcpp::stop("Can't destroy current loop.");
   }
 
   return callbackRegistryTable.remove(loop_id);
@@ -149,10 +149,10 @@ bool deleteCallbackRegistry(int loop_id) {
 bool notifyRRefDeleted(int loop_id) {
   ASSERT_MAIN_THREAD()
   if (loop_id == GLOBAL_LOOP) {
-    Rf_error("Can't notify that reference to global loop is deleted.");
+    Rcpp::stop("Can't notify that reference to global loop is deleted.");
   }
   if (loop_id == getCurrentRegistryId()) {
-    Rf_error("Can't notify that reference to current loop is deleted.");
+    Rcpp::stop("Can't notify that reference to current loop is deleted.");
   }
 
   return callbackRegistryTable.notifyRRefDeleted(loop_id);
@@ -176,7 +176,7 @@ Rcpp::List list_queue_(int id) {
   ASSERT_MAIN_THREAD()
   shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(id);
   if (registry == nullptr) {
-    Rf_error("CallbackRegistry does not exist.");
+    Rcpp::stop("CallbackRegistry does not exist.");
   }
   return registry->list();
 }
@@ -234,7 +234,7 @@ bool execCallbacks(double timeoutSecs, bool runAll, int loop_id) {
   ASSERT_MAIN_THREAD()
   shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(loop_id);
   if (registry == nullptr) {
-    Rf_error("CallbackRegistry does not exist.");
+    Rcpp::stop("CallbackRegistry does not exist.");
   }
 
   if (!registry->wait(timeoutSecs, true)) {
@@ -279,7 +279,7 @@ bool idle(int loop_id) {
   ASSERT_MAIN_THREAD()
   shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(loop_id);
   if (registry == nullptr) {
-    Rf_error("CallbackRegistry does not exist.");
+    Rcpp::stop("CallbackRegistry does not exist.");
   }
   return registry->empty();
 }
@@ -309,7 +309,7 @@ std::string execLater(Rcpp::Function callback, double delaySecs, int loop_id) {
   ensureInitialized();
   shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(loop_id);
   if (registry == nullptr) {
-    Rf_error("CallbackRegistry does not exist.");
+    Rcpp::stop("CallbackRegistry does not exist.");
   }
   uint64_t callback_id = doExecLater(registry, callback, delaySecs, true);
 
@@ -352,7 +352,7 @@ double nextOpSecs(int loop_id) {
   ASSERT_MAIN_THREAD()
   shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(loop_id);
   if (registry == nullptr) {
-    Rf_error("CallbackRegistry does not exist.");
+    Rcpp::stop("CallbackRegistry does not exist.");
   }
 
   Optional<Timestamp> nextTime = registry->nextTimestamp();
