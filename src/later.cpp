@@ -205,7 +205,6 @@ bool execCallbacksOne(
       break;
     }
 
-    // See https://github.com/r-lib/later/issues/191
     // This line may throw errors!
     callback->invoke();
 
