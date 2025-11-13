@@ -2,6 +2,10 @@
 
 ## later (development version)
 
+- Requires R \>= 3.5 and Rcpp \>= 1.0.10 to ensure later callback errors
+  are properly handled. We have removed the fallback to legacy pre-later
+  1.4.0 behaviour ([\#241](https://github.com/r-lib/later/issues/241)).
+
 ## later 1.4.4
 
 CRAN release: 2025-08-27
