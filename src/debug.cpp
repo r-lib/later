@@ -1,6 +1,6 @@
 #include "debug.h"
 #include "utils.h"
-#include <R.h>
+#include <Rcpp.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -55,7 +55,7 @@ std::string log_level(std::string level) {
   } else if (level == "DEBUG") {
     log_level_ = LOG_DEBUG;
   } else {
-    Rf_error("Unknown value for `level`");
+    Rcpp::stop("Unknown value for `level`");
   }
 
   switch(old_level) {

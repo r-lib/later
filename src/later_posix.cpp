@@ -197,7 +197,7 @@ void ensureAutorunnerInitialized() {
     int pipes[2];
     if (pipe(pipes)) {
       free(buf);
-      Rf_error("Failed to create pipe");
+      Rcpp::stop("Failed to create pipe");
       return;
     }
     pipe_out = pipes[0];
@@ -219,7 +219,7 @@ void ensureAutorunnerInitialized() {
     // See https://github.com/rstudio/httpuv/issues/78
     int dummy_pipes[2];
     if (pipe(dummy_pipes)) {
-      Rf_error("Failed to create pipe");
+      Rcpp::stop("Failed to create pipe");
       return;
     }
     dummy_pipe_out = dummy_pipes[0];

@@ -88,7 +88,7 @@ test_that("When callbacks have tied timestamps, they respect order of creation",
 
     void callback(void* data) {
       if (data < max_seen) {
-        Rf_error("Bad ordering detected");
+        Rcpp::stop("Bad ordering detected");
       }
       max_seen = data;
     }

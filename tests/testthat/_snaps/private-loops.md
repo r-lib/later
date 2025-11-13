@@ -11,7 +11,7 @@
     Code
       run_now(loop = l)
     Condition
-      Error in `execCallbacks()`:
+      Error:
       ! CallbackRegistry does not exist.
 
 ---
@@ -19,7 +19,7 @@
     Code
       destroy_loop(global_loop())
     Condition
-      Error in `deleteCallbackRegistry()`:
+      Error:
       ! Can't destroy global loop.
 
 # Temporary event loops
@@ -38,7 +38,7 @@
     Code
       list_queue(l)
     Condition
-      Error in `list_queue_()`:
+      Error:
       ! CallbackRegistry does not exist.
 
 # next_op_secs works
@@ -46,7 +46,7 @@
     Code
       next_op_secs(loop)
     Condition
-      Error in `nextOpSecs()`:
+      Error:
       ! CallbackRegistry does not exist.
 
 # parameter validation works
@@ -54,7 +54,7 @@
     Code
       with_loop(loop, destroy_loop(loop))
     Condition
-      Error in `deleteCallbackRegistry()`:
+      Error:
       ! Can't destroy current loop.
 
 ---
@@ -70,7 +70,7 @@
     Code
       loop_empty(loop)
     Condition
-      Error in `idle()`:
+      Error:
       ! CallbackRegistry does not exist.
 
 ---
@@ -86,7 +86,7 @@
     Code
       notify_r_ref_deleted(global_loop())
     Condition
-      Error in `notifyRRefDeleted()`:
+      Error:
       ! Can't notify that reference to global loop is deleted.
 
 ---
@@ -94,7 +94,7 @@
     Code
       with_loop(loop, notify_r_ref_deleted(loop))
     Condition
-      Error in `notifyRRefDeleted()`:
+      Error:
       ! Can't notify that reference to current loop is deleted.
 
 ---
