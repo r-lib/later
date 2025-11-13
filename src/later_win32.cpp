@@ -92,12 +92,12 @@ void ensureAutorunnerInitialized() {
     wc.hInstance = NULL;
     wc.lpszClassName = class_name;
     if (!RegisterClassEx(&wc)) {
-      Rf_error("Failed to register window class");
+      Rcpp::stop("Failed to register window class");
     }
 
     hwnd = CreateWindowEx(0, class_name, "dummy_name", 0, 0, 0, 0, 0, HWND_MESSAGE, NULL, NULL, NULL);
     if (!hwnd) {
-      Rf_error("Failed to create message-only window");
+      Rcpp::stop("Failed to create message-only window");
     }
 
     initialized = 1;
