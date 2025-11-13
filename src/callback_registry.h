@@ -55,7 +55,7 @@ public:
   StdFunctionCallback(Timestamp when, std::function<void (void)> func);
 
   void invoke() const {
-    // See https://github.com/r-lib/later/issues/191
+    // See https://github.com/r-lib/later/issues/191 and https://github.com/r-lib/later/pull/241
     Rcpp::unwindProtect([this]() {
       BEGIN_RCPP
       func();
