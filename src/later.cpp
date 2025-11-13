@@ -205,13 +205,8 @@ bool execCallbacksOne(
       break;
     }
 
-#ifdef RCPP_USING_UNWIND_PROTECT // See https://github.com/r-lib/later/issues/191
     // This line may throw errors!
     callback->invoke();
-#else
-    // This line may throw errors!
-    callback->invoke_wrapped();
-#endif
 
   } while (runAll);
 
