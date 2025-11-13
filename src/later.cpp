@@ -121,7 +121,7 @@ private:
 shared_ptr<CallbackRegistry> getGlobalRegistry() {
   shared_ptr<CallbackRegistry> registry = callbackRegistryTable.getRegistry(GLOBAL_LOOP);
   if (registry == nullptr) {
-    Rcpp::stop("Global registry does not exist.");
+    Rf_error("Global registry does not exist.");
   }
   return registry;
 }
