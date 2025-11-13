@@ -1,5 +1,7 @@
 # later (development version)
 
+* Requires R >= 3.5 and Rcpp >= 1.0.10 to ensure later callback errors are properly handled. We have removed the fallback to legacy pre-later 1.4.0 behaviour (#241).
+
 # later 1.4.4
 
 * Fixed timings in a test (#237). No user-facing changes.
