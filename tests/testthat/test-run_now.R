@@ -105,7 +105,7 @@ test_that("When callbacks have tied timestamps, they respect order of creation",
   )
   checkLaterOrdering()
   while (!loop_empty()) {
-    run_now()
+    run_now(0.1)
   }
 })
 
