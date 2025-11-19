@@ -3,7 +3,7 @@ pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
   later-cpp: later-cpp.html
-last_built: 2025-11-13T23:44Z
+last_built: 2025-11-19T16:42Z
 urls:
   reference: https://later.r-lib.org/reference
   article: https://later.r-lib.org/articles
