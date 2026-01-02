@@ -1,6 +1,3 @@
-#' @useDynLib later, .registration=TRUE
-#' @importFrom Rcpp evalCpp
-
 # nocov start
 # tested implicitly
 
