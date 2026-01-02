@@ -63,7 +63,7 @@ bool at_top_level() {
 
   int nframe = sys_nframe();
   if (nframe == -1) {
-    throw Rcpp::exception("Error occurred while calling sys.nframe()");
+    Rcpp::stop("Error occurred while calling sys.nframe()");
   }
   return nframe == 0;
 }
