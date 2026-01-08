@@ -1,3 +1,5 @@
+# later (development version)
+
 # later 1.4.5
 
 * Now requires R >= 3.5.0 (for `R_UnwindProtect()`) and Rcpp >= 1.0.10. Removed legacy non-unwind-protect code paths that were previously used as a fallback on older R versions (#241).
