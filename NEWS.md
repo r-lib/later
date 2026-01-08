@@ -1,6 +1,6 @@
-# later (development version)
+# later 1.4.5
 
-* Requires R >= 3.5 and Rcpp >= 1.0.10 to ensure later callback errors are properly handled. We have removed the fallback to legacy pre-later 1.4.0 behaviour (#241).
+* Now requires R >= 3.5.0 (for `R_UnwindProtect()`) and Rcpp >= 1.0.10. Removed legacy non-unwind-protect code paths that were previously used as a fallback on older R versions (#241).
 
 # later 1.4.4
 
