@@ -6,8 +6,9 @@
 #include "callback_registry.h"
 
 // This should be kept in sync with LATER_H_API_VERSION in
-// inst/include/later.h. Whenever the interface between inst/include/later.h
-// and the code in src/ changes, these values should be incremented.
+// inst/include/later_api.h. Whenever the interface between
+// inst/include/later_api.h and the code in src/ changes, these values
+// should be incremented.
 #define LATER_DLL_API_VERSION 3
 
 #define GLOBAL_LOOP 0

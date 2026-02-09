@@ -1,5 +1,7 @@
 # later (development version)
 
+* Moved the contents of `inst/include/later.h` into `later_api.h` to ensure R headers are not included before Rcpp headers when Rcpp auto-includes `$PACKAGE.h` in RcppExports.cpp (RcppCore/Rcpp#1410). The public API header remains `later_api.h`.
+
 # later 1.4.5
 
 * Now requires R >= 3.5.0 (for `R_UnwindProtect()`) and Rcpp >= 1.0.10. Removed legacy non-unwind-protect code paths that were previously used as a fallback on older R versions (#241).
