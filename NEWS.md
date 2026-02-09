@@ -1,5 +1,7 @@
 # later (development version)
 
+* Improved responsiveness when idle at the R console on POSIX systems (#251).
+
 * Fixes #249: Moved the contents of `inst/include/later.h` into `later_api.h` to ensure R headers are not included before Rcpp headers when Rcpp auto-includes `$PACKAGE.h` in RcppExports.cpp. The public API header remains `later_api.h` (#250).
 
 # later 1.4.5
