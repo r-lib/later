@@ -3,7 +3,6 @@
 #include "later.h"
 
 #include <Rcpp.h>
-#include <Rinternals.h>
 #include <queue>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
