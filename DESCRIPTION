@@ -36,8 +36,7 @@ Suggests:
 LinkingTo:
     Rcpp
 VignetteBuilder:
-    knitr,
-    rmarkdown
+    knitr
 Config/build/compilation-database: true
 Config/Needs/website: tidyverse/tidytemplate
 Config/testthat/edition: 3
