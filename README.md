@@ -5,6 +5,8 @@
 
 <!-- badges: start -->
 
+[![CRAN
+status](https://www.r-pkg.org/badges/version/later)](https://CRAN.R-project.org/package=later)
 [![R-CMD-check](https://github.com/r-lib/later/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/r-lib/later/actions/workflows/R-CMD-check.yaml)
 [![Codecov test
 coverage](https://codecov.io/gh/r-lib/later/graph/badge.svg)](https://app.codecov.io/gh/r-lib/later)
