@@ -2,6 +2,9 @@
 
 ## later (development version)
 
+- Improved responsiveness when idle at the R console on POSIX systems
+  ([\#251](https://github.com/r-lib/later/issues/251)).
+
 - Fixes [\#249](https://github.com/r-lib/later/issues/249): Moved the
   contents of `inst/include/later.h` into `later_api.h` to ensure R
   headers are not included before Rcpp headers when Rcpp auto-includes
