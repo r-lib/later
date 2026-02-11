@@ -18,6 +18,8 @@ jobs:
     uses: rstudio/shiny-workflows/.github/workflows/routine.yaml@v1
   R-CMD-check:
     uses: rstudio/shiny-workflows/.github/workflows/R-CMD-check.yaml@v1
+    with:
+      check-depends-only: false
   cpp-version-mismatch:
     name: cpp-version-mismatch
     runs-on: ubuntu-latest

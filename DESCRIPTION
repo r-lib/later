@@ -33,10 +33,11 @@ Suggests:
     promises,
     rmarkdown,
     testthat (>= 3.0.0)
-LinkingTo: 
+LinkingTo:
     Rcpp
-VignetteBuilder: 
-    knitr
+VignetteBuilder:
+    knitr,
+    rmarkdown
 Config/build/compilation-database: true
 Config/Needs/website: tidyverse/tidytemplate
 Config/testthat/edition: 3
