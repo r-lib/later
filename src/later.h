@@ -1,7 +1,6 @@
 #ifndef _LATER_H_
 #define _LATER_H_
 
-#include <string>
 #include <memory>
 #include "callback_registry.h"
 
