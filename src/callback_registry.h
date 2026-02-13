@@ -2,7 +2,6 @@
 #define _CALLBACK_REGISTRY_H_
 
 #include <Rcpp.h>
-#include <queue>
 #include <atomic>
 #include <functional>
 #include <memory>

@@ -8,6 +8,7 @@
 ^src/README.md$
 ^appveyor\.yml$
 ^src/Makevars$
+^\.cache$
 ^\.github$
 ^cran-comments\.md$
 ^LICENSE\.md$

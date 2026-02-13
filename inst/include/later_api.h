@@ -1,8 +1,6 @@
 #ifndef _later_later_api_h
 #define _later_later_api_h
 
-#include <iostream>
-
 #ifndef R_NO_REMAP
 #define R_NO_REMAP
 #endif
