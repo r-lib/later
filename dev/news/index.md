@@ -2,6 +2,8 @@
 
 ## later (development version)
 
+## later 1.4.6
+
 - Improved responsiveness when idle at the R console on POSIX systems
   ([\#251](https://github.com/r-lib/later/issues/251)).
 
