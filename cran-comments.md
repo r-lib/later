@@ -4,4 +4,7 @@
 
 ## revdepcheck results
 
-We did not perform a revdep check as this is a patch release.
+We checked 48 reverse dependencies (46 from CRAN + 2 from Bioconductor), comparing R CMD check results across CRAN and dev versions of this package.
+
+ * We saw 0 new problems
+ * We failed to check 0 packages
