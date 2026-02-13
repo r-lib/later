@@ -23,16 +23,16 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/r-lib/later/blob/v1.4.5/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/r-lib/later/blob/main/DESCRIPTION)
 
 Chang W, Cheng J, Gao C (2026). *later: Utilities for Scheduling
-Functions to Execute Later with Event Loops*. R package version 1.4.5,
+Functions to Execute Later with Event Loops*. R package version 1.4.6,
 <https://later.r-lib.org>.
 
     @Manual{,
       title = {later: Utilities for Scheduling Functions to Execute Later with Event Loops},
       author = {Winston Chang and Joe Cheng and Charlie Gao},
       year = {2026},
-      note = {R package version 1.4.5},
+      note = {R package version 1.4.6},
       url = {https://later.r-lib.org},
     }
