@@ -1,6 +1,9 @@
 #ifndef _later_later_api_h
 #define _later_later_api_h
 
+// ---- Platform prerequisites ------------------------------------------------
+// System and R headers required by the later API.
+
 #ifndef R_NO_REMAP
 #define R_NO_REMAP
 #endif
@@ -28,10 +31,8 @@
 
 #include <Rinternals.h>
 
-// Needed for R_GetCCallable on R 3.3 and older; in more recent versions, this
-// is included via Rinternals.h.
-#include <R_ext/Rdynload.h>
-
+// ---- Public API ------------------------------------------------------------
+// The later C++ interface. See the "Using later from C++" vignette for usage.
 
 namespace later {
 
@@ -57,6 +58,10 @@ static int apiVersionRuntime() {
   return (*dll_api_version)();
 }
 // # nocov end
+
+// ---- later() ---------------------------------------------------------------
+// Schedule a C function to execute on the main R thread after a delay.
+// Safe to call from any thread.
 
 inline void later(void (*func)(void*), void* data, double secs, int loop_id) {
   // This function works by retrieving the later::execLaterNative2 function
@@ -98,6 +103,10 @@ inline void later(void (*func)(void*), void* data, double secs, int loop_id) {
 inline void later(void (*func)(void*), void* data, double secs) {
   later(func, data, secs, GLOBAL_LOOP);
 }
+
+// ---- later_fd() ------------------------------------------------------------
+// Schedule a C function with file descriptor polling. Safe to call from any
+// thread. Requires later >= 1.4.1 (API version 3).
 
 // # nocov start
 // tested by cpp-version-mismatch job on CI
@@ -143,6 +152,10 @@ inline void later_fd(void (*func)(int *, void *), void *data, int num_fds, struc
   later_fd(func, data, num_fds, fds, secs, GLOBAL_LOOP);
 }
 
+
+// ---- BackgroundTask --------------------------------------------------------
+// Helper class for running work on a background thread and returning results
+// on the main R thread. Subclass and implement execute() and complete().
 
 class BackgroundTask {
 
@@ -209,6 +222,10 @@ private:
 };
 
 } // namespace later
+
+// ---- Static initialization -------------------------------------------------
+// Ensures later() and later_fd() are initialized on the main R thread before
+// any user code can call them from a background thread.
 
 namespace {
 
