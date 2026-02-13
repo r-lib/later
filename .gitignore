@@ -13,3 +13,4 @@ docs
 .claude
 CLAUDE.md
 compile_commands.json
+/revdep/
