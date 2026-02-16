@@ -2,6 +2,8 @@
 
 ## later 1.4.6
 
+CRAN release: 2026-02-13
+
 - Improved responsiveness when idle at the R console on POSIX systems
   ([\#251](https://github.com/r-lib/later/issues/251)).
 
