@@ -1,5 +1,7 @@
 # later (development version)
 
+* Fixed #256: compilation failure with glibc >= 2.43 and GCC >= 15, caused by the C11 `once_flag` type now being defined in `<stdlib.h>` under C23. Renamed internal tinycthread symbols to avoid the namespace collision (#257).
+
 # later 1.4.6
 
 * Improved responsiveness when idle at the R console on POSIX systems (#251).
