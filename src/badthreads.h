@@ -38,6 +38,8 @@
 #define mtx_recursive       THREADS_H_ERROR
 #define mtx_timed           THREADS_H_ERROR
 #define call_once           THREADS_H_ERROR
+#define once_flag           THREADS_H_ERROR
+#define ONCE_FLAG_INIT      THREADS_H_ERROR
 #define cnd_t               THREADS_H_ERROR
 #define cnd_init            THREADS_H_ERROR
 #define cnd_signal          THREADS_H_ERROR
