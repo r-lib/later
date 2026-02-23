@@ -1,4 +1,4 @@
-# later (development version)
+# later 1.4.7
 
 * Fixed #256: compilation failure with glibc >= 2.43 and GCC >= 15, caused by the C11 `once_flag` type now being defined in `<stdlib.h>` under C23. Renamed internal tinycthread symbols to avoid the namespace collision (#257).
 
