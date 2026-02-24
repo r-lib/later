@@ -23,7 +23,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/r-lib/later/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/r-lib/later/blob/v1.4.7/DESCRIPTION)
 
 Chang W, Cheng J, Gao C (2026). *later: Utilities for Scheduling
 Functions to Execute Later with Event Loops*. R package version 1.4.7,
