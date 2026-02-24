@@ -1,5 +1,15 @@
 # Changelog
 
+## later 1.4.7
+
+CRAN release: 2026-02-24
+
+- Fixed [\#256](https://github.com/r-lib/later/issues/256): compilation
+  failure with glibc \>= 2.43 and GCC \>= 15, caused by the C11
+  `once_flag` type now being defined in `<stdlib.h>` under C23. Renamed
+  internal tinycthread symbols to avoid the namespace collision
+  ([\#257](https://github.com/r-lib/later/issues/257)).
+
 ## later 1.4.6
 
 CRAN release: 2026-02-13
