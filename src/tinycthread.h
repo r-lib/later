@@ -29,8 +29,6 @@ freely, subject to the following restrictions:
 extern "C" {
 #endif
 
-#include "badthreads.h"
-
 // jcheng 2017-11-03: _XOPEN_SOURCE 600 is necessary to prevent Solaris headers
 // from complaining about the combination of C99 and _XOPEN_SOURCE <= 500. The
 // error message starts with:
@@ -107,6 +105,8 @@ extern "C" {
     #undef __UNDEF_LEAN_AND_MEAN
   #endif
 #endif
+
+#include "badthreads.h"
 
 /* Compiler-specific information */
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
