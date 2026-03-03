@@ -112,7 +112,7 @@ inline void later(void (*func)(void*), void* data, double secs) {
 // tested by cpp-version-mismatch job on CI
 static void later_fd_version_error(void (*func)(int *, void *), void *data, int num_fds, struct pollfd *fds, double secs, int loop_id) {
   (void) func; (void) data; (void) num_fds; (void) fds; (void) secs; (void) loop_id;
-  Rf_error("later_fd called, but installed version of the 'later' package is too old; please upgrade 'later' to 1.4.1 or above");
+  (Rf_error)("later_fd called, but installed version of the 'later' package is too old; please upgrade 'later' to 1.4.1 or above");
 }
 // # nocov end
 
