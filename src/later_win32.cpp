@@ -24,7 +24,7 @@ static const UINT WM_SETUPTIMER = WM_USER + 101;
 
 static void setupTimer() {
   if (!SetTimer(hwnd, TIMER_ID, USER_TIMER_MINIMUM, NULL)) {
-    Rf_error("Failed to schedule callback timer");
+    (Rf_error)("Failed to schedule callback timer");
   }
 }
 
