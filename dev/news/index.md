@@ -2,6 +2,10 @@
 
 ## later (development version)
 
+## later 1.4.8
+
+CRAN release: 2026-03-05
+
 - Fixed [\#262](https://github.com/r-lib/later/issues/262): Internal
   update for compatibility with Rcpp re. `Rf_error` handling
   ([\#263](https://github.com/r-lib/later/issues/263)).
