@@ -1,3 +1,5 @@
+# later (development version)
+
 # later 1.4.8
 
 * Fixed #262: Internal update for compatibility with Rcpp re. `Rf_error` handling (#263).
