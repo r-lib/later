@@ -21,6 +21,7 @@ in Rhttpd.
 You can install the development version of later with:
 
 ``` r
+
 pak::pak("r-lib/later")
 ```
 
@@ -29,6 +30,7 @@ pak::pak("r-lib/later")
 Pass a function (in this case, delayed by 5 seconds):
 
 ``` r
+
 later::later(\() print("Got here!"), 5)
 ```
 
@@ -36,6 +38,7 @@ Or a formula (in this case, run as soon as control returns to the
 top-level):
 
 ``` r
+
 later::later(~print("Got here!"))
 ```
 
@@ -49,6 +52,7 @@ Below, a logical vector is printed indicating which of file descriptors
 21 or 22 were ready, subject to a timeout of 1s.
 
 ``` r
+
 later::later_fd(\(x) print(x), c(21L, 22L), timeout = 1)
 ```
 

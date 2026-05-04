@@ -21,6 +21,9 @@ Useful links:
 
 Authors:
 
+- Charlie Gao <charlie.gao@posit.co>
+  ([ORCID](https://orcid.org/0000-0002-0750-061X))
+
 - Winston Chang <winston@posit.co>
   ([ORCID](https://orcid.org/0000-0002-1576-2126))
 
