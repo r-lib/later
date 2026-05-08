@@ -1,5 +1,9 @@
 # later (development version)
 
+# later 1.4.8.9001
+
+* @pachadotdev: I edited all the C++ code to rely 100% on R's C API. This is slightly related to #262.
+
 # later 1.4.8
 
 * Fixed #262: Internal update for compatibility with Rcpp re. `Rf_error` handling (#263).
