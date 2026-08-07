@@ -22,5 +22,6 @@
 ^[.]?air[.]toml$
 ^\.vscode$
 ^\.claude$
-^CLAUDE.md$
+^AGENTS.md$
+^\.posit$
 ^compile_commands\.json$

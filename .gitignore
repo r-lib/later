@@ -11,6 +11,6 @@ CRAN-RELEASE
 docs
 .cache
 .claude
-CLAUDE.md
+.posit
 compile_commands.json
 /revdep/
