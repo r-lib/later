@@ -62,6 +62,7 @@ Rcpp::RObject RcppFunctionCallback::rRepresentation() const {
 // [[Rcpp::export(rng = false)]]
 void testCallbackOrdering() {
   std::vector<StdFunctionCallback> callbacks;
+  callbacks.reserve(100);
   Timestamp ts;
   std::function<void(void)> func;
   for (size_t i = 0; i < 100; i++) {
